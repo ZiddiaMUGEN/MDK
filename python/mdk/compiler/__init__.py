@@ -26,6 +26,12 @@ def build(target: str):
 
     print(f"Done building {len(state.ALL_STATEDEF_CNS)} state definitions. Now executing conversion to templated CNS.")
 
+    # top-level statements - tMUGEN will convert these for us into -2-scoped and explod-guarded declarations.
+    for controller in state.GLOBAL_CONTROLLERS:
+        create_controller(controller, "Global")
+        print()
+    print()
+
     for state_name in state.ALL_STATEDEF_CNS:
         definition: state.Statedef = state.ALL_STATEDEF_CNS[state_name]
 
@@ -35,15 +41,18 @@ def build(target: str):
             print(f"{param} = {definition.params[param]}")
         print()
         for controller in definition.controllers:
-            if controller.comment != None:
-                print(f";; {controller.comment}")
-            print(f"[State {state_name}]")
-            print(f"type = {controller.type}")
-            for trigger_group in controller.triggers:
-                for trigger in controller.triggers[trigger_group]:
-                    print(f"trigger{trigger_group} = {trigger}")
-            if len(controller.triggers) == 0: print("trigger1 = 1")
-            for param in controller.params:
-                print(f"{param} = {controller.params[param]}")
+            create_controller(controller, state_name)
             print()
         print()
+
+def create_controller(controller: state.Controller, header: str):
+    if controller.comment != None:
+        print(f";; {controller.comment}")
+    print(f"[State {header}]")
+    print(f"type = {controller.type}")
+    for trigger_group in controller.triggers:
+        for trigger in controller.triggers[trigger_group]:
+            print(f"trigger{trigger_group} = {trigger}")
+    if len(controller.triggers) == 0: print("trigger1 = 1")
+    for param in controller.params:
+        print(f"{param} = {controller.params[param]}")

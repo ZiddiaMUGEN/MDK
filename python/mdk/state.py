@@ -30,6 +30,9 @@ ALL_STATEDEF_IMPLS: Dict[str, StatedefImpl] = {}
 ## stores all current Statedefs which have been built.
 ALL_STATEDEF_CNS: Dict[str, Statedef] = {}
 
+## stores any controllers which apply at the global scope. tMUGEN is responsible for converting these into one-off executions in -2.
+GLOBAL_CONTROLLERS: List[Controller] = []
+
 ## stores the Statedef which is currently being built.
 CURRENT_STATEDEF: Statedef = None
 

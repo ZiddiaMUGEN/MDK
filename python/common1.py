@@ -1,10 +1,13 @@
+## this is an implementation of `common1.cns` using MDK-python.
 from mdk import statedef, build
 from mdk.types import StateType, PhysicsType
 
 from mdk.triggers import *
 from mdk.controllers import *
 
-#from mdk.triggers import IntVar
+from mdk.vars import IntVar
+
+myVar = IntVar(0)
 
 @statedef(type = StateType.S, physics = PhysicsType.S, sprpriority = 0, stateno = 0)
 def Stand():
@@ -12,10 +15,9 @@ def Stand():
         ChangeAnim(value = 0)
     if Time == 0:
         VelSet(y = 0)
-    VelSet(x = 0)
 
 @statedef()
 def Walk():
     print("parsing Walk")
 
-build(target = "example.cns")
+build(target = "common1.cns")

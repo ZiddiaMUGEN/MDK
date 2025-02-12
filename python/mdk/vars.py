@@ -10,14 +10,22 @@ class IntVar(Trigger):
     def __init__(self, val: Union[Trigger, int]):
         self.repr: str = f"unnamedVar_{short_uuid()}"
         self.val: str = repr(val)
-        ## at the start of the current statedef, append a controller to initialize this variable.
+        ## perform initialization of this variable in MUGEN
+        initializer: state.Controller = self.create()
         if state.CURRENT_STATEDEF != None:
-            ctrl: state.Controller = state.Controller()
-            ctrl.type = "VarSet"
-            ctrl.comment = f"assigning default value for {self.repr}"
-            ## TODO: fix this once trigger handling is good
-            ctrl.params["trigger1"] = "Time = 0"
-            ctrl.params[self.repr] = self.val
-            ctrl.params["ignorehitpause"] = "1"
-            ctrl.params["persistent"] = "256"
-            state.CURRENT_STATEDEF.controllers.insert(0, ctrl)
+            ## at the start of the current statedef, append a controller to initialize this variable.
+            state.CURRENT_STATEDEF.controllers.insert(0, initializer)
+        else:
+            ## at the global scope, add a controller to initialize this variable.
+            initializer.params["scope"] = "global"
+            state.GLOBAL_CONTROLLERS.append(initializer)
+            
+    def create(self) -> state.Controller:
+        ctrl: state.Controller = state.Controller()
+        ctrl.type = "VarSet"
+        ctrl.comment = f"assigning default value for {self.repr}"
+        ctrl.add_trigger(1, "Time = 0")
+        ctrl.params[self.repr] = self.val
+        ctrl.params["ignorehitpause"] = "1"
+        ctrl.params["persistent"] = "256"
+        return ctrl
