@@ -9,7 +9,7 @@ import types
 from mdk.utils import debug, format_tuple, format_bool
 from mdk.types import StateType, MoveType, PhysicsType
 from mdk.controllers import ChangeState
-from mdk.triggers import TriggerAnd, TriggerOr, TriggerNot
+from mdk.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign
 from mdk.state import ALL_STATEDEF_IMPLS, StatedefImpl
 
 ## Decorator for use with statedefs which accepts optional arguments for each statedef property.
@@ -51,6 +51,7 @@ def statedef(
         new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
         new_globals["mdk.impl.TriggerOr"] = TriggerOr
         new_globals["mdk.impl.TriggerNot"] = TriggerNot
+        new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
         # create a new function including these globals.
         new_fn = types.FunctionType(new_code_obj.co_consts[0], new_globals)
 
@@ -78,7 +79,7 @@ def statedef(
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
     def visit_BoolOp(self, node: ast.BoolOp):
-        # recursively inspect other nodes.
+        # recursively inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node)
         # get the type of operation: we support transforming AND, OR for boolop.
         if type(node.op) == ast.And:
@@ -97,7 +98,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         )
     
     def visit_UnaryOp(self, node: ast.UnaryOp):
-        # recursively inspect other nodes.
+        # recursively inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node)
         # get the type of operation: we support transforming NOT for unaryop
         if type(node.op) == ast.Not:
@@ -110,5 +111,16 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         return ast.Call(
             func=ast.Name(id=target, ctx=ast.Load()),
             args=[node.operand],
+            keywords=[]
+        )
+    
+    def visit_NamedExpr(self, node: ast.NamedExpr):
+        # recursively inspect child nodes.
+        node = super(ReplaceLogicalOperators, self).generic_visit(node)
+        # then, replace the NamedExpr directly with a Call to the assignment override,
+        # with arguments provided from the inner values.
+        return ast.Call(
+            func=ast.Name(id="mdk.impl.TriggerAssign", ctx=ast.Load()),
+            args=[ast.Name(id=node.target.id, ctx=ast.Load()), node.value],
             keywords=[]
         )

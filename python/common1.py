@@ -15,6 +15,10 @@ def Stand():
         ChangeAnim(value = 0)
     if Time == 0:
         VelSet(y = 0)
+    if abs(Vel.x) < Const("movement.stand.friction.threshold") or Time == 4:
+        VelSet(x = 0)
+    if not Alive:
+        ChangeState(value = 5050, ctrl = False)
 
 @statedef()
 def Walk():

@@ -111,6 +111,12 @@ class Trigger:
     def __bool__(self):
         return True
     
+class VectorTrigger(Trigger):
+    def __init__(self, repr: str):
+        super().__init__(repr)
+        self.x = Trigger("Vel.x")
+        self.y = Trigger("Vel.y")
+    
 ## overriding logical operator functions.
 def TriggerAnd(*args):
     # we only need to codegen if there is at least 1 argument which evals to Trigger.
@@ -151,7 +157,25 @@ def TriggerNot(first):
     debug(f"logical op: {repr}")
     return Trigger(repr)
 
+def TriggerAssign(first, value):
+    # we only need to codegen if there is at least 1 argument which evals to Trigger.
+    should_codegen = isinstance(first, Trigger)
+    # if not codegenning, we CANNOT currently handle this case.
+    if not should_codegen:
+        raise Exception(f"MDK-python cannot currently handle assignment operators involving non-trigger types: {first}, {value}")
+    # if codegenning, this MUST return a Trigger to codegen for the controllers inside the statement.
+    # the trigger will have a representation for the actual CNS trigger, and is always truthy.
+    repr = f"{first} := {value}"
+    debug(f"walrus op: {repr}")
+    return Trigger(repr)
+
 ## individual triggers exposed by MUGEN.
+Alive = Trigger("Alive")
 Anim = Trigger("Anim")
 AnimTime = Trigger("AnimTime")
+Vel = VectorTrigger("Vel")
 Time = Trigger("Time")
+
+## triggers which take parameters.
+def Const(name: str):
+    return Trigger(f"const({name})")
