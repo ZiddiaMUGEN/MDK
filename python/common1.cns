@@ -1,0 +1,40 @@
+
+[Statedef Stand]
+type = S
+movetype = U
+physics = S
+sprpriority = 0
+
+[State Stand]
+type = ChangeAnim
+trigger1 = ((Anim != 0 && Anim != 5) || (Anim = 5 && AnimTime = 0))
+value = 0
+
+[State Stand]
+type = VelSet
+trigger1 = Time = 0
+y = 0
+
+[State Stand]
+type = VelSet
+trigger1 = (abs(Vel.x) < const(movement.stand.friction.threshold) || Time = 4)
+x = 0
+
+[State Stand]
+type = ChangeState
+trigger1 = !Alive
+value = 5050
+ctrl = False
+
+[State Stand]
+type = AllPalFX
+trigger1 = 1
+sinadd = 1,2,3,4
+
+
+[Statedef Walk]
+type = U
+movetype = U
+physics = U
+
+

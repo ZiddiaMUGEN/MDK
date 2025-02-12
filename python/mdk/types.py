@@ -20,3 +20,9 @@ class PhysicsType(Enum):
     A = 2
     N = 3
     U = 4
+
+class Transparency(Enum):
+    none = 0, ## casing sucks here but None is a reserved word.
+    Add = 1,
+    Add1 = 2,
+    Sub = 3

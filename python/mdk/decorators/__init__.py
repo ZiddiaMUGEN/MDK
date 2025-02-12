@@ -33,6 +33,7 @@ def statedef(
     stateno: Optional[int] = None
 ) -> Callable:
     def decorator(fn: Callable) -> Callable:
+        print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
         debug(f"Inspecting and modifying AST of function {fn}")
         # get effective source code of the decorated function
         source = inspect.getsource(fn)

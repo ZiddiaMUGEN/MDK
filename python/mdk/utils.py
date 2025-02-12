@@ -12,7 +12,8 @@ def short_uuid() -> str:
 
 ## formatters from Python types to CNS types
 def format_tuple(tp: tuple) -> str:
-    return f"{tp[0]}, {tp[1]}"
+    tp_string = [str(x) for x in tp]
+    return ",".join(tp_string)
 
 def format_bool(b: bool) -> str:
     return "1" if b else "0"

@@ -5,9 +5,7 @@ from mdk.types import StateType, PhysicsType
 from mdk.triggers import *
 from mdk.controllers import *
 
-from mdk.vars import IntVar
-
-myVar = IntVar(0)
+#from mdk.vars import IntVar
 
 @statedef(type = StateType.S, physics = PhysicsType.S, sprpriority = 0, stateno = 0)
 def Stand():
@@ -19,6 +17,7 @@ def Stand():
         VelSet(x = 0)
     if not Alive:
         ChangeState(value = 5050, ctrl = False)
+    AllPalFX(sinadd = (1, 2, 3, 4))
 
 @statedef()
 def Walk():
