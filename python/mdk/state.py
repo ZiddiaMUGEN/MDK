@@ -6,6 +6,7 @@ class Statedef:
         self.name: str = name
         self.controllers: List[Controller] = []
         self.params: Dict[str, str] = {}
+        self.stateno: Optional[int] = None
 
 class Controller:
     def __init__(self):
@@ -36,5 +37,6 @@ GLOBAL_CONTROLLERS: List[Controller] = []
 ## stores the Statedef which is currently being built.
 CURRENT_STATEDEF: Statedef = None
 
-## stores the current trigger expression representation.
+## stores the current trigger expression representation, and the stack of all applied trigger expressions.
 CURRENT_EXPRESSION: Optional[str] = None
+EXPRESSION_STACK: List[str] = []

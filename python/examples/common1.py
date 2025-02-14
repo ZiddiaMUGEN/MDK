@@ -17,7 +17,6 @@ def Stand():
         VelSet(x = 0)
     if not Alive:
         ChangeState(value = 5050, ctrl = False)
-    AllPalFX(sinadd = (1, 2, 3, 4))
 
 @statedef()
 def Walk():

@@ -9,7 +9,7 @@ import types
 from mdk.utils import debug, format_tuple, format_bool
 from mdk.types import StateType, MoveType, PhysicsType
 from mdk.controllers import ChangeState
-from mdk.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign
+from mdk.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
 from mdk.state import ALL_STATEDEF_IMPLS, StatedefImpl
 
 ## Decorator for use with statedefs which accepts optional arguments for each statedef property.
@@ -33,50 +33,75 @@ def statedef(
     stateno: Optional[int] = None
 ) -> Callable:
     def decorator(fn: Callable) -> Callable:
-        print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
-        debug(f"Inspecting and modifying AST of function {fn}")
-        # get effective source code of the decorated function
-        source = inspect.getsource(fn)
-        source = '\n'.join(source.splitlines()[1:]) # skip decorator line
-        # parse AST from the decorated function
-        old_ast = ast.parse(source)
-        # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-        new_ast = ReplaceLogicalOperators().visit(old_ast)
-        # fix location info since the modified nodes won't contain any data
-        ast.fix_missing_locations(new_ast)
-        # compile the updated AST to a function and use it as the resulting wrapped function.
-        new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
-        # add missing globals for each operation.
-        # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
-        new_globals = fn.__globals__
-        new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
-        new_globals["mdk.impl.TriggerOr"] = TriggerOr
-        new_globals["mdk.impl.TriggerNot"] = TriggerNot
-        new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
-        # create a new function including these globals.
-        new_fn = types.FunctionType(new_code_obj.co_consts[0], new_globals)
-
-        debug(f"Mapping statedef with name {fn.__name__} to function {new_fn}")
-        ALL_STATEDEF_IMPLS[fn.__name__] = StatedefImpl(new_fn)
-
-        # apply each parameter
-        ALL_STATEDEF_IMPLS[fn.__name__].stateno = stateno
-        ALL_STATEDEF_IMPLS[fn.__name__].params["type"] = type.name
-        ALL_STATEDEF_IMPLS[fn.__name__].params["movetype"] = movetype.name
-        ALL_STATEDEF_IMPLS[fn.__name__].params["physics"] = physics.name
-        if anim != None: ALL_STATEDEF_IMPLS[fn.__name__].params["anim"] = str(anim)
-        if velset != None: ALL_STATEDEF_IMPLS[fn.__name__].params["velset"] = format_tuple(velset)
-        if ctrl != None: ALL_STATEDEF_IMPLS[fn.__name__].params["ctrl"] = format_bool(ctrl)
-        if poweradd != None: ALL_STATEDEF_IMPLS[fn.__name__].params["poweradd"] = poweradd
-        if juggle != None: ALL_STATEDEF_IMPLS[fn.__name__].params["juggle"] = juggle
-        if facep2 != None: ALL_STATEDEF_IMPLS[fn.__name__].params["facep2"] = format_bool(ctrl)
-        if hitdefpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["hitdefpersist"] = format_bool(hitdefpersist)
-        if movehitpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["movehitpersist"] = format_bool(movehitpersist)
-        if hitcountpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["hitcountpersist"] = format_bool(hitcountpersist)
-        if sprpriority != None: ALL_STATEDEF_IMPLS[fn.__name__].params["sprpriority"] = sprpriority
-
-        return partial(ChangeState, value = fn.__name__)
+        return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno)
     return decorator
+
+def create_statedef(
+    fn: Callable,
+    type: StateType = StateType.U,
+    movetype: MoveType = MoveType.U,
+    physics: PhysicsType = PhysicsType.U,
+    anim: Optional[int] = None,
+    velset: Optional[tuple[float, float]] = None,
+    ctrl: Optional[bool] = None,
+    poweradd: Optional[int] = None,
+    juggle: Optional[int] = None,
+    facep2: Optional[bool] = None,
+    hitdefpersist: Optional[bool] = None,
+    movehitpersist: Optional[bool] = None,
+    hitcountpersist: Optional[bool] = None,
+    sprpriority: Optional[int] = None,
+    stateno: Optional[int] = None
+):
+    print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
+    debug(f"Inspecting and modifying AST of function {fn}")
+    # get effective source code of the decorated function
+    source = inspect.getsource(fn)
+    # remove decorator lines at the start of the source
+    source = source.splitlines()
+    while source[0].strip().startswith('@'):
+        source = source[1:]
+    source = '\n'.join(source)
+    # parse AST from the decorated function
+    old_ast = ast.parse(source)
+    # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
+    new_ast = ReplaceLogicalOperators().visit(old_ast)
+    # fix location info since the modified nodes won't contain any data
+    ast.fix_missing_locations(new_ast)
+    # compile the updated AST to a function and use it as the resulting wrapped function.
+    new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
+    # add missing globals for each operation.
+    # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
+    new_globals = fn.__globals__
+    new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
+    new_globals["mdk.impl.TriggerOr"] = TriggerOr
+    new_globals["mdk.impl.TriggerNot"] = TriggerNot
+    new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
+    new_globals["mdk.impl.TriggerPush"] = TriggerPush
+    new_globals["mdk.impl.TriggerPop"] = TriggerPop
+    # create a new function including these globals.
+    new_fn = types.FunctionType(new_code_obj.co_consts[0], new_globals)
+
+    debug(f"Mapping statedef with name {fn.__name__} to function {new_fn}")
+    ALL_STATEDEF_IMPLS[fn.__name__] = StatedefImpl(new_fn)
+
+    # apply each parameter
+    ALL_STATEDEF_IMPLS[fn.__name__].stateno = stateno
+    ALL_STATEDEF_IMPLS[fn.__name__].params["type"] = type.name
+    ALL_STATEDEF_IMPLS[fn.__name__].params["movetype"] = movetype.name
+    ALL_STATEDEF_IMPLS[fn.__name__].params["physics"] = physics.name
+    if anim != None: ALL_STATEDEF_IMPLS[fn.__name__].params["anim"] = str(anim)
+    if velset != None: ALL_STATEDEF_IMPLS[fn.__name__].params["velset"] = format_tuple(velset)
+    if ctrl != None: ALL_STATEDEF_IMPLS[fn.__name__].params["ctrl"] = format_bool(ctrl)
+    if poweradd != None: ALL_STATEDEF_IMPLS[fn.__name__].params["poweradd"] = poweradd
+    if juggle != None: ALL_STATEDEF_IMPLS[fn.__name__].params["juggle"] = juggle
+    if facep2 != None: ALL_STATEDEF_IMPLS[fn.__name__].params["facep2"] = format_bool(ctrl)
+    if hitdefpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["hitdefpersist"] = format_bool(hitdefpersist)
+    if movehitpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["movehitpersist"] = format_bool(movehitpersist)
+    if hitcountpersist != None: ALL_STATEDEF_IMPLS[fn.__name__].params["hitcountpersist"] = format_bool(hitcountpersist)
+    if sprpriority != None: ALL_STATEDEF_IMPLS[fn.__name__].params["sprpriority"] = sprpriority
+
+    return partial(ChangeState, value = fn.__name__)
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
     def visit_BoolOp(self, node: ast.BoolOp):
@@ -125,3 +150,25 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             args=[ast.Name(id=node.target.id, ctx=ast.Load()), node.value],
             keywords=[]
         )
+    
+    def visit_If(self, node: ast.If):
+        # recursively inspect child nodes.
+        node = super(ReplaceLogicalOperators, self).generic_visit(node)
+        # append a call to mdk.impl.TriggerPush at the start of the block,
+        # and append a call to mdk.impl.TriggerPop at the end of the block.
+        node.body.insert(0, ast.Expr(
+            value=ast.Call(
+                func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load()),
+                args=[],
+                keywords=[]
+            )
+        ))
+        node.body.insert(len(node.body), ast.Expr(
+            value=ast.Call(
+                func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load()),
+                args=[],
+                keywords=[]
+            )
+        ))
+        print(ast.dump(node, indent=4))
+        return node

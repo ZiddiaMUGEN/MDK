@@ -8,7 +8,13 @@ sprpriority = 0
 [State Stand]
 type = ChangeAnim
 trigger1 = ((Anim != 0 && Anim != 5) || (Anim = 5 && AnimTime = 0))
+trigger1 = Time = 1
 value = 0
+
+[State Stand]
+type = ChangeAnim
+trigger1 = ((Anim != 0 && Anim != 5) || (Anim = 5 && AnimTime = 0))
+value = 1
 
 [State Stand]
 type = VelSet

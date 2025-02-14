@@ -1,0 +1,121 @@
+
+[Statedef DevilsEye0]
+stateno = 0
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye0]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye1]
+stateno = 1
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye1]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye2]
+stateno = 2
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye2]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye3]
+stateno = 3
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye3]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye4]
+stateno = 4
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye4]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye5]
+stateno = 5
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye5]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye6]
+stateno = 6
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye6]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye7]
+stateno = 7
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye7]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye8]
+stateno = 8
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye8]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+
+[Statedef DevilsEye9]
+stateno = 9
+type = U
+movetype = U
+physics = U
+
+[State DevilsEye9]
+type = ChangeState
+trigger1 = 1
+value = 12345678
+
+

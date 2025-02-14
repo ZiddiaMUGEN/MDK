@@ -16,6 +16,7 @@ def build(target: str):
         
         # prep a new statedef to store controllers
         state.CURRENT_STATEDEF = state.Statedef(state_name)
+        state.CURRENT_STATEDEF.stateno = impl.stateno
 
         # call the statedef function directly to build CNS. the controllers called by `fn` will directly register their controllers to CURRENT_STATEDEF
         fn()
@@ -38,6 +39,8 @@ def build(target: str):
             definition: state.Statedef = state.ALL_STATEDEF_CNS[state_name]
 
             f.write(f"[Statedef {state_name}]\n")
+            if definition.stateno != None:
+                f.write(f"stateno = {definition.stateno}\n")
             for param in definition.params:
                 f.write(f"{param} = {definition.params[param]}\n")
             f.write('\n')

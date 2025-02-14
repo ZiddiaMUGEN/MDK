@@ -169,6 +169,12 @@ def TriggerAssign(first, value):
     debug(f"walrus op: {repr}")
     return Trigger(repr)
 
+def TriggerPush():
+    state.EXPRESSION_STACK.append(state.CURRENT_EXPRESSION)
+
+def TriggerPop():
+    state.EXPRESSION_STACK.pop()
+
 ## individual triggers exposed by MUGEN.
 Alive = Trigger("Alive")
 Anim = Trigger("Anim")

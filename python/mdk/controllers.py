@@ -27,8 +27,8 @@ def controller(fn: Callable) -> Callable:
         if persistent != None: ctrl.params["persistent"] = int(persistent)
         # hacky: this is a trick for the controllers to calle ach other without duplicating sctrls in the output.
         if append:
-            if state.CURRENT_EXPRESSION != None: ctrl.add_trigger(1, state.CURRENT_EXPRESSION)
-            state.CURRENT_EXPRESSION = None
+            for trigger in state.EXPRESSION_STACK:
+                ctrl.add_trigger(1, trigger)
             state.CURRENT_STATEDEF.controllers.append(ctrl)
         return ctrl
     return wrapper
