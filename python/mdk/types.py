@@ -26,3 +26,12 @@ class Transparency(Enum):
     Add = 1,
     Add1 = 2,
     Sub = 3
+
+class VarScope(Enum):
+    Local = 0,
+    Global = 1
+
+class VarType(Enum):
+    Integer = 0,
+    Float = 1
+    Boolean = 2

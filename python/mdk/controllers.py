@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from mdk.utils import debug, format_bool, format_tuple
 from mdk.triggers import Trigger
-from mdk.types import Transparency
+from mdk.types import Transparency, VarScope, VarType
 from mdk import state
 
 TriggerInt = Union[Trigger, int]
@@ -128,6 +128,21 @@ def PalFX(
     if sinadd != None: result.params["sinadd"] = format_tuple(sinadd)
     if invertall != None: result.params["invertall"] = format_bool(invertall)
     if color != None: result.params["color"] = color
+
+    return result
+
+## note the implementation of VarSet is non-standard. the expected way to use this is with IntVar/FloatVar variables directly in the state code.
+## VarSet is used directly by the handlers for IntVar/FloatVar.
+@controller
+def VarSet(name: str, value: Union[TriggerInt, TriggerFloat, TriggerBool], scope: Optional[VarScope] = None, type: Optional[VarType] = VarType.Integer):
+    result = state.Controller()
+
+    if scope != None:
+        result.params["scope"] = scope.name
+    
+    result.params["name"] = name
+    result.params["value"] = value
+    result.params["vartype"] = type
 
     return result
 
