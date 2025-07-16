@@ -42,7 +42,7 @@ If the `Include` section specifies imported names, strip the output state from i
 
 If the `Include` section specifies a namespace, prepend the namespace to all included templates and triggers.
 
-Insert the output chunks into the source file context.
+Insert the output chunks into the head of the source file context.
 
 ### 4. Type Procesing
 

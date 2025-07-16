@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import List, Callable, TypeVar
 
 from mtl.parsers import ini, trigger
@@ -68,7 +69,7 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: Translat
             if (value := find(section.properties, lambda k: k.key.lower() == "value")) == None:
                 raise TranslationError("Define Trigger section must provide a value property.", section.filename, section.line)
 
-            trigger_section = TriggerSection(name.value, type.value, value.value)
+            trigger_section = TriggerSection(name.value, type.value, trigger.parseTrigger(value.value, value.filename, value.line))
             ctx.triggers.append(trigger_section)
             if index + 1 < len(sections) and sections[index + 1].name.lower().startswith("define parameters"):
                 trigger_section.params = sections[index + 1]
@@ -99,7 +100,42 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: Translat
             raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.filename, section.line)
         index += 1
 
-def translateFile(file: str, cycle: List[str]):
+def processIncludes(mode: TranslationMode, cycle: List[str], ctx: TranslationContext):
+    # CNS mode does not support Include sections.
+    if mode == TranslationMode.CNS_MODE:
+        return
+    
+    for include in ctx.includes:
+        if (source := find(include.properties, lambda k: k.key.lower() == "source")) == None:
+            raise TranslationError("Include block must define a `source` property indicating the file to be included.", include.filename, include.line)
+        
+        ## per the standard, we search 3 locations for the source file:
+        ## - working directory
+        ## - directory of the file performing the inclusion
+        ## - directory of this file
+        search = [f"{os.getcwd()}/{source.value}", f"{os.path.dirname(os.path.realpath(include.filename))}/{source.value}", f"{os.path.dirname(os.path.realpath(__file__))}/{source.value}"]
+        location: Optional[str] = None
+        for path in search:
+            if os.path.exists(path):
+                location = path
+                break
+        if location == None:
+            raise TranslationError(f"Could not find the source file specified by {source.value} for inclusion.", include.filename, include.line)
+        
+        ## now translate the source file
+        include_context = translateFile(location, cycle + [ctx.filename], True)
+
+def translateFile(file: str, cycle: List[str], doPartial: bool) -> TranslationContext:
+    cycle_detection = find(cycle, lambda k: os.path.realpath(file) == os.path.realpath(k))
+    if cycle_detection != None:
+        print("Import cycle was detected!!")
+        print(f"\t-> {os.path.realpath(file)}")
+        index = len(cycle) - 1
+        while index >= 0:
+            print(f"\t-> {os.path.realpath(cycle[index])}")
+            index -= 1
+        raise TranslationError("A cycle was detected during include processing.", file, 0)
+
     ctx = TranslationContext(file)
 
     with open(file) as f:
@@ -107,6 +143,13 @@ def translateFile(file: str, cycle: List[str]):
 
     mode = TranslationMode.MTL_MODE if file.endswith(".mtl") or file.endswith(".inc") else TranslationMode.CNS_MODE
     parseTarget(contents, mode, ctx)
+    processIncludes(mode, cycle, ctx)
+
+    ## for Includes, we only need to process up to this point.
+    if doPartial:
+        return ctx
+    
+    return ctx
 
 if __name__ == "__main__":
     ## TODO: need a project file. need to be able to parse AIR, SPR, SND and multiple MTL/CNS files.
@@ -114,4 +157,4 @@ if __name__ == "__main__":
     parser.add_argument('input', help='Path to the MTL template to translate')
 
     args = parser.parse_args()
-    translateFile(args.input, [])
+    translateFile(args.input, [], False)

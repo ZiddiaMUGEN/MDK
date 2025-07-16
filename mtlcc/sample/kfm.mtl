@@ -1,3 +1,5 @@
+[Include]
+source = stdlib/libmtl.inc
 
 ;---------------------------------------------------------------------------
 ; Lose by Time Over

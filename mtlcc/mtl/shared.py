@@ -106,10 +106,10 @@ class TemplateSection:
 class TriggerSection:
     name: str
     type: str
-    value: str
+    value: TriggerTree
     params: Optional[INISection]
 
-    def __init__(self, name: str, type: str, value: str):
+    def __init__(self, name: str, type: str, value: TriggerTree):
         self.params = None
         self.name = name
         self.type = type

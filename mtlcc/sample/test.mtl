@@ -1,6 +1,9 @@
 ;; Standard include file for MTL. This is used by mtlcc to build CNS files.
 ;; libmtl.inc is included by default by mtlcc.
 
+[Include]
+source = sample/kfm.mtl
+
 ;;;;; Fundamental Type Definitions
 ;; The int, float, short, byte, char, and bool types are built-in. Some aliases and unions are defined here.
 [Define Type]
