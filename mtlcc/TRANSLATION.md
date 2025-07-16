@@ -35,6 +35,7 @@ Search for inclusions in the following paths, in order:
 - Home directory of project
 - Directory of current file
 - Directory of mtlcc.py
+- Absolute path
 
 Since included files also run inclusions, cycle detection needs to be applied. If a cycle is detected, translation should terminate with an error.
 
@@ -48,4 +49,8 @@ Insert the output chunks into the head of the source file context.
 
 Identify any `Define Type` sections. For each type definition, register the definition in the translation context.
 
-Process types in a top-down fashion, identifying any missing types.
+Process types in a top-down fashion, identifying any missing types and emitting errors for them. The translator must identify at this point the size of all defined types.
+
+If a type is defined more than once, the translator must emit an error.
+
+For union types, the translator must verify the size of the union components aligns, and emit an error otherwise.
