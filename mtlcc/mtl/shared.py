@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Optional
 from enum import Enum
 
 @dataclass
@@ -26,11 +26,65 @@ class INIParserContext:
         self.filename = fn
         self.line = 0
 
+class TriggerTreeNode(Enum):
+    MULTIVALUE = -1
+    UNARY_OP = 0
+    BINARY_OP = 1
+    INTERVAL_OP = 2
+    FUNCTION_CALL = 3
+    ATOM = 4
+
+@dataclass
+class TriggerTree:
+    node: TriggerTreeNode
+    operator: str
+    children: List['TriggerTree']
+
+    def _string(self, indent: int) -> str:
+        result = "\t" * indent
+        result += str(self.node)
+
+        if self.node == TriggerTreeNode.MULTIVALUE:
+            if len(self.children) == 1:
+                return self.children[0]._string(0)
+            result += " ("
+            for child in self.children:
+                result += "\n" + child._string(indent + 1)
+            result += "\n)"
+        if self.node == TriggerTreeNode.UNARY_OP:
+            result += f" {self.operator}\n{self.children[0]._string(indent + 1)}"
+        elif self.node == TriggerTreeNode.BINARY_OP:
+            result += f" {self.operator}\n{self.children[0]._string(indent + 1)}\n{self.children[1]._string(indent + 1)}"
+        elif self.node == TriggerTreeNode.INTERVAL_OP:
+            result += f" {self.operator[0]}\n{self.children[0]._string(indent + 1)}\n{self.children[1]._string(indent + 1)}\n"
+            result += "\t" * indent
+            result += f"{self.operator[1]}"
+        elif self.node == TriggerTreeNode.FUNCTION_CALL:
+            result += f" {self.operator} ("
+            for child in self.children:
+                result += "\n" + child._string(indent + 1)
+            result += "\n" + "\t" * indent + ")"
+        elif self.node == TriggerTreeNode.ATOM:
+            result += " " + self.operator
+        return result
+
+    def __repr__(self) -> str:
+        return self._string(0)
+
+@dataclass
+class StateControllerProperty:
+    key: str
+    value: TriggerTree
+
+@dataclass
+class StateControllerSection:
+    properties: List[StateControllerProperty]
+
 @dataclass
 class StateDefinitionSection:
     name: str
     props: List[INIProperty]
-    states: List[INISection]
+    states: List[StateControllerSection]
 
     def __init__(self, name: str, props: List[INIProperty]):
         self.name = name
@@ -40,7 +94,7 @@ class StateDefinitionSection:
 @dataclass
 class TemplateSection:
     name: str
-    states: List[INISection]
+    states: List[StateControllerSection]
     params: Optional[INISection]
 
     def __init__(self, name: str):
@@ -90,36 +144,3 @@ class TranslationContext:
 class TranslationMode(Enum):
     MTL_MODE = 0
     CNS_MODE = 1
-
-class TriggerTreeNode(Enum):
-    START = -1
-    UNARY_OP = 0
-    BINARY_OP = 1
-    FUNCTION_CALL = 2
-    ATOM = 3
-
-@dataclass
-class TriggerTree:
-    node: TriggerTreeNode
-    operator: str
-    children: List['TriggerTree']
-
-    def _string(self, indent: int) -> str:
-        result = "\t" * indent
-        result += str(self.node)
-
-        if self.node == TriggerTreeNode.UNARY_OP:
-            result += f" {self.operator}\n{self.children[0]._string(indent + 1)}"
-        elif self.node == TriggerTreeNode.BINARY_OP:
-            result += f" {self.operator}\n{self.children[0]._string(indent + 1)}\n{self.children[1]._string(indent + 1)}"
-        elif self.node == TriggerTreeNode.FUNCTION_CALL:
-            result += f" {self.operator} ("
-            for child in self.children:
-                result += "\n" + child._string(indent + 1)
-            result += "\n" + "\t" * indent + ")"
-        elif self.node == TriggerTreeNode.ATOM:
-            result += " " + self.operator
-        return result
-
-    def __repr__(self) -> str:
-        return self._string(0)

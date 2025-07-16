@@ -20,7 +20,10 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: Translat
             ctx.state_definitions.append(statedef)
 
             while index + 1 < len(sections) and sections[index + 1].name.lower().startswith("state "):
-                statedef.states.append(sections[index + 1])
+                properties: List[StateControllerProperty] = []
+                for property in sections[index + 1].properties:
+                    properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.filename, property.line)))
+                statedef.states.append(StateControllerSection(properties))
                 index += 1
         elif section.name.lower().startswith("include"):
             if mode == TranslationMode.CNS_MODE:
@@ -42,7 +45,10 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: Translat
 
             while index + 1 < len(sections):
                 if sections[index + 1].name.lower().startswith("state "):
-                    template.states.append(sections[index + 1])
+                    properties: List[StateControllerProperty] = []
+                    for property in sections[index + 1].properties:
+                        properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.filename, property.line)))
+                    template.states.append(StateControllerSection(properties))
                 elif sections[index + 1].name.lower().startswith("define parameters"):
                     if template.params != None:
                         raise TranslationError("A Define Template section may only contain 1 Define Parameters subsection.", sections[index + 1].filename, sections[index + 1].line)
@@ -62,10 +68,10 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: Translat
             if (value := find(section.properties, lambda k: k.key.lower() == "value")) == None:
                 raise TranslationError("Define Trigger section must provide a value property.", section.filename, section.line)
 
-            trigger = TriggerSection(name.value, type.value, value.value)
-            ctx.triggers.append(trigger)
+            trigger_section = TriggerSection(name.value, type.value, value.value)
+            ctx.triggers.append(trigger_section)
             if index + 1 < len(sections) and sections[index + 1].name.lower().startswith("define parameters"):
-                trigger.params = sections[index + 1]
+                trigger_section.params = sections[index + 1]
                 index += 1
         elif section.name.lower().startswith("define structure"):
             if mode == TranslationMode.CNS_MODE:
@@ -109,5 +115,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     translateFile(args.input, [])
-
-    print(trigger.parseTrigger("!!max(abs(0*myvar || 5 + 4 * 3))", "", 0))

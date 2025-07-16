@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 
 from lark import Lark, Token
 from lark.visitors import Visitor_Recursive
@@ -9,7 +9,7 @@ from mtl.shared import TriggerTree, TriggerTreeNode
 
 trigger_grammar = Lark(
     """
-    start: unary
+    start: unary (COMMA unary)*
     unary: UNARY_OP? exponent
     exponent: multi
         | exponent EXP_OP multi
@@ -21,6 +21,7 @@ trigger_grammar = Lark(
         | comp COMP_OP eq
     eq: assign
         | eq EQ_OP assign
+        | OPEN_INTERVAL eq COMMA assign CLOSE_INTERVAL
     assign: and_op
         | assign WALRUS and_op
     and_op: xor
@@ -36,11 +37,14 @@ trigger_grammar = Lark(
     log_or: function
         | log_or LOG_OR_OP function
     function: atom
-        | WORD LBRACKET (atom (COMMA atom)*)? RBRACKET
+        | TOKEN LBRACKET (atom (COMMA atom)*)? RBRACKET
 
     atom: NUMBER
-        | WORD
+        | TOKEN
+        | STRING
+        |
         | unary
+        | LBRACKET unary RBRACKET
 
     UNARY_OP: "!" | "~" | "-"
     EXP_OP: "**"
@@ -56,12 +60,19 @@ trigger_grammar = Lark(
     LOG_XOR_OP: "^^"
     LOG_OR_OP: "||"
 
+    OPEN_INTERVAL: "(" | "["
+    CLOSE_INTERVAL: ")" | "]"
+
     LBRACKET: "("
     RBRACKET: ")"
     COMMA: ","
+    TOKEN: (CNAME) (CNAME|"-"|"+"|" "|".")*
+    STRING: QUOTE CNAME QUOTE
+
+    QUOTE: "\\""
     
-    %import common.WORD
     %import common.NUMBER
+    %import common.CNAME
     %ignore " "
     """
 )
@@ -71,7 +82,6 @@ def parseTrigger(line: str, filename: str, lineno: int) -> TriggerTree:
         tree = trigger_grammar.parse(line)
         flattened = TriggerVisitor(filename, lineno)
         flattened.visit(tree)
-        print(flattened.stack)
         if len(flattened.stack) != 1:
             raise TranslationError("Failed to identify a single node from trigger input.", filename, lineno)
         return flattened.stack[0]
@@ -86,6 +96,12 @@ class TriggerVisitor(Visitor_Recursive[Token]):
         self.filename = filename
         self.lineno = lineno
         super().__init__()
+
+    def start(self, tree: Tree[Token]):
+        values: List[TriggerTree] = []
+        while len(self.stack) != 0:
+            values.append(self.stack.pop())
+        self.stack.append(TriggerTree(TriggerTreeNode.MULTIVALUE, "", values))
 
     def unary(self, tree: Tree[Token]):
         if len(tree.children) == 2 and isinstance(tree.children[0], Token):
@@ -114,7 +130,13 @@ class TriggerVisitor(Visitor_Recursive[Token]):
         self.parse_binary(tree)
 
     def eq(self, tree: Tree[Token]):
-        self.parse_binary(tree)
+        if len(tree.children) == 5 and isinstance(tree.children[0], Token) and isinstance(tree.children[2], Token) and isinstance(tree.children[4], Token):
+            if len(self.stack) < 2:
+                raise TranslationError("Trigger parsing encountered interval operator with less than 2 operands.", self.filename, self.lineno)
+            operator = tree.children[0] + tree.children[4]
+            self.stack.append(TriggerTree(TriggerTreeNode.INTERVAL_OP, str(operator), [self.stack.pop(), self.stack.pop()]))
+        else:
+            self.parse_binary(tree)
 
     def assign(self, tree: Tree[Token]):
         self.parse_binary(tree)
@@ -140,7 +162,7 @@ class TriggerVisitor(Visitor_Recursive[Token]):
     def function(self, tree: Tree[Token]):
         ## function will take 0 or more `atom` tokens as inputs.
         ## need to pop a tree from stack for each atom.
-        if isinstance(tree.children[0], Token) and tree.children[0].type == "WORD":
+        if isinstance(tree.children[0], Token) and tree.children[0].type == "TOKEN":
             operands: List[TriggerTree] = []
             for child in tree.children:
                 if isinstance(child, Tree) and child.data == "atom":
@@ -148,5 +170,7 @@ class TriggerVisitor(Visitor_Recursive[Token]):
             self.stack.append(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.children[0].value, operands))
 
     def atom(self, tree: Tree[Token]):
-        if isinstance(tree.children[0], Token):
+        if len(tree.children) == 0:
+            self.stack.append(TriggerTree(TriggerTreeNode.ATOM, "", []))
+        elif isinstance(tree.children[0], Token):
             self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value, []))
