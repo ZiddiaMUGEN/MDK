@@ -18,19 +18,6 @@ This document provides minimal implementation details, it only notes the languag
     - `Enum`: an alias for `Type` which is scoped specifically to enumeration types.
     - `Flag`: an alias for `Type` which is scoped specifically to flag types.
 
-- Variable assignment works slightly different in MTL due to these rules. All variable assignments must be constructed with the variable type:
-
-```
-[State ]
-type = VarSet
-trigger1 = 1
-VARIABLE NAME = int(VARIABLE VALUE)
-
-[State ]
-type = Null
-trigger1 = VARIABLE_NAME := byte(8)
-```
-
 - For included CNS files, variable types are inferred to be `numeric`.
 
 ## 2. Type Definitions
@@ -214,6 +201,7 @@ trigger1 = myStructure.MEMBER1 = 1
 - In MTL, variable scopes are supported. This allows for tighter variable usage as variables which are temporary to a state can be freed when the state is exited.
 - The compiler must maintain a list of what variables are 'in-scope' for each state definition.
 - There are only 2 scopes (global and state-local) as any more granular scopes are very difficult to reason about in MTL.
+    - This may need to be revisited (maybe with some operator to define a temporary scope for variables) since complicated template inclusions can easily run up the variable space if they are hoisted to the top level.
 
 - By default, variables are considered global for compatibility with CNS.
 - To define a state-local variable, it can be specified in the Statedef section:
@@ -273,7 +261,7 @@ persist = attackType
 [Statedef 200]
 type = S
 movetype = A
-local = attackType = int(0)
+local = attackType := int(0)
 ```
 
 MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the state is recursive or re-entered, the variable WILL be re-initialized.
@@ -283,6 +271,22 @@ MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the 
 - MTL allows the use of variable names instead of `var` and `fvar` names. This aids in code readability.
 - MTL will reserve variable space for all global variables, as well as extra variable space for locals per statedef.
 - If the input file uses legacy variable references (`var` and `fvar`), the compiler must be informed the ranges of variable numbers which are in use. If these are not provided, the compiler will produce an error.
+
+- Because the type of named variables can't be inferred, all named variable assignments must be constructed with the variable type:
+
+```
+[State ]
+type = VarSet
+trigger1 = 1
+VARIABLE NAME = int(VARIABLE VALUE)
+
+[State ]
+type = Null
+trigger1 = VARIABLE_NAME := byte(8)
+```
+
+- When using legacy variable references, the type can be omitted.
+- If the type of a variable changes unexpectedly, the compiler will produce an error.
 
 ## 8. Animation, Sprite, Sound References
 

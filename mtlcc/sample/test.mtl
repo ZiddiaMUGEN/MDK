@@ -5,6 +5,7 @@
 source = stdlib/libmtl.inc
 namespace = stdlib
 import = numeric
+import = parseBool
 
 ;;;;; Fundamental Type Definitions
 ;; The int, float, short, byte, char, and bool types are built-in. Some aliases and unions are defined here.
@@ -19,15 +20,20 @@ type = union
 member = float
 member = int
 
-;;;;; Fundamental Type Conversion
-;; Specific conversions between fundamental types receive trigger definitions.
-[Define Trigger]
-name = bool
-type = bool
-value = !!(input)
+[Define Structure]
+name = myStruct
 
-[Define Parameters]
-value = int
+[Define Members]
+member1 = numeric
+member2 = byte
+member3 = bool
+
+[Define Structure]
+name = outerStruct
+
+[Define Members]
+member1 = numeric
+member2 = myStruct
 
 ;;;;; Reflection Const Triggers
 ;; These provide access into compiler state and type information.

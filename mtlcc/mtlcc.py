@@ -86,7 +86,7 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
             if mode == TranslationMode.CNS_MODE:
                 raise TranslationError("A CNS file cannot contain MTL Define sections.", section.filename, section.line)
 
-            if index + 1 >= len(sections) or sections[index + 1].name.lower().startswith("define members"):
+            if index + 1 >= len(sections) or not sections[index + 1].name.lower().startswith("define members"):
                 raise TranslationError("A Define Structure section must be followed immediately by a Define Members section.", section.filename, section.line)
             
             if (prop := find(section.properties, lambda k: k.key.lower() == "name")) == None:
@@ -149,13 +149,18 @@ def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
         imported_names: List[str] = []
         for property in include.properties:
             if property.key.lower() == "import":
-                imported_names += [property.value.lower()]
+                imported_names += [property.value]
+                if find(include_context.templates, lambda k: k.name == property.value) == None and \
+                    find(include_context.triggers, lambda k: k.name == property.value) == None and \
+                    find(include_context.type_definitions, lambda k: k.name == property.value) == None and \
+                    find(include_context.struct_definitions, lambda k: k.name == property.value) == None:
+                    print(f"Warning at {os.path.realpath(property.filename)}:{property.line}: Attempted to import name {property.value} from included file {include.filename} but no such name exists.")
 
         if len(imported_names) != 0:
-            include_context.templates = list(filter(lambda k: k.name.lower() in imported_names, include_context.templates))
-            include_context.triggers = list(filter(lambda k: k.name.lower() in imported_names, include_context.triggers))
-            include_context.type_definitions = list(filter(lambda k: k.name.lower() in imported_names, include_context.type_definitions))
-            include_context.struct_definitions = list(filter(lambda k: k.name.lower() in imported_names, include_context.struct_definitions))
+            include_context.templates = list(filter(lambda k: k.name in imported_names, include_context.templates))
+            include_context.triggers = list(filter(lambda k: k.name in imported_names, include_context.triggers))
+            include_context.type_definitions = list(filter(lambda k: k.name in imported_names, include_context.type_definitions))
+            include_context.struct_definitions = list(filter(lambda k: k.name in imported_names, include_context.struct_definitions))
 
         ## included context gets added to the HEAD of the current translation context.
         ## this ensures it is available to downstream files.
@@ -186,6 +191,36 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
 
     return ctx
 
+def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
+    for trigger_definition in load_ctx.triggers:
+        trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
+        if (original := find(ctx.triggers, lambda k: k.name == trigger_name)) != None:
+            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {original.filename}:{original.line}", trigger_definition.filename, trigger_definition.line)
+        if (matching_type := find(ctx.types, lambda k: k.name == trigger_name)) != None:
+            raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.filename}:{matching_type.line}: type names are reserved for type initialization.", trigger_definition.filename, trigger_definition.line)
+        
+
+
+def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
+    for struct_definition in load_ctx.struct_definitions:
+        ## determine final type name and check if it is already in use.
+        type_name = struct_definition.name if struct_definition.namespace == None else f"{struct_definition.namespace}.{struct_definition.name}"
+        if (original := find(ctx.types, lambda k: k.name == type_name)) != None:
+            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.filename}:{original.line}", struct_definition.filename, struct_definition.line)
+        
+        ## check that all members of the struct are known types
+        ## also, sum the total size of the structure.
+        struct_size = 0
+        struct_members: List[str] = []
+        for member_name in struct_definition.members.properties:
+            if (member := find(ctx.types, lambda k: k.name == member_name.value)) == None:
+                raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but this type does not exist.", member_name.filename, member_name.line)
+            struct_size += member.size
+            struct_members.append(f"{member_name.key}:{member.name}")
+        
+        ## append this to the type list, in translation context we make no distincition between structures and other types.
+        ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.filename, struct_definition.line))
+
 def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
     for type_definition in load_ctx.type_definitions:
         ## determine final type name and check if it is already in use.
@@ -199,7 +234,7 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
             if (alias := find(type_definition.properties, lambda k: k.key.lower() == "source")) == None:
                 raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.filename, type_definition.line)
             if (source := find(ctx.types, lambda k: k.name == alias.value)) == None:
-                raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", type_definition.filename, type_definition.line)
+                raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.filename, alias.line)
             type_members = [alias.value]
             target_size = source.size
         elif type_definition.type.lower() == "union":
@@ -213,7 +248,7 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
                     if target_size == -1:
                         target_size = target.size
                     if target.size != target_size:
-                        raise TranslationError(f"Union type {type_name} has member size {target_size} but attempted to include type {target.name} with mismatched size {target.size}.", type_definition.filename, type_definition.line)
+                        raise TranslationError(f"Union type {type_name} has member size {target_size} but attempted to include type {target.name} with mismatched size {target.size}.", property.filename, property.line)
                     type_members.append(target.name)
             if len(type_members) == 0:
                 raise TranslationError(f"Union type {type_name} must specify at least one member.", type_definition.filename, type_definition.line)
@@ -244,6 +279,8 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx.types = builtins.getBaseTypes()
 
     translateTypes(load_ctx, ctx)
+    translateStructs(load_ctx, ctx)
+    translateTriggers(load_ctx, ctx)
 
     return ctx
 

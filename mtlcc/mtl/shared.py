@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union, Callable
 from enum import Enum
 
 @dataclass
@@ -182,6 +182,7 @@ class TypeCategory(Enum):
     UNION = 1
     ENUM = 2
     FLAG = 3
+    STRUCTURE = 4
     STRING_FLAG = 97 # special builtin type for things such as hitdefattr where the flag identifier is preserved in the output.
     STRING_ENUM = 98 # special builtin type for things such as movetype, statetype, etc where the enum identifier is preserved in the output.
     BUILTIN = 99 # special builtin types (int, float, etc) which need to exist for type-checking.
@@ -202,10 +203,20 @@ class TypeDefinition:
     line: int
 
 @dataclass
+class TriggerDefinition:
+    name: str
+    type: str
+    const: Union[Callable, None]
+    filename: str
+    line: int
+
+@dataclass
 class TranslationContext:
     filename: str
     types: List[TypeDefinition]
+    triggers: List[TriggerDefinition]
 
     def __init__(self, filename: str):
         self.filename = filename
         self.types = []
+        self.triggers = []

@@ -17,7 +17,7 @@ member = int
 ;;;;; Fundamental Type Conversion
 ;; Specific conversions between fundamental types receive trigger definitions.
 [Define Trigger]
-name = bool
+name = parseBool
 type = bool
 value = !!(input)
 
