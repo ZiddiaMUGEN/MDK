@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import copy
 from typing import List
 
 from mtl.parsers import ini, trigger
@@ -307,7 +308,7 @@ def parseStateController(state: StateControllerSection, ctx: TranslationContext)
     ## process all triggers
     triggers: dict[int, List[TriggerTree]] = {}
     for trigger in state.properties:
-        if (matched := re.match(r"trigger(all|[0-9]+)$", trigger.key)) != None:
+        if (matched := re.match(r"trigger(all|[0-9]+)$", trigger.key.lower())) != None:
             # triggerall has group 0. otherwise just use the provided trigger group.
             group = matched.groups(0)[0]
             if group == "all": group = "0"
@@ -324,8 +325,15 @@ def parseStateController(state: StateControllerSection, ctx: TranslationContext)
             raise TranslationError(f"Required parameter {prop.name} for template or builtin controller {state_template.name} was not provided.", state.filename, state.line)
         if current_prop != None:
             props[current_prop.key] = current_prop.value
+
+    ## check if any property in the input does not exist on the target template, and emit a warning
+    for prop_ in state.properties:
+        if prop_.key.lower() == "type": continue
+        if re.match(r"trigger(all|[0-9]+)$", prop_.key.lower()) != None: continue
+        if find(state_template.params, lambda k: k.name.lower() == prop_.key.lower()) == None:
+            print(f"Warning at {os.path.realpath(state.filename)}:{state.line}: Property {prop_.key} was passed to state controller or template named {state_template.name}, but the template does not declare this property.")
     
-    return StateController(state_name.operator, triggers, props)
+    return StateController(state_name.operator, triggers, props, state.filename, state.line)
 
 def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], triggers: List[TriggerDefinition]) -> List[str]:
     if tree.node == TriggerTreeNode.ATOM:
@@ -361,6 +369,161 @@ def findUndefinedGlobals(state: StateController, table: List[StateParameter], tr
             result += findUndefinedGlobalsInTrigger(trigger, table, triggers)
 
     return result
+
+def makeFromAtom(value: str) -> Union[str, bool, int, float]:
+    if (ivalue := tryParseInt(value)) != None:
+        return ivalue
+    elif (fvalue := tryParseFloat(value)) != None:
+        return fvalue
+    elif (bvalue := tryParseBool(value)) != None:
+        return bvalue
+    return value
+
+def replaceVariableWithNameInTrigger(tree: TriggerTree, old_name: str, new_name: str):
+    if tree.node == TriggerTreeNode.ATOM and tree.operator == old_name:
+        tree.operator = new_name
+    for child in tree.children:
+        replaceVariableWithNameInTrigger(child, old_name, new_name)
+
+def replaceVariableWithName(controller: StateController, old_name: str, new_name: str):
+    for name in controller.properties:
+        replaceVariableWithNameInTrigger(controller.properties[name], old_name, new_name)
+    for group in controller.triggers:
+        for trigger in controller.triggers[group]:
+            replaceVariableWithNameInTrigger(trigger, old_name, new_name)
+
+def replaceVariableWithExpressionInTrigger(tree: TriggerTree, old_name: str, new_exprn: TriggerTree):
+    if tree.node == TriggerTreeNode.ATOM and tree.operator == old_name:
+        tree.children = new_exprn.children
+        tree.operator = new_exprn.operator
+        tree.node = new_exprn.node
+    for child in tree.children:
+        replaceVariableWithExpressionInTrigger(child, old_name, new_exprn)
+
+def replaceVariableWithExpression(controller: StateController, old_name: str, new_exprn: TriggerTree):
+    for name in controller.properties:
+        replaceVariableWithExpressionInTrigger(controller.properties[name], old_name, new_exprn)
+    for group in controller.triggers:
+        for trigger in controller.triggers[group]:
+            replaceVariableWithExpressionInTrigger(trigger, old_name, new_exprn)
+
+def combineTriggers(triggers: dict[int, List[TriggerTree]]) -> List[TriggerTree]:
+    ## combines the provided trigger list into a single tree.
+    ## this is mostly useful currently for merging templates into statedefs.
+    ## but there's potential for this to be useful in some optimization strategy.
+
+    results: List[TriggerTree] = []
+
+    ## remember, group 0 is `triggerall`. we can add every trigger from group 0 directly to the result list.
+    if 0 in triggers:
+        results += triggers[0]
+
+    ## for all other groups, we need to do something like:
+    ## OR(AND(trigger1[0], trigger1[1], trigger1[2], ...), AND(trigger2[0], ...), ...)
+    ## so the root is an OR, and the leaves are AND of all the triggers in 1 group.
+
+    root = TriggerTree(TriggerTreeNode.BINARY_OP, "||", [])
+    for index in triggers:
+        if index == 0: continue
+        leaf = TriggerTree(TriggerTreeNode.BINARY_OP, "&&", [])
+        for trigger in triggers[index]:
+            leaf.children.append(trigger)
+        root.children.append(leaf)
+
+    results += [root]
+
+    return results
+
+def replaceTemplatesInner(ctx: TranslationContext) -> bool:
+    replaced = False
+
+    ## process each statedef and each controller within the statedefs
+    ## if a controller's `type` property references a non-builtin template, remove
+    ## that controller from the state list and insert all the controllers from the template.
+    ## if no template at all matches, raise an error.
+    for statedef in ctx.statedefs:
+        index = 0
+        while index < len(statedef.states):
+            controller = statedef.states[index]
+            if (template := find(ctx.templates, lambda k: k.name.lower() == controller.name.lower())) == None:
+                raise TranslationError(f"No template or builtin controller was found to match state controller with name {controller.name}", controller.filename, controller.line)
+            ## we only care about DEFINED templates here. BUILTIN templates are for MUGEN/CNS state controller types.
+            if template.category == TemplateCategory.DEFINED:
+                ## 1. copy all the locals declared in the template to the locals of the state, with a prefix to ensure they are uniquified.
+                local_prefix = f"{generate_random_string(8)}_"
+                local_map: dict[str, str] = {}
+                for local in template.locals:
+                    statedef.locals.append(StateParameter(f"{local_prefix}{local.name}", local.type, local.default))
+                    local_map[local.name] = f"{local_prefix}{local.name}"
+                ## 2. copy all controllers from the template, updating uses of the locals to use the new prefix.
+                new_controllers = copy.deepcopy(template.states)
+                for new_controller in new_controllers:
+                    for local_name in local_map:
+                        replaceVariableWithName(new_controller, local_name, local_map[local_name])
+                ## 3. replace all uses of parameters with the expression to substitute for that parameter.
+                exprn_map: dict[str, TriggerTree] = {}
+                for param in template.params:
+                    target_exprn = controller.properties[param.name] if param.name in controller.properties else None
+                    if target_exprn == None and param.required:
+                        raise TranslationError(f"No expression was provided for parameter with name {param.name} on template or controller {controller.name}.", controller.filename, controller.line)
+                    if target_exprn != None:
+                        exprn_map[param.name] = target_exprn
+                for new_controller in new_controllers:
+                    for exprn_name in exprn_map:
+                        replaceVariableWithExpression(new_controller, exprn_name, exprn_map[exprn_name])
+
+                ## 4. combine the triggers on the template call into one or more triggerall statements and insert into each new controller.
+                combinedTriggers = combineTriggers(controller.triggers)
+                for new_controller in new_controllers:
+                    if 0 not in new_controller.triggers:
+                        new_controller.triggers[0] = []
+                    new_controller.triggers[0] += combinedTriggers
+
+                ## 5. remove the call to the template (at `index`) and insert the new controllers into the statedef
+                statedef.states = statedef.states[:index] + new_controllers + statedef.states[index+1:]
+                index += len(new_controllers)
+                
+            index += 1
+
+    return replaced
+
+def replaceTemplates(ctx: TranslationContext):
+    ## wrapper for a function that repeatedly replaces templates until no more templates need replacing.
+    ## this is because templates can invoke other templates in their definition, so one pass may not resolve every template.
+    ## limit this to some number of iterations to prevent it from running forever.
+    iterations = 0
+    madeReplacement = True
+    while madeReplacement:
+        madeReplacement = replaceTemplatesInner(ctx)
+        iterations += 1
+        if iterations > 20:
+            raise TranslationError("Template replacement failed to complete after 20 iterations.", "", 0)
+
+def preTranslateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
+    ## this does a very early portion of statedef translation.
+    ## essentially it just builds a StateDefinition object from each StateDefinitionSection object.
+    ## this makes it easier to do the next tasks (template/trigger replacement).
+    for state_definition in load_ctx.state_definitions:
+        ## in current MTL standard state_name is just the state ID.
+        state_name = state_definition.name
+        ## identify all parameters which can be set on the statedef
+        state_params = StateDefinitionParameters()
+        for prop in state_definition.props:
+            ## allow-list the props which can be set here to avoid evil behaviour
+            if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority"]:
+                setattr(state_params, prop.key.lower(), makeFromAtom(prop.value))
+        ## identify all local variable declarations, if any exist
+        state_locals: list[StateParameter] = []
+        for prop in state_definition.props:
+            if prop.key.lower() == "local":
+                state_locals.append(parseLocalParameter(prop, ctx))
+        ## pull the list of controllers; we do absolutely zero checking or validation at this stage.
+        state_controllers: list[StateController] = []
+        for state in state_definition.states:
+            controller = parseStateController(state, ctx)
+            state_controllers.append(controller)
+
+        ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_definition.filename, state_definition.line))
 
 def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
     for template_definition in load_ctx.templates:
@@ -516,7 +679,16 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     translateStructs(load_ctx, ctx)
     translateTriggers(load_ctx, ctx)
     translateTemplates(load_ctx, ctx)
-    replaceTemplates(load_ctx, ctx)
+
+    ## add the default parameters ignorehitpause and persistent to all template definitions.
+    for template in ctx.templates:
+        template.params.append(TemplateParameter("ignorehitpause", "bool", False))
+        template.params.append(TemplateParameter("persistent", "int", False))
+
+    preTranslateStateDefinitions(load_ctx, ctx)
+    replaceTemplates(ctx)
+
+    #print(ctx.statedefs)
 
     return ctx
 

@@ -32,11 +32,14 @@ member2 = myStruct
 ;; These provide access into compiler state and type information.
 [Define Template]
 name = testTemplate
-local = myVar = int(0)
+local = myVar2 = int
+
+[Define Parameters]
+myVar = int
 
 [State 191, 1] ;Freeze animation until PreIntro is over
 type = ChangeAnim
-trigger1 = RoundState = 0
+trigger1 = myVar = myVar2
 value = 190
 
 ;---------------------------------------------------------------------------
@@ -141,3 +144,8 @@ type = PlaySnd
 trigger1 = AnimElemTime(7) = 3
 value = F5,3
 volume = -80
+
+[State 191, template testing]
+type = testTemplate
+trigger1 = 1
+myVar = abs(floor(1.5 * 1)) + test

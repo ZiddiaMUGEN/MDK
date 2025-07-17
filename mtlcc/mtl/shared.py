@@ -54,7 +54,11 @@ class TriggerTree:
         if self.node == TriggerTreeNode.UNARY_OP:
             result += f" {self.operator}\n{self.children[0]._string(indent + 1)}"
         elif self.node == TriggerTreeNode.BINARY_OP:
-            result += f" {self.operator}\n{self.children[0]._string(indent + 1)}\n{self.children[1]._string(indent + 1)}"
+            result += f" {self.operator} (\n"
+            for child in self.children:
+                result += child._string(indent + 1) + "\n"
+            result += "\t" * indent
+            result += ")"
         elif self.node == TriggerTreeNode.INTERVAL_OP:
             result += f" {self.operator[0]}\n{self.children[0]._string(indent + 1)}\n{self.children[1]._string(indent + 1)}\n"
             result += "\t" * indent
@@ -237,13 +241,15 @@ class TemplateCategory(Enum):
 class TemplateParameter:
     name: str
     type: str
-    required: bool = False
+    required: bool = True
 
 @dataclass
 class StateController:
     name: str
     triggers: dict[int, List[TriggerTree]]
     properties: dict[str, TriggerTree]
+    filename: str
+    line: int
 
 @dataclass
 class StateParameter:
@@ -262,14 +268,41 @@ class TemplateDefinition:
     category: TemplateCategory = TemplateCategory.DEFINED
 
 @dataclass
+class StateDefinitionParameters:
+    type: str = "S"
+    movetype: str = "I"
+    physics: str = "N"
+    anim: Optional[int] = None
+    velset: Optional[tuple[float, float]] = None
+    ctrl: Optional[bool] = None
+    poweradd: Optional[int] = None
+    juggle: Optional[int] = None
+    facep2: bool = False
+    hitdefpersist: Optional[bool] = None
+    movehitpersist: Optional[bool] = None
+    hitcountpersist: Optional[bool] = None
+    sprpriority: Optional[int] = None
+
+@dataclass
+class StateDefinition:
+    name: str
+    parameters: StateDefinitionParameters
+    locals: List[StateParameter]
+    states: List[StateController]
+    filename: str
+    line: int
+
+@dataclass
 class TranslationContext:
     filename: str
     types: List[TypeDefinition]
     triggers: List[TriggerDefinition]
     templates: List[TemplateDefinition]
+    statedefs: List[StateDefinition]
 
     def __init__(self, filename: str):
         self.filename = filename
         self.types = []
         self.triggers = []
         self.templates = []
+        self.statedefs = []

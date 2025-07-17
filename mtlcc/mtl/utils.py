@@ -2,9 +2,14 @@ from typing import Optional
 from typing import List, Callable, TypeVar, Union
 
 import os
+import random
+import string
 
 from mtl.shared import TranslationContext, TypeDefinition, TypeCategory
 from mtl.error import TranslationError
+
+def generate_random_string(length: int):
+    return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 
 def tryParseFloat(input: str) -> Optional[float]:
     try:
