@@ -1,7 +1,9 @@
 from typing import List
 from inspect import currentframe
 
-from mtl.shared import TypeDefinition, TypeCategory, TriggerDefinition, TriggerParameter
+from mtl.utils import find, typeConvertWidest
+from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, TriggerDefinition, TriggerParameter, TriggerCategory, Expression
+from mtl.error import TranslationError
 
 def line_number() -> int:
     cf = currentframe()
@@ -27,6 +29,7 @@ def getBaseTypes() -> List[TypeDefinition]:
 
 def getBaseTriggers() -> List[TriggerDefinition]:
     return [
+        ## MUGEN trigger functions
         TriggerDefinition("abs", "numeric", None, [TriggerParameter("exprn", "numeric")], "mtl/builtins.py", line_number()),
         TriggerDefinition("acos", "float", None, [TriggerParameter("exprn", "numeric")], "mtl/builtins.py", line_number()),
         TriggerDefinition("AiLevel", "int", None, [], "mtl/builtins.py", line_number()),
@@ -58,7 +61,7 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("e", "float", None, [], "mtl/builtins.py", line_number()),
         TriggerDefinition("exp", "float", None, [TriggerParameter("exprn", "numeric")], "mtl/builtins.py", line_number()),
         TriggerDefinition("Facing", "int", None, [], "mtl/builtins.py", line_number()),
-        TriggerDefinition("floor", "int", None, [TriggerParameter("exprn", "numeric")], "mtl/builtins.py", line_number()),
+        TriggerDefinition("floor", "int", None, [TriggerParameter("exprn", "float")], "mtl/builtins.py", line_number()),
         TriggerDefinition("FrontEdgeBodyDist", "float", None, [], "mtl/builtins.py", line_number()),
         TriggerDefinition("FrontEdgeDist", "float", None, [], "mtl/builtins.py", line_number()),
         TriggerDefinition("fvar", "float", None, [TriggerParameter("exprn", "int")], "mtl/builtins.py", line_number()),
@@ -146,5 +149,88 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("Win", "bool", None, [], "mtl/builtins.py", line_number()),
         TriggerDefinition("WinKO", "bool", None, [], "mtl/builtins.py", line_number()),
         TriggerDefinition("WinTime", "bool", None, [], "mtl/builtins.py", line_number()),
-        TriggerDefinition("WinPerfect", "bool", None, [], "mtl/builtins.py", line_number())
+        TriggerDefinition("WinPerfect", "bool", None, [], "mtl/builtins.py", line_number()),
+
+        ## builtin operator functions
+        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "bool")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator-", "int", builtin_negate, [TriggerParameter("expr", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", "float", builtin_negate, [TriggerParameter("expr", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator~", "int", builtin_bitnot, [TriggerParameter("expr", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator+", "int", builtin_add, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator+", "float", builtin_add, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", "int", builtin_sub, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", "float", builtin_sub, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator*", "int", builtin_mult, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator*", "float", builtin_mult, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator/", "int", builtin_div, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator/", "float", builtin_div, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator%", "int", builtin_div, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator**", "int", builtin_exp, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator**", "float", builtin_exp, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator&&", "bool", builtin_and, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator||", "bool", builtin_or, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator&", "int", builtin_bitand, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator|", "int", builtin_bitor, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^", "int", builtin_bitxor, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator:=", "int", builtin_assign, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator<", "bool", builtin_lt, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<=", "bool", builtin_lte, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>", "bool", builtin_gt, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>=", "bool", builtin_gte, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator<", "bool", builtin_lt, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<=", "bool", builtin_lte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>", "bool", builtin_gt, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>=", "bool", builtin_gte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], "mtl/builtins.py", line_number(), TriggerCategory.OPERATOR),
     ]
+
+def builtin_not(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+    if (result := find(ctx.types, lambda k: k.name == "bool")) != None:
+        return Expression(result, f"(!{exprs[0].value})")
+    raise TranslationError("Failed to find the `bool` type in project, check if builtins are broken.", "mtl/builtins.py", line_number())
+
+def builtin_negate(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+    return Expression(exprs[0].type, f"(-{exprs[0].value})")
+
+def builtin_bitnot(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+    return Expression(exprs[0].type, f"(~{exprs[0].value})")
+
+def builtin_binary(exprs: List[Expression], ctx: TranslationContext, op: str) -> Expression:
+    if (result := typeConvertWidest(exprs[0].type, exprs[1].type, ctx, "mtl/builtins.py", line_number())) != None:
+        return Expression(result, f"({exprs[0].value} {op} {exprs[1].value})")
+    raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", "mtl/builtins.py", line_number())
+
+def builtin_add(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "+")
+def builtin_sub(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "-")
+def builtin_mult(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "*")
+def builtin_div(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "/")
+def builtin_mod(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
+def builtin_exp(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
+def builtin_and(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
+def builtin_or(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
+def builtin_xor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
+def builtin_eq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "=")
+def builtin_neq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "!=")
+def builtin_bitand(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
+def builtin_bitor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
+def builtin_bitxor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
+def builtin_assign(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ":=")
+def builtin_lt(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<")
+def builtin_lte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<=")
+def builtin_gt(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">")
+def builtin_gte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">=")

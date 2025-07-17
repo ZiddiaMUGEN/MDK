@@ -1,17 +1,12 @@
 import argparse
 import os
-from typing import List, Callable, TypeVar
+from typing import List
 
 from mtl.parsers import ini, trigger
 from mtl.shared import *
 from mtl.error import TranslationError
 from mtl.utils import *
 from mtl import builtins
-
-T = TypeVar('T')
-def find(l: List[T], p: Callable[[T], bool]) -> Optional[T]:
-    result = next(filter(p, l), None)
-    return result
 
 def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadContext):
     ## group sections into states, templates, triggers, types, includes, etc
@@ -192,27 +187,74 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
 
     return ctx
 
-def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
-    if type in cycle:
-        print("Alias cycle was detected!!")
-        print(f"\t-> {type}")
-        index = len(cycle) - 1
-        while index >= 0:
-            print(f"\t-> {cycle[index]}")
-            index -= 1
-        raise TranslationError("A cycle was detected during alias resolution.", "", 0)
+def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext, filename: str, line: int) -> Union[TriggerDefinition, None]:
+    matches = list(filter(lambda k: k.name == name, ctx.triggers))
 
-    ## if the input type is not an alias, return the input type
-    if (alias := find(ctx.types, lambda k: k.name == type and k.category == TypeCategory.ALIAS)) == None:
-        return type
+    # iterate each match
+    for match in matches:
+        if len(match.params) != len(types): continue
+        
+        is_matching = True
+        for index in range(len(types)):
+            first_str = resolveAlias(types[index], ctx, [])
+            first = find(ctx.types, lambda k: k.name == first_str)
+            second_str = resolveAlias(match.params[index].type, ctx, [])
+            second = find(ctx.types, lambda k: k.name == second_str)
+            assert(first != None and second != None)
+            if typeConvertOrdered(first, second, ctx, filename, line) == None:
+                is_matching = False
 
-    ## otherwise, drill through to the source type
-    if (source := find(ctx.types, lambda k: k.name == alias.members[0])) == None:
-        raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.filename, alias.line)
-    
-    return resolveAlias(source.name, ctx, cycle + [type])
+        if is_matching: return match
+
+    return None
 
 def runTypeCheck(tree: TriggerTree, filename: str, line: int, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
+    ## for multivalue, just handle single case for now. tuples are a bit of work still.
+    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) > 1:
+        raise TranslationError("TODO: support multivalue expressions correctly", filename, line)
+    elif tree.node == TriggerTreeNode.MULTIVALUE:
+        return runTypeCheck(tree.children[0], filename, line, locals, ctx)
+    
+    ## for intervals, give an error for now.
+    if tree.node == TriggerTreeNode.INTERVAL_OP:
+        raise TranslationError("TODO: support interval expressions correctly", filename, line)
+    
+    ## for atoms, early exit: just identify the type of the node.
+    if tree.node == TriggerTreeNode.ATOM:
+        if tryParseInt(tree.operator) != None:
+            return "int"
+        elif tryParseFloat(tree.operator) != None:
+            return "float"
+        elif tryParseBool(tree.operator) != None:
+            return "bool"
+        elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
+            return resolveAlias(local.type, ctx, [])
+        else:
+            raise TranslationError(f"Could not determine type from expression {tree.operator}.", filename, line)
+    
+    ## do a depth-first search on the tree. determine the type of each node, then apply types to each operator to determine the result type.
+    child_types: List[str] = []
+    for child in tree.children:
+        child_types.append(runTypeCheck(child, filename, line, locals, ctx))
+
+    ## process operators using operator functions.
+    ## no need to evaluate anything at this stage, just return the stated return type of the operator.
+    if tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
+        ## operator is stored in tree.operator, child types are above. there are builtin operator triggers provided,
+        ## so determine which trigger to use.
+        operator_call = findTriggerBySignature(f"operator{tree.operator}", child_types, ctx, filename, line)
+        if operator_call == None:
+            raise TranslationError(f"Could not find any matching overload for operator {tree.operator} with input types {', '.join(child_types)}.", filename, line)
+        return resolveAlias(operator_call.type, ctx, [])
+
+    ## handle explicit function calls.
+    ## this is very similar to operators. find the matching trigger and use the output type provided.
+    if tree.node == TriggerTreeNode.FUNCTION_CALL:
+        function_call = findTriggerBySignature(tree.operator, child_types, ctx, filename, line)
+        if function_call == None:
+            raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", filename, line)
+        return resolveAlias(function_call.type, ctx, [])
+    
     return "bottom"
 
 def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
@@ -223,25 +265,11 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
             raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.filename}:{matching_type.line}: type names are reserved for type initialization.", trigger_definition.filename, trigger_definition.line)
         
         # identify matches by name, then inspect type signature
-        matches = list(filter(lambda k: k.name == trigger_name, ctx.triggers))
-        if len(matches) != 0:
-            source_params = trigger_definition.params.properties if trigger_definition.params != None else []
-            for match in matches:
-                # if they have different param lengths, obviously differ
-                if len(match.params) != len(source_params):
-                    continue
-
-                # match the typename of each
-                index = 0
-                matches = True
-                while index < len(match.params):
-                    if match.params[index].type != source_params[index].value:
-                        matches = False
-                        break
-                    index += 1
+        param_types = [param.value for param in trigger_definition.params.properties] if trigger_definition.params != None else []
+        matched = findTriggerBySignature(trigger_name, param_types, ctx, trigger_definition.filename, trigger_definition.line)
                 
-                if matches:
-                    raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {match.filename}:{match.line}", trigger_definition.filename, trigger_definition.line)
+        if matched != None:
+            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {matched.filename}:{matched.line}", trigger_definition.filename, trigger_definition.line)
         
         ## ensure the expected type of the trigger is known
         if (trigger_type := find(ctx.types, lambda k: k.name == trigger_definition.type)) == None:
@@ -356,6 +384,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ## note: the spec states that translation of included files should stop at step 3.
     ## this is guaranteed by having steps up to 3 in `loadFile`, and remaining steps handled in `translateContext`.
-    loadContext = loadFile(args.input, [])
-    translated = translateContext(loadContext)
-    #print(translated)
+    try:
+        loadContext = loadFile(args.input, [])
+        translated = translateContext(loadContext)
+        #print(translated)
+    except TranslationError as exc:
+        print("Translation terminated with an error.")
+        print(f"\t{exc.message}")

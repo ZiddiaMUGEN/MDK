@@ -20,6 +20,26 @@ This document provides minimal implementation details, it only notes the languag
 
 - For included CNS files, variable types are inferred to be `numeric`.
 
+### 1.1 Type Conversion
+
+- MTL supports several flavors of **type conversion**. Several conversions can be done automatically (though they may emit an error).
+
+- For the builtin types:
+    - `int` is implicitly convertible to `float`.
+    - `float` cannot be implicitly converted to `int` as it results in loss of precision.
+    - smaller builtin types can implicitly convert to wider ones (`bool`->`byte`->`short`->`int`)
+    - `char` is implicitly convertible to `byte`, but the reverse is not true.
+
+- And in general for defined types:
+    - `alias` types are resolved to their source type.
+    - `enum` can be converted to `int` via builtin functions, and vice versa.
+    - `flag` can be converted to `int` via builtin functions, and vice versa.
+    - single `flag` values can also be converted to `bool`  via builtin functions.
+
+- Specifically for union types:
+    - the union is always assumed to be the wider type during conversion.
+    - in both conversions (type->union and union->type), it should be permitted if the type is a member of the union. the output is the union type.
+
 ## 2. Type Definitions
 
 - In MTL, the type system also enables users to create **user-defined types**. User defined types can fall into one of several categories.

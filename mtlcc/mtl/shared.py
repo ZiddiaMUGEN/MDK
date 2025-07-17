@@ -207,14 +207,25 @@ class TriggerParameter:
     name: str
     type: str
 
+class TriggerCategory(Enum):
+    SIMPLE = 0
+    CONST = 1
+    OPERATOR = 2
+
+@dataclass
+class Expression:
+    type: TypeDefinition
+    value: str
+
 @dataclass
 class TriggerDefinition:
     name: str
     type: str
-    const: Union[Callable, None]
+    const: Union[Callable[[List[Expression], 'TranslationContext'], Expression], None]
     params: List[TriggerParameter]
     filename: str
     line: int
+    category: TriggerCategory = TriggerCategory.SIMPLE
 
 @dataclass
 class TranslationContext:

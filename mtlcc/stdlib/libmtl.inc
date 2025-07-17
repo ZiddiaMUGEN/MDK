@@ -19,7 +19,7 @@ member = int
 [Define Trigger]
 name = parseBool
 type = bool
-value = !!(input)
+value = !!input
 
 [Define Parameters]
 input = int
