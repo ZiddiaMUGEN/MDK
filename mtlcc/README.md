@@ -199,6 +199,11 @@ val1 = float
 val2 = float
 ```
 
+### 4.1 Operators
+
+- MTL permits definition of operator triggers to specify the behaviour of a specific operator. For example, `operator+(char, char)` (which does not currently exist) could be used to specify how `char` types are added.
+- I am still identifying operator trigger syntax. Users will not be able to specify their own operator triggers until the syntax is finalised. Internally the `mtlcc` implementation uses them to implement operators on `float`, `int`, and `bool`.
+
 ## 5. Structure Definitions
 
 - MTL supports defining structures as a grouping of related variables. 
