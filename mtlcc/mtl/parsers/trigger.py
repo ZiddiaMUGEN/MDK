@@ -104,6 +104,7 @@ class TriggerVisitor(Visitor_Recursive[Token]):
         self.stack.append(TriggerTree(TriggerTreeNode.MULTIVALUE, "", values))
 
     def unary(self, tree: Tree[Token]):
+        #print(tree)
         if len(tree.children) == 2 and isinstance(tree.children[0], Token):
             if len(self.stack) < 1:
                 raise TranslationError("Trigger parsing encountered unary operator with less than 1 operand.", self.filename, self.lineno)
@@ -172,5 +173,9 @@ class TriggerVisitor(Visitor_Recursive[Token]):
     def atom(self, tree: Tree[Token]):
         if len(tree.children) == 0:
             self.stack.append(TriggerTree(TriggerTreeNode.ATOM, "", []))
+        elif len(tree.children) == 3 and isinstance(tree.children[0], Token) and isinstance(tree.children[2], Token):
+            ## atom carries the rule `LBRACKET unary RBRACKET` so we handle here.
+            ## but the brackets are just to enforce precedence in the parser, we essentially don't need to do anything here!
+            pass
         elif isinstance(tree.children[0], Token):
             self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value, []))

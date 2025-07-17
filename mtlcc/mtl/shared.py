@@ -203,10 +203,16 @@ class TypeDefinition:
     line: int
 
 @dataclass
+class TriggerParameter:
+    name: str
+    type: str
+
+@dataclass
 class TriggerDefinition:
     name: str
     type: str
     const: Union[Callable, None]
+    params: List[TriggerParameter]
     filename: str
     line: int
 

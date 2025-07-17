@@ -157,6 +157,28 @@ val1 = numeric
 val2 = numeric
 ```
 
+MTL supports trigger overloading, which means two triggers can have the same name, so long as their parameter types are different. So for example, the below is legal (and allows use of concrete types instead of the `numeric` union):
+
+```
+[Define Trigger]
+name = max
+type = int
+value = ifelse(val1 > val2, val1, val2)
+
+[Define Parameters]
+val1 = int
+val2 = int
+
+[Define Trigger]
+name = max
+type = float
+value = ifelse(val1 > val2, val1, val2)
+
+[Define Parameters]
+val1 = float
+val2 = float
+```
+
 ## 5. Structure Definitions
 
 - MTL supports defining structures as a grouping of related variables. 

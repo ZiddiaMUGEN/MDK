@@ -61,14 +61,16 @@ After all types have been processed, structures must also be processed into type
 
 Identify any `Define Trigger` sections. For each trigger definition, register the definition in the translation context.
 
-The trigger name must be unique and also must be distinct from type names, as type names are used similarly to triggers during variable initialization. If the name is not unique, an error is emitted.
+The trigger must be uniquely identifiable by name and input parameters. Two triggers may use the same name, as long as input parameters differ.
+
+The trigger name also must be distinct from type names.
 
 For each parameter defined by the trigger (in its `Define Parameters` section), the type of the parameter must be known.
 
-Triggers are not permitted to reference either local or global variables; the intended use is for any variables required by the trigger to be passed as parameters. 
+Triggers are not permitted to reference either local or global variables; the intended use is for any variables required by the trigger to be passed as parameters.
 At this stage of translation variable names and scopes are not known anyway, so any identifier which is not recognized as a parameter should be rejected.
 
-The trigger expression should be type-checked at this point and the resolved type of the trigger should be stored.
+The trigger expression should be type-checked at this point and the resolved type of the trigger should be checked against the type stated by the developer.
 
 ### 6. Template Processing
 

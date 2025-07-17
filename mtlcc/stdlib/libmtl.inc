@@ -22,7 +22,7 @@ type = bool
 value = !!(input)
 
 [Define Parameters]
-value = int
+input = int
 
 ;;;;; Reflection Const Triggers
 ;; These provide access into compiler state and type information.

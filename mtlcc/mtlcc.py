@@ -5,6 +5,7 @@ from typing import List, Callable, TypeVar
 from mtl.parsers import ini, trigger
 from mtl.shared import *
 from mtl.error import TranslationError
+from mtl.utils import *
 from mtl import builtins
 
 T = TypeVar('T')
@@ -191,14 +192,76 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
 
     return ctx
 
+def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
+    if type in cycle:
+        print("Alias cycle was detected!!")
+        print(f"\t-> {type}")
+        index = len(cycle) - 1
+        while index >= 0:
+            print(f"\t-> {cycle[index]}")
+            index -= 1
+        raise TranslationError("A cycle was detected during alias resolution.", "", 0)
+
+    ## if the input type is not an alias, return the input type
+    if (alias := find(ctx.types, lambda k: k.name == type and k.category == TypeCategory.ALIAS)) == None:
+        return type
+
+    ## otherwise, drill through to the source type
+    if (source := find(ctx.types, lambda k: k.name == alias.members[0])) == None:
+        raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.filename, alias.line)
+    
+    return resolveAlias(source.name, ctx, cycle + [type])
+
+def runTypeCheck(tree: TriggerTree, filename: str, line: int, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
+    return "bottom"
+
 def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
     for trigger_definition in load_ctx.triggers:
         trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
-        if (original := find(ctx.triggers, lambda k: k.name == trigger_name)) != None:
-            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {original.filename}:{original.line}", trigger_definition.filename, trigger_definition.line)
+        
         if (matching_type := find(ctx.types, lambda k: k.name == trigger_name)) != None:
             raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.filename}:{matching_type.line}: type names are reserved for type initialization.", trigger_definition.filename, trigger_definition.line)
         
+        # identify matches by name, then inspect type signature
+        matches = list(filter(lambda k: k.name == trigger_name, ctx.triggers))
+        if len(matches) != 0:
+            source_params = trigger_definition.params.properties if trigger_definition.params != None else []
+            for match in matches:
+                # if they have different param lengths, obviously differ
+                if len(match.params) != len(source_params):
+                    continue
+
+                # match the typename of each
+                index = 0
+                matches = True
+                while index < len(match.params):
+                    if match.params[index].type != source_params[index].value:
+                        matches = False
+                        break
+                    index += 1
+                
+                if matches:
+                    raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {match.filename}:{match.line}", trigger_definition.filename, trigger_definition.line)
+        
+        ## ensure the expected type of the trigger is known
+        if (trigger_type := find(ctx.types, lambda k: k.name == trigger_definition.type)) == None:
+            raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.filename, trigger_definition.line)
+        
+        ## ensure the type of all parameters for the trigger are known
+        params: List[TriggerParameter] = []
+        if trigger_definition.params != None:
+            for parameter in trigger_definition.params.properties:
+                if (matching_type := find(ctx.types, lambda k: k.name == parameter.value)) == None:
+                    raise TranslationError(f"Trigger parameter {parameter.key} declares a type of {parameter.value} but that type is not known.", parameter.filename, parameter.line)
+                params.append(TriggerParameter(parameter.key, parameter.value))
+
+        ## run the type-checker against the trigger expression
+        ## the locals table for triggers is just the input params.
+        result_type = runTypeCheck(trigger_definition.value, trigger_definition.filename, trigger_definition.line, params, ctx)
+        if result_type != trigger_type.name:
+            raise TranslationError(f"Trigger with name {trigger_name} declared return type of {trigger_type.name} but resolved type was {result_type}.", trigger_definition.filename, trigger_definition.line)
+
+        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.filename, trigger_definition.line))
 
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
@@ -277,6 +340,7 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
 
     ctx.types = builtins.getBaseTypes()
+    ctx.triggers = builtins.getBaseTriggers()
 
     translateTypes(load_ctx, ctx)
     translateStructs(load_ctx, ctx)
@@ -294,4 +358,4 @@ if __name__ == "__main__":
     ## this is guaranteed by having steps up to 3 in `loadFile`, and remaining steps handled in `translateContext`.
     loadContext = loadFile(args.input, [])
     translated = translateContext(loadContext)
-    print(translated)
+    #print(translated)

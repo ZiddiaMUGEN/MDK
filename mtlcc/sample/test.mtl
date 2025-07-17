@@ -3,7 +3,6 @@
 
 [Include]
 source = stdlib/libmtl.inc
-namespace = stdlib
 import = numeric
 import = parseBool
 
@@ -13,12 +12,6 @@ import = parseBool
 name = bool8
 type = alias
 source = byte
-
-[Define Type]
-name = numeric
-type = union
-member = float
-member = int
 
 [Define Structure]
 name = myStruct
