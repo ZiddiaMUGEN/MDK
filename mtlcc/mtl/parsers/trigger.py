@@ -178,4 +178,4 @@ class TriggerVisitor(Visitor_Recursive[Token]):
             ## but the brackets are just to enforce precedence in the parser, we essentially don't need to do anything here!
             pass
         elif isinstance(tree.children[0], Token):
-            self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value, []))
+            self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip(), []))

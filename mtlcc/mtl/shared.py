@@ -103,6 +103,7 @@ class TemplateSection:
     namespace: Optional[str]
     states: List[StateControllerSection]
     params: Optional[INISection]
+    locals: List[INIProperty]
     filename: str
     line: int
 
@@ -113,6 +114,7 @@ class TemplateSection:
         self.namespace = None
         self.filename = filename
         self.line = line
+        self.locals = []
 
 @dataclass
 class TriggerSection:
@@ -227,13 +229,47 @@ class TriggerDefinition:
     line: int
     category: TriggerCategory = TriggerCategory.SIMPLE
 
+class TemplateCategory(Enum):
+    DEFINED = 0
+    BUILTIN = 1
+
+@dataclass
+class TemplateParameter:
+    name: str
+    type: str
+    required: bool = False
+
+@dataclass
+class StateController:
+    name: str
+    triggers: dict[int, List[TriggerTree]]
+    properties: dict[str, TriggerTree]
+
+@dataclass
+class StateParameter:
+    name: str
+    type: str
+    default: Optional[TriggerTree]
+
+@dataclass
+class TemplateDefinition:
+    name: str
+    params: List[TemplateParameter]
+    locals: List[StateParameter]
+    states: List[StateController]
+    filename: str
+    line: int
+    category: TemplateCategory = TemplateCategory.DEFINED
+
 @dataclass
 class TranslationContext:
     filename: str
     types: List[TypeDefinition]
     triggers: List[TriggerDefinition]
+    templates: List[TemplateDefinition]
 
     def __init__(self, filename: str):
         self.filename = filename
         self.types = []
         self.triggers = []
+        self.templates = []

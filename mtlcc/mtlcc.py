@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 from typing import List
 
 from mtl.parsers import ini, trigger
@@ -47,6 +48,13 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
             
             template = TemplateSection(prop.value, section.filename, section.line)
             ctx.templates.append(template)
+
+            ## read any local definitions from the define template block
+            locals: List[INIProperty] = []
+            for prop in section.properties:
+                if prop.key == "local":
+                    locals.append(prop)
+            template.locals = locals
 
             while index + 1 < len(sections):
                 if sections[index + 1].name.lower().startswith("state "):
@@ -257,6 +265,140 @@ def runTypeCheck(tree: TriggerTree, filename: str, line: int, locals: List[Trigg
     
     return "bottom"
 
+def parseLocalParameter(local: INIProperty, ctx: TranslationContext) -> StateParameter:
+    ## local variables are basically specified as valid trigger syntax, e.g. `myLocalName = myLocalType(defaultValueExpr)`
+    ## so we parse as a trigger and make sure the syntax tree matches the expected format.
+    ## there are only 2 valid formats: `name = type` and `name = type(default)`.
+    tree = trigger.parseTrigger(local.value, local.filename, local.line)
+    if tree.node == TriggerTreeNode.MULTIVALUE: tree = tree.children[0]
+
+    ## check the operator is correct and the first node is an atom
+    ## keep in mind the tree constructs right-to-left so children[1] is the first child node.
+    if tree.node != TriggerTreeNode.BINARY_OP or tree.operator != "=":
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+    if tree.children[1].node != TriggerTreeNode.ATOM:
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+    ## the second node can be either ATOM (for type name) or FUNCTION_CALL with a single child (for default value)
+    if tree.children[0].node != TriggerTreeNode.ATOM and tree.children[0].node != TriggerTreeNode.FUNCTION_CALL:
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+    if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL and len(tree.children[0].children) != 1:
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+    local_type = tree.children[0].operator
+    default_value = tree.children[0].children[0] if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL else None
+
+    ## check the type specified for the local exists
+    if find(ctx.types, lambda k: k.name == local_type) == None:
+        raise TranslationError(f"A local was declared with a type of {local_type} but that type does not exist.", local.filename, local.line)
+
+    return StateParameter(tree.children[1].operator.strip(), local_type, default_value)
+
+def parseStateController(state: StateControllerSection, ctx: TranslationContext):
+    ## determine the type of controller to be used
+    if (state_name_node := find(state.properties, lambda k: k.key == "type")) == None:
+        raise TranslationError(f"Could not find type property on state controller.", state.filename, state.line)
+    state_name = state_name_node.value.children[0] if state_name_node.value.node == TriggerTreeNode.MULTIVALUE else state_name_node.value
+    if state_name.node != TriggerTreeNode.ATOM:
+        raise TranslationError(f"The type property on a state controller must be a state controller name.", state.filename, state.line)
+    
+    ## find the template definition corresponding to this controller
+    if (state_template := find(ctx.templates, lambda k: k.name.lower() == state_name.operator.lower())) == None:
+        raise TranslationError(f"Couldn't find any template or builtin controller with name {state_name.operator}.", state.filename, state.line)
+    
+    ## process all triggers
+    triggers: dict[int, List[TriggerTree]] = {}
+    for trigger in state.properties:
+        if (matched := re.match(r"trigger(all|[0-9]+)$", trigger.key)) != None:
+            # triggerall has group 0. otherwise just use the provided trigger group.
+            group = matched.groups(0)[0]
+            if group == "all": group = "0"
+            group = int(group)
+            # store the trigger in the specified group
+            if group not in triggers: triggers[group] = []
+            triggers[group].append(trigger.value)
+    
+    ## ensure the current state passes all required properties to the template
+    props: dict[str, TriggerTree] = {}
+    for prop in state_template.params:
+        current_prop = find(state.properties, lambda k: k.key.lower() == prop.name.lower())
+        if prop.required and current_prop == None:
+            raise TranslationError(f"Required parameter {prop.name} for template or builtin controller {state_template.name} was not provided.", state.filename, state.line)
+        if current_prop != None:
+            props[current_prop.key] = current_prop.value
+    
+    return StateController(state_name.operator, triggers, props)
+
+def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], triggers: List[TriggerDefinition]) -> List[str]:
+    if tree.node == TriggerTreeNode.ATOM:
+        ## if the current node is an ATOM, check if the value is a number or a boolean.
+        ## in those cases, the value is known.
+        ## then, check if the name exists in the provided variable table.
+        ## finally, check if the name exists in the trigger context. triggers which do not take parameters may optionally be used without brackets (e.g. `Alive` instead of `Alive()`)
+        ## which would be parsed as an ATOM instead of a FUNCTION_CALL.
+        if tryParseInt(tree.operator) != None or tryParseFloat(tree.operator) != None or tryParseBool(tree.operator) != None:
+            return []
+        elif find(table, lambda k: k.name == tree.operator) != None:
+            return []
+        elif find(triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
+            return []
+        else:
+            return [tree.operator]
+        
+    result: List[str] = []
+    for child in tree.children:
+        result += findUndefinedGlobalsInTrigger(child, table, triggers)
+
+    return result
+
+def findUndefinedGlobals(state: StateController, table: List[StateParameter], triggers: List[TriggerDefinition]) -> List[str]:
+    result: List[str] = []
+
+    ## search the trigger tree of each property and trigger in the controller to identify any undefined globals
+    ## (essentially any ATOM which we do not recognize as an enum or flag, or existing variable)
+    for name in state.properties:
+        result += findUndefinedGlobalsInTrigger(state.properties[name], table, triggers)
+    for group in state.triggers:
+        for trigger in state.triggers[group]:
+            result += findUndefinedGlobalsInTrigger(trigger, table, triggers)
+
+    return result
+
+def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
+    for template_definition in load_ctx.templates:
+        ## determine final template name and check if it is already in use.
+        template_name = template_definition.name if template_definition.namespace == None else f"{template_definition.namespace}.{template_definition.name}"
+        if (original := find(ctx.templates, lambda k: k.name == template_name)) != None:
+            raise TranslationError(f"Template with name {template_name} was redefined: original definition at {original.filename}:{original.line}", template_definition.filename, template_definition.line)
+        
+        ## determine the type and default value of any local declarations
+        template_locals: list[StateParameter] = []
+        for local in template_definition.locals:
+            template_locals.append(parseLocalParameter(local, ctx))
+
+        ## determine the type of any parameter declarations
+        template_params: list[TemplateParameter] = []
+        if template_definition.params != None:
+            for param in template_definition.params.properties:
+                if find(ctx.types, lambda k: k.name == param.value) == None:
+                    raise TranslationError(f"A template parameter was declared with a type of {param.value} but that type does not exist.", param.filename, param.line)
+                template_params.append(TemplateParameter(param.key, param.value))
+
+        ## analyse all template states. in this stage we just want to confirm variable usage is correct.
+        ## type checking will happen later when we have substituted templates into their call sites.
+        template_states: list[StateController] = []
+        for state in template_definition.states:
+            controller = parseStateController(state, ctx)
+            ## run findUndefinedGlobals against this controller to determine any global variable usage.
+            ## the variable table we pass contains only the locals and the parameters, so all globals in this case are undefined.
+            ## templates which use undefined global variables will be rejected as templates can't use globals.
+            ## we must also pass the list of triggers so the function can identify parameter-less trigger calls.
+            temp_params = [StateParameter(p.name, p.type, None) for p in template_params]
+            undefineds = findUndefinedGlobals(controller, temp_params + template_locals, ctx.triggers)
+            if len(undefineds) != 0:
+                raise TranslationError(f"Template uses global variables named {', '.join(undefineds)}, but templates cannot define or use globals.", state.filename, state.line)
+            template_states.append(controller)
+        
+        ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.filename, template_definition.line))
+
 def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
     for trigger_definition in load_ctx.triggers:
         trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
@@ -290,7 +432,6 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
             raise TranslationError(f"Trigger with name {trigger_name} declared return type of {trigger_type.name} but resolved type was {result_type}.", trigger_definition.filename, trigger_definition.line)
 
         ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.filename, trigger_definition.line))
-
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
     for struct_definition in load_ctx.struct_definitions:
@@ -369,10 +510,13 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
 
     ctx.types = builtins.getBaseTypes()
     ctx.triggers = builtins.getBaseTriggers()
+    ctx.templates = builtins.getBaseTemplates()
 
     translateTypes(load_ctx, ctx)
     translateStructs(load_ctx, ctx)
     translateTriggers(load_ctx, ctx)
+    translateTemplates(load_ctx, ctx)
+    replaceTemplates(load_ctx, ctx)
 
     return ctx
 

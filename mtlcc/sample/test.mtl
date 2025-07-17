@@ -30,7 +30,14 @@ member2 = myStruct
 
 ;;;;; Reflection Const Triggers
 ;; These provide access into compiler state and type information.
+[Define Template]
+name = testTemplate
+local = myVar = int(0)
 
+[State 191, 1] ;Freeze animation until PreIntro is over
+type = ChangeAnim
+trigger1 = RoundState = 0
+value = 190
 
 ;---------------------------------------------------------------------------
 ; Lose by Time Over

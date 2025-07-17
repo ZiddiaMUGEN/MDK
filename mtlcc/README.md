@@ -134,6 +134,7 @@ PARAMETER NAME = PARAMETER VALUE
 ```
 
 - Triggers provided when calling a template must be translated into triggers on the states comprising the template. The compiler may need to collapse triggers to be able to integrate them with triggers inside the template.
+- Templates are permitted to make use of local variables defined in the `Define Template` section.
 
 ### 3.2 Include
 
@@ -256,7 +257,7 @@ trigger1 = myStructure.MEMBER1 = 1
 ```
 [Statedef 0]
 type = S
-local = VARIABLE NAME
+local = VARIABLE NAME = VARIABLE TYPE
 ```
 
 - Multiple `local` definitions can be provided here.
@@ -266,17 +267,17 @@ local = VARIABLE NAME
 [Statedef 200]
 type = S
 movetype = A
-local = attackType
+local = attackType = int
 
 [State ]
 type = VarSet
 trigger1 = Command = "a"
-attackType = int(1)
+attackType = 1
 
 [State ]
 type = VarSet
 trigger1 = Command = "b"
-attackType = int(2)
+attackType = 2
 
 [State ]
 type = ChangeState
@@ -308,7 +309,7 @@ persist = attackType
 [Statedef 200]
 type = S
 movetype = A
-local = attackType := int(0)
+local = attackType = int(0)
 ```
 
 MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the state is recursive or re-entered, the variable WILL be re-initialized.
@@ -319,7 +320,7 @@ MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the 
 - MTL will reserve variable space for all global variables, as well as extra variable space for locals per statedef.
 - If the input file uses legacy variable references (`var` and `fvar`), the compiler must be informed the ranges of variable numbers which are in use. If these are not provided, the compiler will produce an error.
 
-- Because the type of named variables can't be inferred, all named variable assignments must be constructed with the variable type:
+- Because the type of global named variables can't be inferred, all global named variable assignments must be constructed with the variable type:
 
 ```
 [State ]
@@ -332,7 +333,8 @@ type = Null
 trigger1 = VARIABLE_NAME := byte(8)
 ```
 
-- When using legacy variable references, the type can be omitted.
+- Local variables have their type assigned at declaration, so the variable type is known and can be ommitted in assignment.
+- When using legacy variable references, the type can be omitted as it's inferred from the type of the function.
 - If the type of a variable changes unexpectedly, the compiler will produce an error.
 
 ## 8. Animation, Sprite, Sound References

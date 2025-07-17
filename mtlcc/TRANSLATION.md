@@ -63,7 +63,7 @@ Identify any `Define Trigger` sections. For each trigger definition, register th
 
 The trigger must be uniquely identifiable by name and input parameters. Two triggers may use the same name, as long as input parameters differ.
 
-The trigger name also must be distinct from type names.
+The trigger name also must be distinct from type names, as type names are used similarly to triggers during variable initialization.
 
 For each parameter defined by the trigger (in its `Define Parameters` section), the type of the parameter must be known.
 
@@ -78,8 +78,6 @@ Identify any `Define Template` sections. For each template definition, register 
 
 The template name must be globally unique, and cannot overlap with any state controller name.
 
-For each local variable defined in the template, the variable should be renamed to something globally unique (to avoid risk of conflicts during template inclusion). All uses of the variable in the template's controllers must also be updated.
-
 A table identifying all local variables used by the template should be stored for reference.
 
 All state controller parameters should be checked to ensure only local and parameter variables are used. The use of global variables within templates is not permitted.
@@ -92,10 +90,16 @@ Templates are permitted to make calls to other templates, so this process must b
 
 Wherever a template is referenced, identify the expressions which populate the template's parameters. Copy the template controllers into the current statedef, making replacements for the template's parameters with the provided expressions.
 
-If the template declares locals, add new local definitions to the calling statedef.
+For each local variable defined in the template, the variable should be renamed to something globally unique (to avoid risk of conflicts during template inclusion). All uses of the variable in the template's controllers must also be updated.
+
+If the template declares locals, hoist the new (+ renamed) local definitions to the calling statedef.
 
 The triggers applied to the template call must be joined together, converted into a `triggerall` statement, and applied to all included state controllers.
 
 ### 8. State Count Check
 
 After template replacement, do a quick check to confirm all statedefs are below 512 states. This is a sanity check to ensure the character does not exceed limits imposed by MUGEN.
+
+### 9. Trigger Replacement
+
+### 10. Global Identification / Variable Allocation
