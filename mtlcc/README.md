@@ -20,7 +20,16 @@ This document provides minimal implementation details, it only notes the languag
 
 - For included CNS files, variable types are inferred to be `numeric`.
 
-### 1.1 Type Conversion
+### 1.1 Tuples, Optionals, and Repeated Types
+
+- MTL allows the definition of **tuple types** for variables, triggers, and parameters. A **tuple type** is simply a type which comprises more than one inner type. This is similar to a structure type, but the fields are not referenced by name.
+- Tuples are declared by including additional types with a comma. For example, the type `int,float` is a tuple where the first item is an `int` and the second item is a `float`.
+- When working with tuples, you have access to additional type syntax.
+    - If the float in the above tuple is optional, you can define the type as `int,float?`.
+    - If you may accept more than one float in the tuple, you can define the type as `int,float...`.
+- Currently the syntax for use of tuples directly in MTL code is not pinned down. The tuple type definitions are used within builtin controllers and triggers to satisfy CNS requirements.
+
+### 1.2 Type Conversion
 
 - MTL supports several flavors of **type conversion**. Several conversions can be done automatically (though they may emit an error).
 

@@ -217,11 +217,27 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
 
     return None
 
+def matchesEnumValue(type: TypeDefinition, e: str) -> bool:
+    if type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]: return False
+    ## for this matcher, we only want to check enums with format 'enum_name.enum_value' and 'flag_name.flag_value'.
+    ## matching for unscoped enums is done elsewhere.
+    if "." not in e: return False
+    value = e.split(".")[-1]
+    scope = ".".join(e.split(".")[:-1])
+    ## early exit if the type name doesn't match the enum we're inspecting
+    if type.name != scope: return False
+    ## determine if the value directly matches an enum key.
+    if find(type.members, lambda k: k.lower() == value.lower()) != None: return True
+    ## determine if the value matches a FLAG value. each flag value is a single character, match on each character.
+    if type.category == TypeCategory.FLAG or type.category == TypeCategory.STRING_FLAG:
+        for chara in value:
+            if find(type.members, lambda k: k.lower() == chara.lower()) == None: raise TranslationError(f"Flag constant {chara} does not exist on flag type {type.name}", type.location)
+        return True
+    raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", type.location)
+
 def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
-    ## for multivalue, just handle single case for now. tuples are a bit of work still.
-    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) > 1:
-        raise TranslationError("TODO: support multivalue expressions correctly", tree.location)
-    elif tree.node == TriggerTreeNode.MULTIVALUE:
+    ## for multivalue, handle single case here. true multivalue handled below.
+    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 1:
         return runTypeCheck(tree.children[0], locals, ctx)
     
     ## for intervals, give an error for now.
@@ -238,6 +254,11 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return "bool"
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
             return resolveAlias(local.type, ctx, [])
+        elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower())) != None:
+            return resolveAlias(trigger.type, ctx, [])
+        elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator))) != None:
+            ## this matches on both enums and flags.
+            return resolveAlias(enum.name, ctx, [])
         else:
             raise TranslationError(f"Could not determine type from expression {tree.operator}.", tree.location)
     
@@ -263,6 +284,11 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
         if function_call == None:
             raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", tree.location)
         return resolveAlias(function_call.type, ctx, [])
+    
+    ## handle true multivalue.
+    ## just resolve it to typenames separated with commas.
+    if tree.node == TriggerTreeNode.MULTIVALUE:
+        return ",".join([resolveAlias(child, ctx, []) for child in child_types])
     
     return "bottom"
 
@@ -347,6 +373,8 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
         elif find(table, lambda k: k.name == tree.operator) != None:
             return []
         elif find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
+            return []
+        elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator)) != None:
             return []
         else:
             return [GlobalParameter(tree.operator, "")]
@@ -497,6 +525,45 @@ def replaceTriggers(ctx: TranslationContext):
         if iterations > 20:
             raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal())
         
+def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
+    ## type check every property in a statedef.
+    ## this is executed twice: once after template replace but before trigger replace,
+    ## and then again after trigger replace.
+    ## until trigger replacement happens we assume the output type of a defined trigger call is correct.
+    globals_convert = [TriggerParameter(g.name, g.type, Location("<global-identifier>", 0)) for g in ctx.globals]
+    locals_convert = [TriggerParameter(p.name, p.type, p.location) for p in statedef.locals]
+    bool_type = find(ctx.types, lambda k: k.name == "bool")
+    assert(bool_type != None)
+    for controller in statedef.states:
+        controller_type = find(ctx.templates, lambda k: k.name.lower() == controller.name.lower())
+        if controller_type == None:
+            raise TranslationError(f"Could not find any state controller or template with name {controller.name}.", controller.location)
+        for group in controller.triggers:
+            for trigger in controller.triggers[group]:
+                result_type = runTypeCheck(trigger, globals_convert + locals_convert, ctx)
+                result_typedefs = unpackTypes(result_type, ctx)
+                if result_typedefs == None:
+                    raise TranslationError(f"Could not find any type with descriptor {result_type}.", trigger.location)
+                if len(result_typedefs) != 1:
+                    raise TranslationError(f"Result of trigger expression must be bool, not a tuple {result_type}.", trigger.location)
+                if not typeConvertOrdered(result_typedefs[0], bool_type, ctx, trigger.location):
+                    ## special case: `int` converts to `bool` implicitly for triggers.
+                    if result_type not in ["int", "short", "byte"]:
+                        raise TranslationError(f"Result of trigger expression must be bool, not {result_type}.", trigger.location)
+        for prop in controller.properties:
+            result_type = runTypeCheck(controller.properties[prop], globals_convert + locals_convert, ctx)
+            result_typedefs = unpackTypes(result_type, ctx)
+            if result_typedefs == None:
+                raise TranslationError(f"Could not find any type with descriptor {result_type}.", controller.properties[prop].location)
+            
+            ## we need to look up the expected result for this prop.
+            expected_prop = find(controller_type.params, lambda k: k.name.lower() == prop)
+            ## expected_prop could be None if the prop isn't expected on this controller/template.
+            ## we already emitted a warning for this earlier anyway.
+            if expected_prop != None:
+                if not unpackAndMatch(result_type, expected_prop.type, ctx):
+                    raise TranslationError(f"Could not match type {result_type} to expected type {expected_prop.type} on controller {controller_type.name}.", controller.properties[prop].location)
+        
 def createGlobalsTable(ctx: TranslationContext):
     ## we must iterate all statedefs and search for undefined globals.
     ## this should also include a type checking stage.
@@ -525,7 +592,7 @@ def createGlobalsTable(ctx: TranslationContext):
                     continue
                 ## if both are concrete, attempt to match
                 type1 = find(ctx.types, lambda k: k.name == symbol.type)
-                type2 = find(ctx.types, lambda k: k.name == matching.type)
+                type2 = find(ctx.types, lambda k: k.name == matching.type) # type: ignore
                 if type1 == None:
                     raise TranslationError(f"Could not find type with name {type1} during type checking.", controller.location)
                 if type2 == None:
@@ -536,9 +603,12 @@ def createGlobalsTable(ctx: TranslationContext):
     ## now ensure every symbol has a concrete type.
     for sym in discovered:
         if sym.type == "":
-            raise TranslationError(f"Global {sym.name} was used, but never assigned, so the type checker could not identify its type.", location[sym.name])
-    ## global table has now been created. store in ctx and run the full type checker
+            #raise TranslationError(f"Global {sym.name} was used, but never assigned, so the type checker could not identify its type.", location[sym.name])
+            pass
+    ## global table has now been created. store in ctx and run the full type check
     ctx.globals = discovered
+    for statedef in ctx.statedefs:
+        runTypeCheckGlobal(statedef, ctx)
     print(ctx.globals)
 
 def replaceTemplatesInner(ctx: TranslationContext) -> bool:
@@ -699,8 +769,8 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
         result_type = runTypeCheck(trigger_definition.value, params, ctx)
-        if result_type != trigger_type.name:
-            raise TranslationError(f"Trigger with name {trigger_name} declared return type of {trigger_type.name} but resolved type was {result_type}.", trigger_definition.location)
+        if not unpackAndMatch(result_type, trigger_type.name, ctx):
+            raise TranslationError(f"Could not match type {result_type} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
 
         ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.value, trigger_definition.location))
 
@@ -736,7 +806,7 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
             type_category = TypeCategory.ALIAS
             if (alias := find(type_definition.properties, lambda k: k.key.lower() == "source")) == None:
                 raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.location)
-            if (source := find(ctx.types, lambda k: k.name == alias.value)) == None:
+            if (source := find(ctx.types, lambda k: k.name == alias.value)) == None: # type: ignore
                 raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.location)
             type_members = [alias.value]
             target_size = source.size

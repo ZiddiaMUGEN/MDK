@@ -125,3 +125,50 @@ def typeConvertWidest(type1: TypeDefinition, type2: TypeDefinition, ctx: Transla
     
     ## otherwise, take the widest
     return result1 if result1.size > result2.size else result2
+
+## unpacks a type (which may be a tuple and may contain repetition or optional syntax) into a list of component types.
+def unpackTypes(base_type: str, ctx: TranslationContext) -> Optional[List[TypeDefinition]]:
+    result: List[TypeDefinition] = []
+    ## each type is delimited with a comma.
+    components = [component.strip() for component in base_type.split(",")]
+    ## iterate each type and check if it exists.
+    ## in this function we do not actually care about the extra syntax, we just want to identify the member types.
+    for component in components:
+        component = component.replace("?", "").replace("...", "").strip()
+        target = find(ctx.types, lambda k: k.name == component)
+        if target == None:
+            return None
+        result.append(target)
+
+    return result
+
+## unpacks two types and compares them. permits for repetition and optionals.
+## there is an assumption here that `base_type` is a resolved type and will not contain extra syntax.
+def unpackAndMatch(base_type: str, target_type: str, ctx: TranslationContext) -> bool:
+    if "," not in base_type and "," not in target_type:
+        return base_type == target_type.replace("?", "").replace("...", "")
+    ## break each type into its component types
+    base_components = [component.strip() for component in base_type.split(",")]
+    target_components = [component.strip() for component in base_type.split(",")]
+    ## compare component by component until reaching the end of the list, OR the repetition syntax.
+    index = 0
+    while index < len(base_components) and index < len(target_components):
+        ## off the bat just make sure the component type exists
+        if find(ctx.types, lambda k: k.name == base_components[index]) == None: return False
+        target_type = target_components[index].replace("?", "").replace("...", "")
+        ## ensure the current type matches the target
+        if base_components[index] != target_type: return False
+        ## if the target has the repetition syntax, we should iterate remaining components of base_components and ensure they all match the repeated target.
+        if index < len(target_components) and target_components[index].endswith("?"):
+            while index < len(base_components):
+                if base_components[index] != target_type: return False
+                index += 1
+            break
+
+        index += 1
+
+    ## if the target type has more components, we need to ensure every additional component has the optional syntax.
+    while index < len(target_components):
+        if not target_components[index].endswith("?"): return False
+
+    return True
