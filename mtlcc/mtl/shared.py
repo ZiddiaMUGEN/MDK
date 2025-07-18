@@ -186,6 +186,7 @@ class TypeCategory(Enum):
     STRING_FLAG = 97 # special builtin type for things such as hitdefattr where the flag identifier is preserved in the output.
     STRING_ENUM = 98 # special builtin type for things such as movetype, statetype, etc where the enum identifier is preserved in the output.
     BUILTIN = 99 # special builtin types (int, float, etc) which need to exist for type-checking.
+    BUILTIN_DENY = 100 # builtin types which you cannot allocate.
 
 @dataclass
 class TypeDefinition:

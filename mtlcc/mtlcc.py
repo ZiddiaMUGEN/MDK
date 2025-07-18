@@ -1,5 +1,6 @@
 import argparse
 import os
+import traceback
 import re
 import copy
 from typing import List
@@ -217,13 +218,19 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
 
     return None
 
-def matchesEnumValue(type: TypeDefinition, e: str) -> bool:
+def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinition]) -> bool:
     if type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]: return False
-    ## for this matcher, we only want to check enums with format 'enum_name.enum_value' and 'flag_name.flag_value'.
-    ## matching for unscoped enums is done elsewhere.
-    if "." not in e: return False
+
+    ## if the maybe-enum is unscoped, we may still match it with the automatic enum list provided.
+    if "." not in e:
+        for en in autoEnums:
+            if matchesEnumValue(type, f"{en.name}.{e}", []): return True
+        return False
+
+    ## we want to split the enum into scope and value.
     value = e.split(".")[-1]
     scope = ".".join(e.split(".")[:-1])
+
     ## early exit if the type name doesn't match the enum we're inspecting
     if type.name != scope: return False
     ## determine if the value directly matches an enum key.
@@ -235,10 +242,10 @@ def matchesEnumValue(type: TypeDefinition, e: str) -> bool:
         return True
     raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", type.location)
 
-def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
+def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext, autoEnums: List[TypeDefinition] = []) -> str:
     ## for multivalue, handle single case here. true multivalue handled below.
     if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 1:
-        return runTypeCheck(tree.children[0], locals, ctx)
+        return runTypeCheck(tree.children[0], locals, ctx, autoEnums)
     
     ## for intervals, give an error for now.
     if tree.node == TriggerTreeNode.INTERVAL_OP:
@@ -252,11 +259,13 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return "float"
         elif tryParseBool(tree.operator) != None:
             return "bool"
+        elif tryParseCint(tree.operator) != None:
+            return "cint"
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
             return resolveAlias(local.type, ctx, [])
         elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower())) != None:
             return resolveAlias(trigger.type, ctx, [])
-        elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator))) != None:
+        elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums))) != None:
             ## this matches on both enums and flags.
             return resolveAlias(enum.name, ctx, [])
         else:
@@ -265,7 +274,7 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
     ## do a depth-first search on the tree. determine the type of each node, then apply types to each operator to determine the result type.
     child_types: List[str] = []
     for child in tree.children:
-        child_types.append(runTypeCheck(child, locals, ctx))
+        child_types.append(runTypeCheck(child, locals, ctx, autoEnums))
 
     ## process operators using operator functions.
     ## no need to evaluate anything at this stage, just return the stated return type of the operator.
@@ -288,7 +297,9 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
     ## handle true multivalue.
     ## just resolve it to typenames separated with commas.
     if tree.node == TriggerTreeNode.MULTIVALUE:
-        return ",".join([resolveAlias(child, ctx, []) for child in child_types])
+        child_resolved = [resolveAlias(child, ctx, []) for child in child_types]
+        child_resolved.reverse()
+        return ",".join(child_resolved)
     
     return "bottom"
 
@@ -361,27 +372,28 @@ def parseStateController(state: StateControllerSection, ctx: TranslationContext)
     
     return StateController(state_name.operator, triggers, props, state.location)
 
-def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], ctx: TranslationContext) -> List[GlobalParameter]:
+def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], ctx: TranslationContext, autoEnums: List[TypeDefinition] = []) -> List[GlobalParameter]:
     if tree.node == TriggerTreeNode.ATOM:
         ## if the current node is an ATOM, check if the value is a number or a boolean.
         ## in those cases, the value is known.
         ## then, check if the name exists in the provided variable table.
         ## finally, check if the name exists in the trigger context. triggers which do not take parameters may optionally be used without brackets (e.g. `Alive` instead of `Alive()`)
         ## which would be parsed as an ATOM instead of a FUNCTION_CALL.
-        if tryParseInt(tree.operator) != None or tryParseFloat(tree.operator) != None or tryParseBool(tree.operator) != None:
+        if tryParseInt(tree.operator) != None or tryParseFloat(tree.operator) != None or tryParseBool(tree.operator) != None or tryParseCint(tree.operator) != None:
             return []
         elif find(table, lambda k: k.name == tree.operator) != None:
             return []
         elif find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
             return []
-        elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator)) != None:
+        elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums)) != None:
             return []
         else:
+            print(tree.operator)
             return [GlobalParameter(tree.operator, "")]
         
     result: List[GlobalParameter] = []
     for child in tree.children:
-        result += findUndefinedGlobalsInTrigger(child, table, ctx)
+        result += findUndefinedGlobalsInTrigger(child, table, ctx, autoEnums)
 
     ## if this node is an assignment, and the LHS is for a globalparameter, get the type of the RHS.
     if len(result) > 0 and tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[1].node == TriggerTreeNode.ATOM:
@@ -394,10 +406,25 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
 def findUndefinedGlobals(state: StateController, table: List[StateParameter], ctx: TranslationContext) -> List[GlobalParameter]:
     result: List[GlobalParameter] = []
 
+    ## identify the type of this controller
+    controller_type = find(ctx.templates, lambda k: k.name.lower() == state.name.lower())
+    if controller_type == None:
+        raise TranslationError(f"Could not identify template or builtin definition for controller type {state.name}", state.location)
+
     ## search the trigger tree of each property and trigger in the controller to identify any undefined globals
     ## (essentially any ATOM which we do not recognize as an enum or flag, or existing variable)
     for name in state.properties:
-        result += findUndefinedGlobalsInTrigger(state.properties[name], table, ctx)
+        ## because a property has a known output type, we can retrieve the enum and flag names the property wants
+        ## and pass them directly to runTypeCheck.
+        ## for this we need to look up the expected result for this prop, and then unpack it into types,
+        ## and determine any enums or flags to inject.
+        expected_prop = find(controller_type.params, lambda k: k.name.lower() == name)
+        enums_flags: List[TypeDefinition] = []
+        if expected_prop != None:
+            expected_typedefs = unpackTypes(expected_prop.type, ctx)
+            if expected_typedefs != None:
+                enums_flags = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
+        result += findUndefinedGlobalsInTrigger(state.properties[name], table, ctx, enums_flags)
     for group in state.triggers:
         for trigger in state.triggers[group]:
             result += findUndefinedGlobalsInTrigger(trigger, table, ctx)
@@ -533,7 +560,7 @@ def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
     globals_convert = [TriggerParameter(g.name, g.type, Location("<global-identifier>", 0)) for g in ctx.globals]
     locals_convert = [TriggerParameter(p.name, p.type, p.location) for p in statedef.locals]
     bool_type = find(ctx.types, lambda k: k.name == "bool")
-    assert(bool_type != None)
+
     for controller in statedef.states:
         controller_type = find(ctx.templates, lambda k: k.name.lower() == controller.name.lower())
         if controller_type == None:
@@ -546,18 +573,27 @@ def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
                     raise TranslationError(f"Could not find any type with descriptor {result_type}.", trigger.location)
                 if len(result_typedefs) != 1:
                     raise TranslationError(f"Result of trigger expression must be bool, not a tuple {result_type}.", trigger.location)
-                if not typeConvertOrdered(result_typedefs[0], bool_type, ctx, trigger.location):
+                if not typeConvertOrdered(result_typedefs[0], bool_type, ctx, trigger.location): # type: ignore
                     ## special case: `int` converts to `bool` implicitly for triggers.
                     if result_type not in ["int", "short", "byte"]:
                         raise TranslationError(f"Result of trigger expression must be bool, not {result_type}.", trigger.location)
         for prop in controller.properties:
-            result_type = runTypeCheck(controller.properties[prop], globals_convert + locals_convert, ctx)
+            ## because a property has a known output type, we can retrieve the enum and flag names the property wants
+            ## and pass them directly to runTypeCheck.
+            ## for this we need to look up the expected result for this prop, and then unpack it into types,
+            ## and determine any enums or flags to inject.
+            expected_prop = find(controller_type.params, lambda k: k.name.lower() == prop)
+            enums_flags: List[TypeDefinition] = []
+            if expected_prop != None:
+                expected_typedefs = unpackTypes(expected_prop.type, ctx)
+                if expected_typedefs != None:
+                    enums_flags = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
+
+            result_type = runTypeCheck(controller.properties[prop], globals_convert + locals_convert, ctx, enums_flags)
             result_typedefs = unpackTypes(result_type, ctx)
             if result_typedefs == None:
-                raise TranslationError(f"Could not find any type with descriptor {result_type}.", controller.properties[prop].location)
+                raise TranslationError(f"Could not find any type with descriptor {result_type}.", controller.properties[prop].location)            
             
-            ## we need to look up the expected result for this prop.
-            expected_prop = find(controller_type.params, lambda k: k.name.lower() == prop)
             ## expected_prop could be None if the prop isn't expected on this controller/template.
             ## we already emitted a warning for this earlier anyway.
             if expected_prop != None:
@@ -599,12 +635,10 @@ def createGlobalsTable(ctx: TranslationContext):
                     raise TranslationError(f"Could not find type with name {type2} during type checking.", controller.location)
                 if not typeConvertWidest(type1, type2, ctx, controller.location):
                     raise TranslationError(f"Global {symbol.name} was previously assigned with type {type1}, but was re-assigned with incompatible type {type2}.", controller.location)
-    print(discovered)
     ## now ensure every symbol has a concrete type.
     for sym in discovered:
         if sym.type == "":
-            #raise TranslationError(f"Global {sym.name} was used, but never assigned, so the type checker could not identify its type.", location[sym.name])
-            pass
+            raise TranslationError(f"Global {sym.name} was used, but never assigned, so the type checker could not identify its type.", location[sym.name])
     ## global table has now been created. store in ctx and run the full type check
     ctx.globals = discovered
     for statedef in ctx.statedefs:
@@ -871,7 +905,6 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
             raise TranslationError(f"State definition for state {statedef.name} has more than 512 state controllers after template resolution. Reduce the size of this state definition or its templates.", statedef.location)
         
     createGlobalsTable(ctx)
-
     replaceTriggers(ctx)
 
     #print(ctx.statedefs)
@@ -891,5 +924,7 @@ if __name__ == "__main__":
         translated = translateContext(loadContext)
         #print(translated)
     except TranslationError as exc:
+        py_exc = traceback.format_exc().split("\n")[-4].strip()
         print("Translation terminated with an error.")
         print(f"\t{exc.message}")
+        print(f"mtlcc exception source: {py_exc}")

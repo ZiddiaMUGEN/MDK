@@ -34,6 +34,13 @@ def tryParseBool(input: str) -> Optional[bool]:
     elif input == "false": return False
     else: return None
 
+def tryParseCint(input: str) -> Optional[str]:
+    # cint: an int with a prefix F or S.
+    # special type to support sounds and spark numbers. CNS has very weird syntax.
+    if (input.startswith("F") or input.startswith("S")) and tryParseInt(input[1:]):
+        return input
+    return None
+
 T = TypeVar('T')
 def find(l: List[T], p: Callable[[T], bool]) -> Optional[T]:
     result = next(filter(p, l), None)

@@ -54,7 +54,7 @@ velset = 0,0
 [State 170, 1]
 type = NotHitBy
 trigger1 = 1
-value = HitType.SCA,HitAttr.AA,HitAttr.ATSL
+value = SCA
 time = 1
 
 ;---------------------------------------------------------------------------
