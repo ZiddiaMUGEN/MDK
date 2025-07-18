@@ -202,17 +202,44 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
 
     # iterate each match
     for match in matches:
-        if len(match.params) != len(types): continue
-        
         is_matching = True
-        for index in range(len(types)):
+
+        ## iterate all the types from input signature and attempt to match each.
+        index = 0
+        while index < len(types) and index < len(match.params):
+            # get typedef 1
             first_str = resolveAlias(types[index], ctx, [])
             first = find(ctx.types, lambda k: k.name == first_str)
-            second_str = resolveAlias(match.params[index].type, ctx, [])
+
+            # get typedef 2
+            second_str = resolveAlias(match.params[index].type.replace("...", "").replace("?", ""), ctx, [])
             second = find(ctx.types, lambda k: k.name == second_str)
-            assert(first != None and second != None)
+
+            ## check
+            if first == None:
+                raise TranslationError(f"Input type {first_str} could not be found.", location)
+            if second == None:
+                raise TranslationError(f"Matching type {second_str} could not be found.", location)
             if typeConvertOrdered(first, second, ctx, location) == None:
                 is_matching = False
+                break
+
+            ## if the target function includes repetition `...` we need to also match
+            if "..." in match.params[index].type:
+                while index < len(types):
+                    if typeConvertOrdered(first, second, ctx, location) == None:
+                        is_matching = False
+                        break
+                    index += 1
+
+            index += 1
+
+        ## if there are remaining types in the input, something went wrong
+        if index < len(types): is_matching = False
+        ## if there are remaining types in the target, ensure they all have `?`
+        while index < len(match.params):
+            if not "?" in match.params[index].type: is_matching = False
+            index += 1
 
         if is_matching: return match
 
@@ -242,10 +269,13 @@ def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinitio
         return True
     raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", type.location)
 
-def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext, autoEnums: List[TypeDefinition] = []) -> str:
+def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext, autoEnums: List[TypeDefinition] = [], isForTrigger: bool = False) -> str:
     ## for multivalue, handle single case here. true multivalue handled below.
     if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 1:
-        return runTypeCheck(tree.children[0], locals, ctx, autoEnums)
+        r = runTypeCheck(tree.children[0], locals, ctx, autoEnums)
+        if isForTrigger and r in ["int", "short", "byte"]:
+            return "bool"
+        return r
     
     ## for intervals, give an error for now.
     if tree.node == TriggerTreeNode.INTERVAL_OP:
@@ -274,11 +304,16 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
     ## do a depth-first search on the tree. determine the type of each node, then apply types to each operator to determine the result type.
     child_types: List[str] = []
     for child in tree.children:
-        child_types.append(runTypeCheck(child, locals, ctx, autoEnums))
+        child_types.append(runTypeCheck(child, locals, ctx, autoEnums, isForTrigger = isForTrigger))
 
     ## process operators using operator functions.
     ## no need to evaluate anything at this stage, just return the stated return type of the operator.
     if tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
+        if isForTrigger and tree.operator in ["&&", "||"]:
+            index = 0
+            while index < len(child_types):
+                if child_types[index] in ["int", "short", "byte"]: child_types[index] = "bool"
+                index += 1
         ## operator is stored in tree.operator, child types are above. there are builtin operator triggers provided,
         ## so determine which trigger to use.
         operator_call = findTriggerBySignature(f"operator{tree.operator}", child_types, ctx, tree.location)
@@ -388,7 +423,6 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
         elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums)) != None:
             return []
         else:
-            print(tree.operator)
             return [GlobalParameter(tree.operator, "")]
         
     result: List[GlobalParameter] = []
@@ -567,16 +601,14 @@ def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
             raise TranslationError(f"Could not find any state controller or template with name {controller.name}.", controller.location)
         for group in controller.triggers:
             for trigger in controller.triggers[group]:
-                result_type = runTypeCheck(trigger, globals_convert + locals_convert, ctx)
+                result_type = runTypeCheck(trigger, globals_convert + locals_convert, ctx, isForTrigger = True)
                 result_typedefs = unpackTypes(result_type, ctx)
                 if result_typedefs == None:
                     raise TranslationError(f"Could not find any type with descriptor {result_type}.", trigger.location)
                 if len(result_typedefs) != 1:
                     raise TranslationError(f"Result of trigger expression must be bool, not a tuple {result_type}.", trigger.location)
                 if not typeConvertOrdered(result_typedefs[0], bool_type, ctx, trigger.location): # type: ignore
-                    ## special case: `int` converts to `bool` implicitly for triggers.
-                    if result_type not in ["int", "short", "byte"]:
-                        raise TranslationError(f"Result of trigger expression must be bool, not {result_type}.", trigger.location)
+                    raise TranslationError(f"Result of trigger expression must be bool, not {result_type}.", trigger.location)
         for prop in controller.properties:
             ## because a property has a known output type, we can retrieve the enum and flag names the property wants
             ## and pass them directly to runTypeCheck.
@@ -643,7 +675,6 @@ def createGlobalsTable(ctx: TranslationContext):
     ctx.globals = discovered
     for statedef in ctx.statedefs:
         runTypeCheckGlobal(statedef, ctx)
-    print(ctx.globals)
 
 def replaceTemplatesInner(ctx: TranslationContext) -> bool:
     replaced = False
@@ -802,7 +833,7 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
 
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
-        result_type = runTypeCheck(trigger_definition.value, params, ctx)
+        result_type = runTypeCheck(trigger_definition.value, params, ctx, isForTrigger = True)
         if not unpackAndMatch(result_type, trigger_type.name, ctx):
             raise TranslationError(f"Could not match type {result_type} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
 
@@ -907,8 +938,6 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     createGlobalsTable(ctx)
     replaceTriggers(ctx)
 
-    #print(ctx.statedefs)
-
     return ctx
 
 if __name__ == "__main__":
@@ -922,7 +951,6 @@ if __name__ == "__main__":
     try:
         loadContext = loadFile(args.input, [])
         translated = translateContext(loadContext)
-        #print(translated)
     except TranslationError as exc:
         py_exc = traceback.format_exc().split("\n")[-4].strip()
         print("Translation terminated with an error.")

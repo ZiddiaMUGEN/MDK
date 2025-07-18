@@ -187,10 +187,6 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("operator**", "int", builtin_exp, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator**", "float", builtin_exp, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator&&", "bool", builtin_and, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator||", "bool", builtin_or, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
         TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
@@ -211,6 +207,10 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("operator<=", "bool", builtin_lte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator>", "bool", builtin_gt, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator>=", "bool", builtin_gte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+
+        TriggerDefinition("operator&&", "bool", builtin_and, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator||", "bool", builtin_or, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
     ]
 
 def builtin_not(exprs: List[Expression], ctx: TranslationContext) -> Expression:

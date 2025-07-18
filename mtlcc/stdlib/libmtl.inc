@@ -14,6 +14,11 @@ type = union
 member = float
 member = int
 
+[Define Type]
+name = HitString
+type = alias
+source = HitType,HitAttr...?
+
 ;;;;; Fundamental Type Conversion
 ;; Specific conversions between fundamental types receive trigger definitions.
 [Define Trigger]
