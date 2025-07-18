@@ -47,7 +47,7 @@ def find(l: List[T], p: Callable[[T], bool]) -> Optional[T]:
     return result
 
 ## resolves aliases to the target type
-def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
+def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str] = []) -> str:
     if type in cycle:
         print("Alias cycle was detected!!")
         print(f"\t-> {type}")
@@ -62,10 +62,10 @@ def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
         return type
 
     ## otherwise, drill through to the source type
-    if (source := find(ctx.types, lambda k: k.name == alias.members[0])) == None:
+    if (source := unpackTypes(alias.members[0], ctx)) == None:
         raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.location)
     
-    return resolveAlias(source.name, ctx, cycle + [type])
+    return resolveAlias(source[0].name, ctx, cycle + [type])
 
 ## attempts to convert a concrete type to a union type.
 def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
@@ -74,7 +74,7 @@ def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: Translat
 
     ## iterate each member, resolve alias, and see if the source type is convertible to the member type.
     for member in type2.members:
-        unalias = resolveAlias(member, ctx, [])
+        unalias = resolveAlias(member, ctx)
         resolved = find(ctx.types, lambda k: k.name == unalias)
         if resolved != None and typeConvertOrdered(type1, resolved, ctx, location) != None:
             ## per spec: the union is always assumed to be the wider type during conversion. the output is the union type.
@@ -141,7 +141,7 @@ def unpackTypes(base_type: str, ctx: TranslationContext) -> Optional[List[TypeDe
     ## iterate each type and check if it exists.
     ## in this function we do not actually care about the extra syntax, we just want to identify the member types.
     for component in components:
-        component = component.replace("?", "").replace("...", "").strip()
+        component = resolveAlias(component.replace("?", "").replace("...", "").strip(), ctx)
         target = find(ctx.types, lambda k: k.name == component)
         if target == None:
             return None
@@ -153,16 +153,16 @@ def unpackTypes(base_type: str, ctx: TranslationContext) -> Optional[List[TypeDe
 ## there is an assumption here that `base_type` is a resolved type and will not contain extra syntax.
 def unpackAndMatch(base_type: str, target_type: str, ctx: TranslationContext) -> bool:
     if "," not in base_type and "," not in target_type:
-        return base_type == target_type.replace("?", "").replace("...", "")
+        return resolveAlias(base_type, ctx) == resolveAlias(target_type.replace("?", "").replace("...", ""), ctx)
     ## break each type into its component types
-    base_components = [component.strip() for component in base_type.split(",")]
+    base_components = [resolveAlias(component.strip(), ctx) for component in base_type.split(",")]
     target_components = [component.strip() for component in base_type.split(",")]
     ## compare component by component until reaching the end of the list, OR the repetition syntax.
     index = 0
     while index < len(base_components) and index < len(target_components):
         ## off the bat just make sure the component type exists
         if find(ctx.types, lambda k: k.name == base_components[index]) == None: return False
-        target_type = target_components[index].replace("?", "").replace("...", "")
+        target_type = resolveAlias(target_components[index].replace("?", "").replace("...", ""), ctx)
         ## ensure the current type matches the target
         if base_components[index] != target_type: return False
         ## if the target has the repetition syntax, we should iterate remaining components of base_components and ensure they all match the repeated target.

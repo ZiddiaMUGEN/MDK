@@ -213,11 +213,11 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
         index = 0
         while index < len(types) and index < len(match.params):
             # get typedef 1
-            first_str = resolveAlias(types[index], ctx, [])
+            first_str = resolveAlias(types[index], ctx)
             first = find(ctx.types, lambda k: k.name == first_str)
 
             # get typedef 2
-            second_str = resolveAlias(match.params[index].type.replace("...", "").replace("?", ""), ctx, [])
+            second_str = resolveAlias(match.params[index].type.replace("...", "").replace("?", ""), ctx)
             second = find(ctx.types, lambda k: k.name == second_str)
 
             ## check
@@ -297,12 +297,12 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
         elif tryParseCint(tree.operator) != None:
             return "cint"
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
-            return resolveAlias(local.type, ctx, [])
+            return resolveAlias(local.type, ctx)
         elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower())) != None:
-            return resolveAlias(trigger.type, ctx, [])
+            return resolveAlias(trigger.type, ctx)
         elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums))) != None:
             ## this matches on both enums and flags.
-            return resolveAlias(enum.name, ctx, [])
+            return resolveAlias(enum.name, ctx)
         else:
             raise TranslationError(f"Could not determine type from expression {tree.operator}.", tree.location)
     
@@ -324,7 +324,7 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
         operator_call = findTriggerBySignature(f"operator{tree.operator}", child_types, ctx, tree.location)
         if operator_call == None:
             raise TranslationError(f"Could not find any matching overload for operator {tree.operator} with input types {', '.join(child_types)}.", tree.location)
-        return resolveAlias(operator_call.type, ctx, [])
+        return resolveAlias(operator_call.type, ctx)
 
     ## handle explicit function calls.
     ## this is very similar to operators. find the matching trigger and use the output type provided.
@@ -332,12 +332,12 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
         function_call = findTriggerBySignature(tree.operator, child_types, ctx, tree.location)
         if function_call == None:
             raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", tree.location)
-        return resolveAlias(function_call.type, ctx, [])
+        return resolveAlias(function_call.type, ctx)
     
     ## handle true multivalue.
     ## just resolve it to typenames separated with commas.
     if tree.node == TriggerTreeNode.MULTIVALUE:
-        child_resolved = [resolveAlias(child, ctx, []) for child in child_types]
+        child_resolved = [resolveAlias(child, ctx) for child in child_types]
         child_resolved.reverse()
         return ",".join(child_resolved)
     
@@ -545,11 +545,19 @@ def tryReplaceTriggerCall(tree: TriggerTree, target: TriggerDefinition, locals: 
         return True
     if tree.node == TriggerTreeNode.FUNCTION_CALL and tree.operator == target.name:
         ## due to trigger overloading, we need to check param counts and type.
+        ## FOR NOW, triggers have fixed parameter count.
         if len(target.params) != len(tree.children): return False
         convert_locals = [TriggerParameter(local.name, local.type) for local in locals]
-        #for index in range(len(target.params)):
-        #    if runTypeCheck(tree.children[index], "", 0, convert_locals, ctx) != resolveAlias(target.params[index].type, ctx, []):
-        #        return False
+        convert_globals = [TriggerParameter(g.name, g.type) for g in ctx.globals]
+        auto_enums: List[TypeDefinition] = []
+        expected_typedefs = unpackTypes(target.type, ctx)
+        if expected_typedefs != None:
+            auto_enums = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
+        for index in range(len(target.params)):
+            resolved_type = runTypeCheck(tree.children[index], convert_locals + convert_globals, ctx, auto_enums)
+            target_type = resolveAlias(target.params[index].type, ctx)
+            if not unpackAndMatch(resolved_type, target_type, ctx):
+                return False
                 
         ## we must copy the target's tree, and do replacement of any parameters passed to the target.
         print(tree)
@@ -877,7 +885,7 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
             if (alias := find(type_definition.properties, lambda k: k.key.lower() == "source")) == None:
                 raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.location)
             if (source := unpackTypes(alias.value, ctx)) == None: # type: ignore
-                raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.location)
+                raise TranslationError(f"Alias type {type_name} references source definition {alias.value}, but the definition could not be resolved.", alias.location)
             type_members = [alias.value]
             target_size = 0
             for s in source:
