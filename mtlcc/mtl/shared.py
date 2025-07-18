@@ -1,30 +1,31 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Union, Callable
 from enum import Enum
+
+@dataclass
+class Location:
+    filename: str
+    line: int
 
 @dataclass
 class INIProperty:
     key: str
     value: str
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class INISection:
     name: str
     comment: str
     properties: List[INIProperty]
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class INIParserContext:
-    filename: str
-    line: int
+    location: Location
 
-    def __init__(self, fn: str):
-        self.filename = fn
-        self.line = 0
+    def __init__(self, fn: str, location: Location):
+        self.location = location
 
 class TriggerTreeNode(Enum):
     MULTIVALUE = -1
@@ -39,6 +40,7 @@ class TriggerTree:
     node: TriggerTreeNode
     operator: str
     children: List['TriggerTree']
+    location: Location
 
     def _string(self, indent: int) -> str:
         result = "\t" * indent
@@ -79,27 +81,25 @@ class TriggerTree:
 class StateControllerProperty:
     key: str
     value: TriggerTree
+    location: Location
 
 @dataclass
 class StateControllerSection:
     properties: List[StateControllerProperty]
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class StateDefinitionSection:
     name: str
     props: List[INIProperty]
     states: List[StateControllerSection]
-    filename: str
-    line: int
+    location: Location
 
-    def __init__(self, name: str, props: List[INIProperty], filename: str, line: int):
+    def __init__(self, name: str, props: List[INIProperty], location: Location):
         self.name = name
         self.states = []
         self.props = props
-        self.filename = filename
-        self.line = line
+        self.location = location
 
 @dataclass
 class TemplateSection:
@@ -108,16 +108,14 @@ class TemplateSection:
     states: List[StateControllerSection]
     params: Optional[INISection]
     locals: List[INIProperty]
-    filename: str
-    line: int
+    location: Location
 
-    def __init__(self, name: str, filename: str, line: int):
+    def __init__(self, name: str, location: Location):
         self.states = []
         self.params = None
         self.name = name
         self.namespace = None
-        self.filename = filename
-        self.line = line
+        self.location = location
         self.locals = []
 
 @dataclass
@@ -127,24 +125,21 @@ class TriggerSection:
     value: TriggerTree
     params: Optional[INISection]
     namespace: Optional[str]
-    filename: str
-    line: int
+    location: Location
 
-    def __init__(self, name: str, type: str, value: TriggerTree, filename: str, line: int):
+    def __init__(self, name: str, type: str, value: TriggerTree, location: Location):
         self.params = None
         self.name = name
         self.type = type
         self.value = value
         self.namespace = None
-        self.filename = filename
-        self.line = line
+        self.location = location
 
 @dataclass
 class StructureDefinitionSection:
     name: str
     members: INISection
-    filename: str
-    line: int
+    location: Location
     template: Optional[str] = None
     namespace: Optional[str] = None
 
@@ -153,8 +148,7 @@ class TypeDefinitionSection:
     name: str
     type: str
     properties: List[INIProperty]
-    filename: str
-    line: int
+    location: Location
     namespace: Optional[str] = None
 
 @dataclass
@@ -170,7 +164,7 @@ class LoadContext:
 
     def __init__(self, fn: str):
         self.filename = fn
-        self.ini_context = INIParserContext(fn)
+        self.ini_context = INIParserContext(fn, Location(self.filename, 0))
         self.state_definitions = []
         self.templates = []
         self.triggers = []
@@ -205,13 +199,13 @@ class TypeDefinition:
     # - for ENUM, the members define the valid values the enumeration can take; enumeration IDs are assigned in order.
     # - for FLAG, the members define the valid flag values which can be set; a maximum of 32 members can be added.
     members: List[str]
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class TriggerParameter:
     name: str
     type: str
+    location: Location = field(default_factory=lambda: Location("", 0))
 
 class TriggerCategory(Enum):
     SIMPLE = 0
@@ -229,8 +223,8 @@ class TriggerDefinition:
     type: str
     const: Union[Callable[[List[Expression], 'TranslationContext'], Expression], None]
     params: List[TriggerParameter]
-    filename: str
-    line: int
+    exprn: Optional[TriggerTree]
+    location: Location
     category: TriggerCategory = TriggerCategory.SIMPLE
 
 class TemplateCategory(Enum):
@@ -242,20 +236,26 @@ class TemplateParameter:
     name: str
     type: str
     required: bool = True
+    location: Location = field(default_factory=lambda: Location("", 0))
 
 @dataclass
 class StateController:
     name: str
     triggers: dict[int, List[TriggerTree]]
     properties: dict[str, TriggerTree]
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class StateParameter:
     name: str
     type: str
+    location: Location
     default: Optional[TriggerTree]
+
+@dataclass
+class GlobalParameter:
+    name: str
+    type: str
 
 @dataclass
 class TemplateDefinition:
@@ -263,8 +263,7 @@ class TemplateDefinition:
     params: List[TemplateParameter]
     locals: List[StateParameter]
     states: List[StateController]
-    filename: str
-    line: int
+    location: Location
     category: TemplateCategory = TemplateCategory.DEFINED
 
 @dataclass
@@ -289,8 +288,7 @@ class StateDefinition:
     parameters: StateDefinitionParameters
     locals: List[StateParameter]
     states: List[StateController]
-    filename: str
-    line: int
+    location: Location
 
 @dataclass
 class TranslationContext:
@@ -299,6 +297,7 @@ class TranslationContext:
     triggers: List[TriggerDefinition]
     templates: List[TemplateDefinition]
     statedefs: List[StateDefinition]
+    globals: List[GlobalParameter]
 
     def __init__(self, filename: str):
         self.filename = filename
@@ -306,3 +305,4 @@ class TranslationContext:
         self.triggers = []
         self.templates = []
         self.statedefs = []
+        self.globals = []

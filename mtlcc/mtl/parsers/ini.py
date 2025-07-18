@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from mtl.error import TranslationError
-from mtl.shared import INISection, INIProperty, INIParserContext
+from mtl.shared import INISection, INIProperty, INIParserContext, Location
 
 # find any comment (delimited by `;`) and produce a line with it removed.
 def remove_comment(line: str, ctx: INIParserContext) -> str:
@@ -27,7 +27,7 @@ def remove_comment(line: str, ctx: INIParserContext) -> str:
         index += 1
     
     if in_string:
-        raise TranslationError("String literals must be terminated on the same line with a closing quote character.", ctx.filename, ctx.line)
+        raise TranslationError("String literals must be terminated on the same line with a closing quote character.", ctx.location)
 
     return result
 
@@ -38,7 +38,7 @@ def read_header(line: str, ctx: INIParserContext) -> tuple[str, str]:
 
 # INI property name and value are separated by equals.
 def read_pair(line: str, ctx: INIParserContext) -> tuple[str, str]:
-    if "=" not in line: raise TranslationError("Properties must contain a key and a value separated by an equals character.", ctx.filename, ctx.line)
+    if "=" not in line: raise TranslationError("Properties must contain a key and a value separated by an equals character.", ctx.location)
     return (line.split("=")[0].strip(), "=".join(line.split("=")[1:]).strip())
 
 def parse(content: str, ctx: INIParserContext) -> List[INISection]:
@@ -47,7 +47,7 @@ def parse(content: str, ctx: INIParserContext) -> List[INISection]:
 
     lines = content.replace("\r\n", "\n").split("\n")
     for line in lines:
-        ctx.line += 1
+        ctx.location.line += 1
         line = remove_comment(line, ctx).strip()
         if len(line) == 0: continue
         
@@ -55,12 +55,12 @@ def parse(content: str, ctx: INIParserContext) -> List[INISection]:
             if current != None: result.append(current)
             line = line[1:-1]
             (section_name, section_comment) = read_header(line, ctx)
-            current = INISection(section_name, section_comment, [], ctx.filename, ctx.line)
+            current = INISection(section_name, section_comment, [], Location(ctx.location.filename, ctx.location.line))
         elif current != None:
             (property_name, property_value) = read_pair(line, ctx)
-            current.properties.append(INIProperty(property_name, property_value, ctx.filename, ctx.line))
+            current.properties.append(INIProperty(property_name, property_value, Location(ctx.location.filename, ctx.location.line)))
         else:
-            raise TranslationError("INI files must begin with a section header enclosed in square braces.", ctx.filename, ctx.line)
+            raise TranslationError("INI files must begin with a section header enclosed in square braces.", ctx.location)
 
     if current != None: result.append(current)
 

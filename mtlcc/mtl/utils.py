@@ -5,8 +5,14 @@ import os
 import random
 import string
 
-from mtl.shared import TranslationContext, TypeDefinition, TypeCategory
+from inspect import getframeinfo, stack
+
+from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, Location
 from mtl.error import TranslationError
+
+def compiler_internal() -> Location:
+    caller = getframeinfo(stack()[1][0])
+    return Location(caller.filename, caller.lineno)
 
 def generate_random_string(length: int):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
@@ -42,7 +48,7 @@ def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
         while index >= 0:
             print(f"\t-> {cycle[index]}")
             index -= 1
-        raise TranslationError("A cycle was detected during alias resolution.", "", 0)
+        raise TranslationError("A cycle was detected during alias resolution.", compiler_internal())
 
     ## if the input type is not an alias, return the input type
     if (alias := find(ctx.types, lambda k: k.name == type and k.category == TypeCategory.ALIAS)) == None:
@@ -50,12 +56,12 @@ def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str]) -> str:
 
     ## otherwise, drill through to the source type
     if (source := find(ctx.types, lambda k: k.name == alias.members[0])) == None:
-        raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.filename, alias.line)
+        raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.location)
     
     return resolveAlias(source.name, ctx, cycle + [type])
 
 ## attempts to convert a concrete type to a union type.
-def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, filename: str, line: int) -> Union[TypeDefinition, None]:
+def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
     if type2.category != TypeCategory.UNION: return None
     if type1.category == TypeCategory.UNION: return None
 
@@ -63,7 +69,7 @@ def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: Translat
     for member in type2.members:
         unalias = resolveAlias(member, ctx, [])
         resolved = find(ctx.types, lambda k: k.name == unalias)
-        if resolved != None and typeConvertOrdered(type1, resolved, ctx, filename, line) != None:
+        if resolved != None and typeConvertOrdered(type1, resolved, ctx, location) != None:
             ## per spec: the union is always assumed to be the wider type during conversion. the output is the union type.
             return type2
         
@@ -71,7 +77,7 @@ def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: Translat
     return None
 
 ## attempts to convert type1 to type2.
-def typeConvertOrdered(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, filename: str, line: int) -> Union[TypeDefinition, None]:
+def typeConvertOrdered(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
     ## if types match, just return the type.
     if type1.name == type2.name: return type1
 
@@ -85,7 +91,7 @@ def typeConvertOrdered(type1: TypeDefinition, type2: TypeDefinition, ctx: Transl
     if type1.name == "float" and type2.name == "int":
         ## in a lot of builtin cases an alternative to convert `int` to `float` will be taken. so just warn and return None.
         ## if no alternative exists an error will be emitted anyway.
-        print(f"Warning at {os.path.realpath(filename)}:{line}: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
+        print(f"Warning at {os.path.realpath(location.filename)}:{location.line}: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
         return None
     
     ## smaller builtin types can implicitly convert to wider ones (`bool`->`byte`->`short`->`int`)
@@ -99,17 +105,17 @@ def typeConvertOrdered(type1: TypeDefinition, type2: TypeDefinition, ctx: Transl
     ## the sections related to builtin functions aren't needed.
     ## now resolve for unions.
     if type1.category == TypeCategory.UNION and type2.category != TypeCategory.UNION:
-        return typeConvertUnion(type2, type1, ctx, filename, line)
+        return typeConvertUnion(type2, type1, ctx, location)
     elif type2.category == TypeCategory.UNION and type1.category != TypeCategory.UNION:
-        return typeConvertUnion(type1, type2, ctx, filename, line)
+        return typeConvertUnion(type1, type2, ctx, location)
 
     ## could not convert.
     return None
 
 ## attempts to convert type1 to type2, and type2 to type1; returns the widest result.
-def typeConvertWidest(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, filename: str, line: int) -> Union[TypeDefinition, None]:
-    result1 = typeConvertOrdered(type1, type2, ctx, filename, line)
-    result2 = typeConvertOrdered(type1, type2, ctx, filename, line)
+def typeConvertWidest(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
+    result1 = typeConvertOrdered(type1, type2, ctx, location)
+    result2 = typeConvertOrdered(type1, type2, ctx, location)
 
     ## only one-way valid conversion? take the other path
     if result1 == None:

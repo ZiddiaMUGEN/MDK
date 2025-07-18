@@ -16,38 +16,38 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
     while index < len(sections):
         section = sections[index]
         if section.name.lower().startswith("statedef "):
-            statedef = StateDefinitionSection(section.name[9:], section.properties, section.filename, section.line)
+            statedef = StateDefinitionSection(section.name[9:], section.properties, section.location)
             ctx.state_definitions.append(statedef)
 
             while index + 1 < len(sections) and sections[index + 1].name.lower().startswith("state "):
                 properties: List[StateControllerProperty] = []
                 for property in sections[index + 1].properties:
-                    properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.filename, property.line)))
-                statedef.states.append(StateControllerSection(properties, sections[index + 1].filename, sections[index + 1].line))
+                    properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
+                statedef.states.append(StateControllerSection(properties, sections[index + 1].location))
                 index += 1
         elif section.name.lower().startswith("include"):
             if mode == TranslationMode.CNS_MODE:
-                raise TranslationError("A CNS file cannot contain MTL Include sections.", section.filename, section.line)
+                raise TranslationError("A CNS file cannot contain MTL Include sections.", section.location)
             ctx.includes.append(section)
         elif section.name.lower().startswith("define type"):
             if mode == TranslationMode.CNS_MODE:
-                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.filename, section.line)
+                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.location)
             
             if (name := find(section.properties, lambda k: k.key.lower() == "name")) == None:
-                raise TranslationError("Define Type section must provide a name property.", section.filename, section.line)
+                raise TranslationError("Define Type section must provide a name property.", section.location)
         
             if (type := find(section.properties, lambda k: k.key.lower() == "type")) == None:
-                raise TranslationError("Define Type section must provide a type property.", section.filename, section.line)
+                raise TranslationError("Define Type section must provide a type property.", section.location)
 
-            ctx.type_definitions.append(TypeDefinitionSection(name.value, type.value, section.properties, section.filename, section.line))
+            ctx.type_definitions.append(TypeDefinitionSection(name.value, type.value, section.properties, section.location))
         elif section.name.lower().startswith("define template"):
             if mode == TranslationMode.CNS_MODE:
-                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.filename, section.line)
+                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.location)
             
             if (prop := find(section.properties, lambda k: k.key.lower() == "name")) == None:
-                raise TranslationError("Define Template section must provide a name property.", section.filename, section.line)
+                raise TranslationError("Define Template section must provide a name property.", section.location)
             
-            template = TemplateSection(prop.value, section.filename, section.line)
+            template = TemplateSection(prop.value, section.location)
             ctx.templates.append(template)
 
             ## read any local definitions from the define template block
@@ -61,11 +61,11 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
                 if sections[index + 1].name.lower().startswith("state "):
                     properties: List[StateControllerProperty] = []
                     for property in sections[index + 1].properties:
-                        properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.filename, property.line)))
-                    template.states.append(StateControllerSection(properties, sections[index + 1].filename, sections[index + 1].line))
+                        properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
+                    template.states.append(StateControllerSection(properties, sections[index + 1].location))
                 elif sections[index + 1].name.lower().startswith("define parameters"):
                     if template.params != None:
-                        raise TranslationError("A Define Template section may only contain 1 Define Parameters subsection.", sections[index + 1].filename, sections[index + 1].line)
+                        raise TranslationError("A Define Template section may only contain 1 Define Parameters subsection.", sections[index + 1].location)
                     else:
                         template.params = sections[index + 1]
                 else:
@@ -73,44 +73,44 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
                 index += 1
         elif section.name.lower().startswith("define trigger"):
             if mode == TranslationMode.CNS_MODE:
-                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.filename, section.line)
+                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.location)
             
             if (name := find(section.properties, lambda k: k.key.lower() == "name")) == None:
-                raise TranslationError("Define Trigger section must provide a name property.", section.filename, section.line)
+                raise TranslationError("Define Trigger section must provide a name property.", section.location)
             if (type := find(section.properties, lambda k: k.key.lower() == "type")) == None:
-                raise TranslationError("Define Trigger section must provide a type property.", section.filename, section.line)
+                raise TranslationError("Define Trigger section must provide a type property.", section.location)
             if (value := find(section.properties, lambda k: k.key.lower() == "value")) == None:
-                raise TranslationError("Define Trigger section must provide a value property.", section.filename, section.line)
+                raise TranslationError("Define Trigger section must provide a value property.", section.location)
 
-            trigger_section = TriggerSection(name.value, type.value, trigger.parseTrigger(value.value, value.filename, value.line), section.filename, section.line)
+            trigger_section = TriggerSection(name.value, type.value, trigger.parseTrigger(value.value, value.location), section.location)
             ctx.triggers.append(trigger_section)
             if index + 1 < len(sections) and sections[index + 1].name.lower().startswith("define parameters"):
                 trigger_section.params = sections[index + 1]
                 index += 1
         elif section.name.lower().startswith("define structure"):
             if mode == TranslationMode.CNS_MODE:
-                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.filename, section.line)
+                raise TranslationError("A CNS file cannot contain MTL Define sections.", section.location)
 
             if index + 1 >= len(sections) or not sections[index + 1].name.lower().startswith("define members"):
-                raise TranslationError("A Define Structure section must be followed immediately by a Define Members section.", section.filename, section.line)
+                raise TranslationError("A Define Structure section must be followed immediately by a Define Members section.", section.location)
             
             if (prop := find(section.properties, lambda k: k.key.lower() == "name")) == None:
-                raise TranslationError("Define Structure section must provide a name property.", section.filename, section.line)
+                raise TranslationError("Define Structure section must provide a name property.", section.location)
 
-            structure = StructureDefinitionSection(prop.value, sections[index + 1], section.filename, section.line)
+            structure = StructureDefinitionSection(prop.value, sections[index + 1], section.location)
             ctx.struct_definitions.append(structure)
             index += 1
         elif section.name.lower().startswith("state "):
             # a standalone 'state' section is invalid. raise an exception
-            raise TranslationError("A State section in a source file must be grouped with a parent section such as Statedef.", section.filename, section.line)
+            raise TranslationError("A State section in a source file must be grouped with a parent section such as Statedef.", section.location)
         elif section.name.lower().startswith("define parameters"):
             # a standalone 'state' section is invalid. raise an exception
-            raise TranslationError("A Define Parameters section in a source file must be grouped with a parent section such as Define Template.", section.filename, section.line)
+            raise TranslationError("A Define Parameters section in a source file must be grouped with a parent section such as Define Template.", section.location)
         elif section.name.lower().startswith("define members"):
             # a standalone 'state' section is invalid. raise an exception
-            raise TranslationError("A Define Members section in a source file must be grouped with a parent Define Structure section.", section.filename, section.line)
+            raise TranslationError("A Define Members section in a source file must be grouped with a parent Define Structure section.", section.location)
         else:
-            raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.filename, section.line)
+            raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.location)
         index += 1
 
 def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
@@ -120,21 +120,21 @@ def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
     
     for include in ctx.includes:
         if (source := find(include.properties, lambda k: k.key.lower() == "source")) == None:
-            raise TranslationError("Include block must define a `source` property indicating the file to be included.", include.filename, include.line)
+            raise TranslationError("Include block must define a `source` property indicating the file to be included.", include.location)
         
         ## per the standard, we search 3 locations for the source file:
         ## - working directory
         ## - directory of the file performing the inclusion
         ## - directory of this file
         ## - absolute path
-        search = [f"{os.getcwd()}/{source.value}", f"{os.path.dirname(os.path.realpath(include.filename))}/{source.value}", f"{os.path.dirname(os.path.realpath(__file__))}/{source.value}", f"{os.path.realpath(source.value)}"]
+        search = [f"{os.getcwd()}/{source.value}", f"{os.path.dirname(os.path.realpath(include.location.filename))}/{source.value}", f"{os.path.dirname(os.path.realpath(__file__))}/{source.value}", f"{os.path.realpath(source.value)}"]
         location: Optional[str] = None
         for path in search:
             if os.path.exists(path):
                 location = path
                 break
         if location == None:
-            raise TranslationError(f"Could not find the source file specified by {source.value} for inclusion.", include.filename, include.line)
+            raise TranslationError(f"Could not find the source file specified by {source.value} for inclusion.", source.location)
         
         ## now translate the source file
         include_context = loadFile(location, cycle + [ctx.filename])
@@ -159,7 +159,7 @@ def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
                     find(include_context.triggers, lambda k: k.name == property.value) == None and \
                     find(include_context.type_definitions, lambda k: k.name == property.value) == None and \
                     find(include_context.struct_definitions, lambda k: k.name == property.value) == None:
-                    print(f"Warning at {os.path.realpath(property.filename)}:{property.line}: Attempted to import name {property.value} from included file {include.filename} but no such name exists.")
+                    print(f"Warning at {os.path.realpath(property.location.filename)}:{property.location.line}: Attempted to import name {property.value} from included file {include.location.filename} but no such name exists.")
 
         if len(imported_names) != 0:
             include_context.templates = list(filter(lambda k: k.name in imported_names, include_context.templates))
@@ -183,7 +183,7 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
         while index >= 0:
             print(f"\t-> {os.path.realpath(cycle[index])}")
             index -= 1
-        raise TranslationError("A cycle was detected during include processing.", file, 0)
+        raise TranslationError("A cycle was detected during include processing.", compiler_internal())
 
     ctx = LoadContext(file)
 
@@ -196,7 +196,7 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
 
     return ctx
 
-def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext, filename: str, line: int) -> Union[TriggerDefinition, None]:
+def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext, location: Location) -> Union[TriggerDefinition, None]:
     matches = list(filter(lambda k: k.name == name, ctx.triggers))
 
     # iterate each match
@@ -210,23 +210,23 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
             second_str = resolveAlias(match.params[index].type, ctx, [])
             second = find(ctx.types, lambda k: k.name == second_str)
             assert(first != None and second != None)
-            if typeConvertOrdered(first, second, ctx, filename, line) == None:
+            if typeConvertOrdered(first, second, ctx, location) == None:
                 is_matching = False
 
         if is_matching: return match
 
     return None
 
-def runTypeCheck(tree: TriggerTree, filename: str, line: int, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
+def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext) -> str:
     ## for multivalue, just handle single case for now. tuples are a bit of work still.
     if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) > 1:
-        raise TranslationError("TODO: support multivalue expressions correctly", filename, line)
+        raise TranslationError("TODO: support multivalue expressions correctly", tree.location)
     elif tree.node == TriggerTreeNode.MULTIVALUE:
-        return runTypeCheck(tree.children[0], filename, line, locals, ctx)
+        return runTypeCheck(tree.children[0], locals, ctx)
     
     ## for intervals, give an error for now.
     if tree.node == TriggerTreeNode.INTERVAL_OP:
-        raise TranslationError("TODO: support interval expressions correctly", filename, line)
+        raise TranslationError("TODO: support interval expressions correctly", tree.location)
     
     ## for atoms, early exit: just identify the type of the node.
     if tree.node == TriggerTreeNode.ATOM:
@@ -239,29 +239,29 @@ def runTypeCheck(tree: TriggerTree, filename: str, line: int, locals: List[Trigg
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
             return resolveAlias(local.type, ctx, [])
         else:
-            raise TranslationError(f"Could not determine type from expression {tree.operator}.", filename, line)
+            raise TranslationError(f"Could not determine type from expression {tree.operator}.", tree.location)
     
     ## do a depth-first search on the tree. determine the type of each node, then apply types to each operator to determine the result type.
     child_types: List[str] = []
     for child in tree.children:
-        child_types.append(runTypeCheck(child, filename, line, locals, ctx))
+        child_types.append(runTypeCheck(child, locals, ctx))
 
     ## process operators using operator functions.
     ## no need to evaluate anything at this stage, just return the stated return type of the operator.
     if tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
         ## operator is stored in tree.operator, child types are above. there are builtin operator triggers provided,
         ## so determine which trigger to use.
-        operator_call = findTriggerBySignature(f"operator{tree.operator}", child_types, ctx, filename, line)
+        operator_call = findTriggerBySignature(f"operator{tree.operator}", child_types, ctx, tree.location)
         if operator_call == None:
-            raise TranslationError(f"Could not find any matching overload for operator {tree.operator} with input types {', '.join(child_types)}.", filename, line)
+            raise TranslationError(f"Could not find any matching overload for operator {tree.operator} with input types {', '.join(child_types)}.", tree.location)
         return resolveAlias(operator_call.type, ctx, [])
 
     ## handle explicit function calls.
     ## this is very similar to operators. find the matching trigger and use the output type provided.
     if tree.node == TriggerTreeNode.FUNCTION_CALL:
-        function_call = findTriggerBySignature(tree.operator, child_types, ctx, filename, line)
+        function_call = findTriggerBySignature(tree.operator, child_types, ctx, tree.location)
         if function_call == None:
-            raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", filename, line)
+            raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", tree.location)
         return resolveAlias(function_call.type, ctx, [])
     
     return "bottom"
@@ -270,40 +270,40 @@ def parseLocalParameter(local: INIProperty, ctx: TranslationContext) -> StatePar
     ## local variables are basically specified as valid trigger syntax, e.g. `myLocalName = myLocalType(defaultValueExpr)`
     ## so we parse as a trigger and make sure the syntax tree matches the expected format.
     ## there are only 2 valid formats: `name = type` and `name = type(default)`.
-    tree = trigger.parseTrigger(local.value, local.filename, local.line)
+    tree = trigger.parseTrigger(local.value, local.location)
     if tree.node == TriggerTreeNode.MULTIVALUE: tree = tree.children[0]
 
     ## check the operator is correct and the first node is an atom
     ## keep in mind the tree constructs right-to-left so children[1] is the first child node.
     if tree.node != TriggerTreeNode.BINARY_OP or tree.operator != "=":
-        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
     if tree.children[1].node != TriggerTreeNode.ATOM:
-        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
     ## the second node can be either ATOM (for type name) or FUNCTION_CALL with a single child (for default value)
     if tree.children[0].node != TriggerTreeNode.ATOM and tree.children[0].node != TriggerTreeNode.FUNCTION_CALL:
-        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
     if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL and len(tree.children[0].children) != 1:
-        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", local.filename, local.line)
+        raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
     local_type = tree.children[0].operator
     default_value = tree.children[0].children[0] if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL else None
 
     ## check the type specified for the local exists
     if find(ctx.types, lambda k: k.name == local_type) == None:
-        raise TranslationError(f"A local was declared with a type of {local_type} but that type does not exist.", local.filename, local.line)
+        raise TranslationError(f"A local was declared with a type of {local_type} but that type does not exist.", tree.location)
 
-    return StateParameter(tree.children[1].operator.strip(), local_type, default_value)
+    return StateParameter(tree.children[1].operator.strip(), local_type, tree.location, default_value)
 
 def parseStateController(state: StateControllerSection, ctx: TranslationContext):
     ## determine the type of controller to be used
     if (state_name_node := find(state.properties, lambda k: k.key == "type")) == None:
-        raise TranslationError(f"Could not find type property on state controller.", state.filename, state.line)
+        raise TranslationError(f"Could not find type property on state controller.", state.location)
     state_name = state_name_node.value.children[0] if state_name_node.value.node == TriggerTreeNode.MULTIVALUE else state_name_node.value
     if state_name.node != TriggerTreeNode.ATOM:
-        raise TranslationError(f"The type property on a state controller must be a state controller name.", state.filename, state.line)
+        raise TranslationError(f"The type property on a state controller must be a state controller name.", state_name.location)
     
     ## find the template definition corresponding to this controller
     if (state_template := find(ctx.templates, lambda k: k.name.lower() == state_name.operator.lower())) == None:
-        raise TranslationError(f"Couldn't find any template or builtin controller with name {state_name.operator}.", state.filename, state.line)
+        raise TranslationError(f"Couldn't find any template or builtin controller with name {state_name.operator}.", state_name.location)
     
     ## process all triggers
     triggers: dict[int, List[TriggerTree]] = {}
@@ -322,7 +322,7 @@ def parseStateController(state: StateControllerSection, ctx: TranslationContext)
     for prop in state_template.params:
         current_prop = find(state.properties, lambda k: k.key.lower() == prop.name.lower())
         if prop.required and current_prop == None:
-            raise TranslationError(f"Required parameter {prop.name} for template or builtin controller {state_template.name} was not provided.", state.filename, state.line)
+            raise TranslationError(f"Required parameter {prop.name} for template or builtin controller {state_template.name} was not provided.", state.location)
         if current_prop != None:
             props[current_prop.key] = current_prop.value
 
@@ -331,11 +331,11 @@ def parseStateController(state: StateControllerSection, ctx: TranslationContext)
         if prop_.key.lower() == "type": continue
         if re.match(r"trigger(all|[0-9]+)$", prop_.key.lower()) != None: continue
         if find(state_template.params, lambda k: k.name.lower() == prop_.key.lower()) == None:
-            print(f"Warning at {os.path.realpath(state.filename)}:{state.line}: Property {prop_.key} was passed to state controller or template named {state_template.name}, but the template does not declare this property.")
+            print(f"Warning at {os.path.realpath(prop_.location.filename)}:{prop_.location.line}: Property {prop_.key} was passed to state controller or template named {state_template.name}, but the template does not declare this property.")
     
-    return StateController(state_name.operator, triggers, props, state.filename, state.line)
+    return StateController(state_name.operator, triggers, props, state.location)
 
-def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], triggers: List[TriggerDefinition]) -> List[str]:
+def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter], ctx: TranslationContext) -> List[GlobalParameter]:
     if tree.node == TriggerTreeNode.ATOM:
         ## if the current node is an ATOM, check if the value is a number or a boolean.
         ## in those cases, the value is known.
@@ -346,27 +346,33 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
             return []
         elif find(table, lambda k: k.name == tree.operator) != None:
             return []
-        elif find(triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
+        elif find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
             return []
         else:
-            return [tree.operator]
+            return [GlobalParameter(tree.operator, "")]
         
-    result: List[str] = []
+    result: List[GlobalParameter] = []
     for child in tree.children:
-        result += findUndefinedGlobalsInTrigger(child, table, triggers)
+        result += findUndefinedGlobalsInTrigger(child, table, ctx)
+
+    ## if this node is an assignment, and the LHS is for a globalparameter, get the type of the RHS.
+    if len(result) > 0 and tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[1].node == TriggerTreeNode.ATOM:
+        target = tree.children[1].operator
+        rtype = runTypeCheck(tree.children[0], [TriggerParameter(p.name, p.type, p.location) for p in table], ctx)
+        result += [GlobalParameter(target, rtype)]
 
     return result
 
-def findUndefinedGlobals(state: StateController, table: List[StateParameter], triggers: List[TriggerDefinition]) -> List[str]:
-    result: List[str] = []
+def findUndefinedGlobals(state: StateController, table: List[StateParameter], ctx: TranslationContext) -> List[GlobalParameter]:
+    result: List[GlobalParameter] = []
 
     ## search the trigger tree of each property and trigger in the controller to identify any undefined globals
     ## (essentially any ATOM which we do not recognize as an enum or flag, or existing variable)
     for name in state.properties:
-        result += findUndefinedGlobalsInTrigger(state.properties[name], table, triggers)
+        result += findUndefinedGlobalsInTrigger(state.properties[name], table, ctx)
     for group in state.triggers:
         for trigger in state.triggers[group]:
-            result += findUndefinedGlobalsInTrigger(trigger, table, triggers)
+            result += findUndefinedGlobalsInTrigger(trigger, table, ctx)
 
     return result
 
@@ -407,7 +413,7 @@ def replaceVariableWithExpression(controller: StateController, old_name: str, ne
         for trigger in controller.triggers[group]:
             replaceVariableWithExpressionInTrigger(trigger, old_name, new_exprn)
 
-def combineTriggers(triggers: dict[int, List[TriggerTree]]) -> List[TriggerTree]:
+def combineTriggers(triggers: dict[int, List[TriggerTree]], location: Location) -> List[TriggerTree]:
     ## combines the provided trigger list into a single tree.
     ## this is mostly useful currently for merging templates into statedefs.
     ## but there's potential for this to be useful in some optimization strategy.
@@ -422,10 +428,10 @@ def combineTriggers(triggers: dict[int, List[TriggerTree]]) -> List[TriggerTree]
     ## OR(AND(trigger1[0], trigger1[1], trigger1[2], ...), AND(trigger2[0], ...), ...)
     ## so the root is an OR, and the leaves are AND of all the triggers in 1 group.
 
-    root = TriggerTree(TriggerTreeNode.BINARY_OP, "||", [])
+    root = TriggerTree(TriggerTreeNode.BINARY_OP, "||", [], location)
     for index in triggers:
         if index == 0: continue
-        leaf = TriggerTree(TriggerTreeNode.BINARY_OP, "&&", [])
+        leaf = TriggerTree(TriggerTreeNode.BINARY_OP, "&&", [], location)
         for trigger in triggers[index]:
             leaf.children.append(trigger)
         root.children.append(leaf)
@@ -433,6 +439,107 @@ def combineTriggers(triggers: dict[int, List[TriggerTree]]) -> List[TriggerTree]
     results += [root]
 
     return results
+
+def tryReplaceTriggerCall(tree: TriggerTree, target: TriggerDefinition, locals: List[StateParameter], ctx: TranslationContext) -> bool:
+    ## targets without expressions are builtin triggers, which never need replacement.
+    if target.exprn == None: return False
+    ## we will recursively try to find an ATOM or FUNCTION_CALL which matches the target definition.
+    if tree.node == TriggerTreeNode.ATOM and tree.operator == target.name and len(target.params) == 0:
+        tree.children = target.exprn.children
+        tree.operator = target.exprn.operator
+        tree.node = target.exprn.node
+        return True
+    if tree.node == TriggerTreeNode.FUNCTION_CALL and tree.operator == target.name:
+        ## due to trigger overloading, we need to check param counts and type.
+        if len(target.params) != len(tree.children): return False
+        convert_locals = [TriggerParameter(local.name, local.type) for local in locals]
+        #for index in range(len(target.params)):
+        #    if runTypeCheck(tree.children[index], "", 0, convert_locals, ctx) != resolveAlias(target.params[index].type, ctx, []):
+        #        return False
+                
+        ## we must copy the target's tree, and do replacement of any parameters passed to the target.
+        print(tree)
+    
+    ## analyse the children of the current tree recursively.
+    updated = False
+    for child in tree.children:
+        updated = updated or tryReplaceTriggerCall(child, target, locals, ctx)
+
+    return updated
+
+def replaceTriggersInner(ctx: TranslationContext) -> bool:
+    replaced = False
+
+    ## iterate each controller within each statedef, and do replacements on each of:
+    ### - triggers
+    ### - properties
+    ## this is a 5-ishx for-each loop, which is pretty bad. this can probably be done better. however the quantities we're working with
+    ## mean it's probably more performant than it looks.
+    for statedef in ctx.statedefs:
+        for controller in statedef.states:
+            for index in controller.triggers:
+                for trigger in controller.triggers[index]:
+                    for trigger_definition in ctx.triggers:
+                        replaced = replaced or tryReplaceTriggerCall(trigger, trigger_definition, statedef.locals, ctx)
+
+
+    return replaced
+
+def replaceTriggers(ctx: TranslationContext):
+    ## wrapper for a function that repeatedly replaces triggers until no more triggers need replacing.
+    ## this is because triggers can invoke other triggers in their definition, so one pass may not resolve every trigger.
+    ## limit this to some number of iterations to prevent it from running forever.
+    iterations = 0
+    madeReplacement = True
+    while madeReplacement:
+        madeReplacement = replaceTriggersInner(ctx)
+        iterations += 1
+        if iterations > 20:
+            raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal())
+        
+def createGlobalsTable(ctx: TranslationContext):
+    ## we must iterate all statedefs and search for undefined globals.
+    ## this should also include a type checking stage.
+    ## we type-check here because this is the only stage we can type-check with original defined trigger names.
+    discovered: List[GlobalParameter] = []
+    location: dict[str, Location] = {}
+    for statedef in ctx.statedefs:
+        for controller in statedef.states:
+            partial = findUndefinedGlobals(controller, statedef.locals, ctx)
+            ## each symbol in `partial` may already exist in `discovered` from a previous controller.
+            ## each symbol may have an empty type (when it is used) or a concrete type (when it is assigned).
+            ## `partial` itself can also contain duplicates (if it is used, assigned, re-assigned in the same controller).
+            ## we want to add new entries to partial, update entries from empty to concrete, and confirm two concrete assignments have matching types.
+            for symbol in partial:
+                ## if not in discovered already, add it
+                if (matching := find(discovered, lambda k: k.name == symbol.name)) == None:
+                    discovered.append(symbol)
+                    location[symbol.name] = controller.location
+                    continue
+                ## if in discovered and this symbol has empty type, skip
+                if symbol.type == "": continue
+                ## if in discovered with empty type, update
+                if matching.type == "":
+                    matching.type = symbol.type
+                    location[symbol.name] = controller.location
+                    continue
+                ## if both are concrete, attempt to match
+                type1 = find(ctx.types, lambda k: k.name == symbol.type)
+                type2 = find(ctx.types, lambda k: k.name == matching.type)
+                if type1 == None:
+                    raise TranslationError(f"Could not find type with name {type1} during type checking.", controller.location)
+                if type2 == None:
+                    raise TranslationError(f"Could not find type with name {type2} during type checking.", controller.location)
+                if not typeConvertWidest(type1, type2, ctx, controller.location):
+                    raise TranslationError(f"Global {symbol.name} was previously assigned with type {type1}, but was re-assigned with incompatible type {type2}.", controller.location)
+    print(discovered)
+    ## now ensure every symbol has a concrete type.
+    for sym in discovered:
+        if sym.type == "":
+            raise TranslationError(f"Global {sym.name} was used, but never assigned, so the type checker could not identify its type.", location[sym.name])
+    ## global table has now been created. store in ctx and run the full type checker
+    ctx.globals = discovered
+    print(ctx.globals)
 
 def replaceTemplatesInner(ctx: TranslationContext) -> bool:
     replaced = False
@@ -446,14 +553,15 @@ def replaceTemplatesInner(ctx: TranslationContext) -> bool:
         while index < len(statedef.states):
             controller = statedef.states[index]
             if (template := find(ctx.templates, lambda k: k.name.lower() == controller.name.lower())) == None:
-                raise TranslationError(f"No template or builtin controller was found to match state controller with name {controller.name}", controller.filename, controller.line)
+                raise TranslationError(f"No template or builtin controller was found to match state controller with name {controller.name}", controller.location)
             ## we only care about DEFINED templates here. BUILTIN templates are for MUGEN/CNS state controller types.
             if template.category == TemplateCategory.DEFINED:
+                replaced = True
                 ## 1. copy all the locals declared in the template to the locals of the state, with a prefix to ensure they are uniquified.
                 local_prefix = f"{generate_random_string(8)}_"
                 local_map: dict[str, str] = {}
                 for local in template.locals:
-                    statedef.locals.append(StateParameter(f"{local_prefix}{local.name}", local.type, local.default))
+                    statedef.locals.append(StateParameter(f"{local_prefix}{local.name}", local.type, local.location, local.default))
                     local_map[local.name] = f"{local_prefix}{local.name}"
                 ## 2. copy all controllers from the template, updating uses of the locals to use the new prefix.
                 new_controllers = copy.deepcopy(template.states)
@@ -465,7 +573,7 @@ def replaceTemplatesInner(ctx: TranslationContext) -> bool:
                 for param in template.params:
                     target_exprn = controller.properties[param.name] if param.name in controller.properties else None
                     if target_exprn == None and param.required:
-                        raise TranslationError(f"No expression was provided for parameter with name {param.name} on template or controller {controller.name}.", controller.filename, controller.line)
+                        raise TranslationError(f"No expression was provided for parameter with name {param.name} on template or controller {controller.name}.", controller.location)
                     if target_exprn != None:
                         exprn_map[param.name] = target_exprn
                 for new_controller in new_controllers:
@@ -473,7 +581,7 @@ def replaceTemplatesInner(ctx: TranslationContext) -> bool:
                         replaceVariableWithExpression(new_controller, exprn_name, exprn_map[exprn_name])
 
                 ## 4. combine the triggers on the template call into one or more triggerall statements and insert into each new controller.
-                combinedTriggers = combineTriggers(controller.triggers)
+                combinedTriggers = combineTriggers(controller.triggers, controller.location)
                 for new_controller in new_controllers:
                     if 0 not in new_controller.triggers:
                         new_controller.triggers[0] = []
@@ -497,7 +605,7 @@ def replaceTemplates(ctx: TranslationContext):
         madeReplacement = replaceTemplatesInner(ctx)
         iterations += 1
         if iterations > 20:
-            raise TranslationError("Template replacement failed to complete after 20 iterations.", "", 0)
+            raise TranslationError("Template replacement failed to complete after 20 iterations.", compiler_internal())
 
 def preTranslateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
     ## this does a very early portion of statedef translation.
@@ -523,14 +631,14 @@ def preTranslateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext)
             controller = parseStateController(state, ctx)
             state_controllers.append(controller)
 
-        ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_definition.filename, state_definition.line))
+        ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_definition.location))
 
 def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
     for template_definition in load_ctx.templates:
         ## determine final template name and check if it is already in use.
         template_name = template_definition.name if template_definition.namespace == None else f"{template_definition.namespace}.{template_definition.name}"
         if (original := find(ctx.templates, lambda k: k.name == template_name)) != None:
-            raise TranslationError(f"Template with name {template_name} was redefined: original definition at {original.filename}:{original.line}", template_definition.filename, template_definition.line)
+            raise TranslationError(f"Template with name {template_name} was redefined: original definition at {original.location.filename}:{original.location.line}", template_definition.location)
         
         ## determine the type and default value of any local declarations
         template_locals: list[StateParameter] = []
@@ -542,7 +650,7 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
         if template_definition.params != None:
             for param in template_definition.params.properties:
                 if find(ctx.types, lambda k: k.name == param.value) == None:
-                    raise TranslationError(f"A template parameter was declared with a type of {param.value} but that type does not exist.", param.filename, param.line)
+                    raise TranslationError(f"A template parameter was declared with a type of {param.value} but that type does not exist.", param.location)
                 template_params.append(TemplateParameter(param.key, param.value))
 
         ## analyse all template states. in this stage we just want to confirm variable usage is correct.
@@ -554,54 +662,54 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
             ## the variable table we pass contains only the locals and the parameters, so all globals in this case are undefined.
             ## templates which use undefined global variables will be rejected as templates can't use globals.
             ## we must also pass the list of triggers so the function can identify parameter-less trigger calls.
-            temp_params = [StateParameter(p.name, p.type, None) for p in template_params]
-            undefineds = findUndefinedGlobals(controller, temp_params + template_locals, ctx.triggers)
+            temp_params = [StateParameter(p.name, p.type, p.location, None) for p in template_params]
+            undefineds = findUndefinedGlobals(controller, temp_params + template_locals, ctx)
             if len(undefineds) != 0:
-                raise TranslationError(f"Template uses global variables named {', '.join(undefineds)}, but templates cannot define or use globals.", state.filename, state.line)
+                raise TranslationError(f"Template uses global variables named {', '.join([u.name for u in undefineds])}, but templates cannot define or use globals.", state.location)
             template_states.append(controller)
         
-        ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.filename, template_definition.line))
+        ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))
 
 def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
     for trigger_definition in load_ctx.triggers:
         trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
         
         if (matching_type := find(ctx.types, lambda k: k.name == trigger_name)) != None:
-            raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.filename}:{matching_type.line}: type names are reserved for type initialization.", trigger_definition.filename, trigger_definition.line)
+            raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.location.filename}:{matching_type.location.line}: type names are reserved for type initialization.", trigger_definition.location)
         
         # identify matches by name, then inspect type signature
         param_types = [param.value for param in trigger_definition.params.properties] if trigger_definition.params != None else []
-        matched = findTriggerBySignature(trigger_name, param_types, ctx, trigger_definition.filename, trigger_definition.line)
+        matched = findTriggerBySignature(trigger_name, param_types, ctx, trigger_definition.location)
                 
         if matched != None:
-            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {matched.filename}:{matched.line}", trigger_definition.filename, trigger_definition.line)
+            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {matched.location.filename}:{matched.location.line}", trigger_definition.location)
         
         ## ensure the expected type of the trigger is known
         if (trigger_type := find(ctx.types, lambda k: k.name == trigger_definition.type)) == None:
-            raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.filename, trigger_definition.line)
+            raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.location)
         
         ## ensure the type of all parameters for the trigger are known
         params: List[TriggerParameter] = []
         if trigger_definition.params != None:
             for parameter in trigger_definition.params.properties:
                 if (matching_type := find(ctx.types, lambda k: k.name == parameter.value)) == None:
-                    raise TranslationError(f"Trigger parameter {parameter.key} declares a type of {parameter.value} but that type is not known.", parameter.filename, parameter.line)
+                    raise TranslationError(f"Trigger parameter {parameter.key} declares a type of {parameter.value} but that type is not known.", parameter.location)
                 params.append(TriggerParameter(parameter.key, parameter.value))
 
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
-        result_type = runTypeCheck(trigger_definition.value, trigger_definition.filename, trigger_definition.line, params, ctx)
+        result_type = runTypeCheck(trigger_definition.value, params, ctx)
         if result_type != trigger_type.name:
-            raise TranslationError(f"Trigger with name {trigger_name} declared return type of {trigger_type.name} but resolved type was {result_type}.", trigger_definition.filename, trigger_definition.line)
+            raise TranslationError(f"Trigger with name {trigger_name} declared return type of {trigger_type.name} but resolved type was {result_type}.", trigger_definition.location)
 
-        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.filename, trigger_definition.line))
+        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.value, trigger_definition.location))
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
     for struct_definition in load_ctx.struct_definitions:
         ## determine final type name and check if it is already in use.
         type_name = struct_definition.name if struct_definition.namespace == None else f"{struct_definition.namespace}.{struct_definition.name}"
         if (original := find(ctx.types, lambda k: k.name == type_name)) != None:
-            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.filename}:{original.line}", struct_definition.filename, struct_definition.line)
+            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.location.filename}:{original.location.line}", struct_definition.location)
         
         ## check that all members of the struct are known types
         ## also, sum the total size of the structure.
@@ -609,27 +717,27 @@ def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
         struct_members: List[str] = []
         for member_name in struct_definition.members.properties:
             if (member := find(ctx.types, lambda k: k.name == member_name.value)) == None:
-                raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but this type does not exist.", member_name.filename, member_name.line)
+                raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but this type does not exist.", member_name.location)
             struct_size += member.size
             struct_members.append(f"{member_name.key}:{member.name}")
         
         ## append this to the type list, in translation context we make no distincition between structures and other types.
-        ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.filename, struct_definition.line))
+        ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.location))
 
 def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
     for type_definition in load_ctx.type_definitions:
         ## determine final type name and check if it is already in use.
         type_name = type_definition.name if type_definition.namespace == None else f"{type_definition.namespace}.{type_definition.name}"
         if (original := find(ctx.types, lambda k: k.name == type_name)) != None:
-            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.filename}:{original.line}", type_definition.filename, type_definition.line)
+            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.location.filename}:{original.location.line}", type_definition.location)
 
         ## determine the type category and type members
         if type_definition.type.lower() == "alias":
             type_category = TypeCategory.ALIAS
             if (alias := find(type_definition.properties, lambda k: k.key.lower() == "source")) == None:
-                raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.filename, type_definition.line)
+                raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.location)
             if (source := find(ctx.types, lambda k: k.name == alias.value)) == None:
-                raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.filename, alias.line)
+                raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.location)
             type_members = [alias.value]
             target_size = source.size
         elif type_definition.type.lower() == "union":
@@ -639,14 +747,14 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
             for property in type_definition.properties:
                 if property.key == "member":
                     if (target := find(ctx.types, lambda k: k.name == property.value)) == None:
-                        raise TranslationError(f"Union type {type_name} references source type {property.value}, but that type does not exist.", type_definition.filename, type_definition.line)
+                        raise TranslationError(f"Union type {type_name} references source type {property.value}, but that type does not exist.", type_definition.location)
                     if target_size == -1:
                         target_size = target.size
                     if target.size != target_size:
-                        raise TranslationError(f"Union type {type_name} has member size {target_size} but attempted to include type {target.name} with mismatched size {target.size}.", property.filename, property.line)
+                        raise TranslationError(f"Union type {type_name} has member size {target_size} but attempted to include type {target.name} with mismatched size {target.size}.", property.location)
                     type_members.append(target.name)
             if len(type_members) == 0:
-                raise TranslationError(f"Union type {type_name} must specify at least one member.", type_definition.filename, type_definition.line)
+                raise TranslationError(f"Union type {type_name} must specify at least one member.", type_definition.location)
         elif type_definition.type.lower() == "enum":
             type_category = TypeCategory.ENUM
             type_members: List[str] = []
@@ -661,12 +769,12 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
                 if property.key == "flag":
                     type_members.append(property.value)
             if len(type_members) > 32:
-                raise TranslationError("Flag types may not support more than 32 members.", type_definition.filename, type_definition.line)
+                raise TranslationError("Flag types may not support more than 32 members.", type_definition.location)
             target_size = 32
         else:
-            raise TranslationError(f"Unrecognized type category {type_definition.type} in Define Type section.", type_definition.filename, type_definition.line)
+            raise TranslationError(f"Unrecognized type category {type_definition.type} in Define Type section.", type_definition.location)
         
-        ctx.types.append(TypeDefinition(type_name, type_category, target_size, type_members, type_definition.filename, type_definition.line))
+        ctx.types.append(TypeDefinition(type_name, type_category, target_size, type_members, type_definition.location))
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
@@ -687,6 +795,14 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
 
     preTranslateStateDefinitions(load_ctx, ctx)
     replaceTemplates(ctx)
+
+    for statedef in ctx.statedefs:
+        if len(statedef.states) > 512:
+            raise TranslationError(f"State definition for state {statedef.name} has more than 512 state controllers after template resolution. Reduce the size of this state definition or its templates.", statedef.location)
+        
+    createGlobalsTable(ctx)
+
+    replaceTriggers(ctx)
 
     #print(ctx.statedefs)
 

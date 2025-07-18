@@ -147,5 +147,5 @@ volume = -80
 
 [State 191, template testing]
 type = testTemplate
-trigger1 = 1
-myVar = abs(floor(1.5 * 1)) + test
+trigger1 = myNewGlobal := 5
+myVar = parseBool(myNewGlobal)
