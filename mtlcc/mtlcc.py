@@ -193,6 +193,11 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
 
     mode = TranslationMode.MTL_MODE if file.endswith(".mtl") or file.endswith(".inc") else TranslationMode.CNS_MODE
     parseTarget(contents, mode, ctx)
+    # create a virtual include for libmtl.inc.
+    # libmtl.inc has several required types for the builtins to function.
+    # only include this on the primary file.
+    if len(cycle) == 0:
+        ctx.includes.insert(0, INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal()))
     processIncludes(mode, cycle, ctx)
 
     return ctx
@@ -871,10 +876,12 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
             type_category = TypeCategory.ALIAS
             if (alias := find(type_definition.properties, lambda k: k.key.lower() == "source")) == None:
                 raise TranslationError(f"Alias type {type_name} must specify an alias source.", type_definition.location)
-            if (source := find(ctx.types, lambda k: k.name == alias.value)) == None: # type: ignore
+            if (source := unpackTypes(alias.value, ctx)) == None: # type: ignore
                 raise TranslationError(f"Alias type {type_name} references source type {alias.value}, but that type does not exist.", alias.location)
             type_members = [alias.value]
-            target_size = source.size
+            target_size = 0
+            for s in source:
+                target_size += s.size
         elif type_definition.type.lower() == "union":
             type_category = TypeCategory.UNION
             type_members: List[str] = []

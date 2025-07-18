@@ -210,7 +210,7 @@ def getBaseTriggers() -> List[TriggerDefinition]:
 
         TriggerDefinition("operator&&", "bool", builtin_and, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator||", "bool", builtin_or, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
     ]
 
 def builtin_not(exprs: List[Expression], ctx: TranslationContext) -> Expression:
@@ -235,8 +235,6 @@ def builtin_mult(exprs: List[Expression], ctx: TranslationContext) -> Expression
 def builtin_div(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "/")
 def builtin_mod(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
 def builtin_exp(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
-def builtin_and(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
-def builtin_or(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
 def builtin_xor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
 def builtin_eq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "=")
 def builtin_neq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "!=")
@@ -248,6 +246,11 @@ def builtin_lt(exprs: List[Expression], ctx: TranslationContext) -> Expression: 
 def builtin_lte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<=")
 def builtin_gt(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">")
 def builtin_gte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">=")
+
+# special cases. these accept variable inputs to support trigger collapsing.
+## TODO: support variable inputs properly...
+def builtin_and(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
+def builtin_or(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
 
 def getBaseTemplates() -> List[TemplateDefinition]:
     return [

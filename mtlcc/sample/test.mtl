@@ -1,35 +1,3 @@
-;; Standard include file for MTL. This is used by mtlcc to build CNS files.
-;; libmtl.inc is included by default by mtlcc.
-
-[Include]
-source = stdlib/libmtl.inc
-import = numeric
-import = parseBool
-
-;;;;; Fundamental Type Definitions
-;; The int, float, short, byte, char, and bool types are built-in. Some aliases and unions are defined here.
-[Define Type]
-name = bool8
-type = alias
-source = byte
-
-[Define Structure]
-name = myStruct
-
-[Define Members]
-member1 = numeric
-member2 = byte
-member3 = bool
-
-[Define Structure]
-name = outerStruct
-
-[Define Members]
-member1 = numeric
-member2 = myStruct
-
-;;;;; Reflection Const Triggers
-;; These provide access into compiler state and type information.
 [Define Template]
 name = testTemplate
 local = myVar2 = int
