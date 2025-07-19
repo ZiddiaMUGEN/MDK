@@ -114,11 +114,9 @@ def parseTarget(sections: List[INISection], mode: TranslationMode, ctx: LoadCont
             raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.location)
         index += 1
 
-def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
-    # CNS mode does not support Include sections.
-    if mode == TranslationMode.CNS_MODE:
-        return
-    
+def processIncludes(cycle: List[str], ctx: LoadContext):
+    # although CNS mode does not support Include sections, we explicitly block parsing them in parseTarget, and we still want to include libmtl.inc for all files.
+    # so we permit includes through here.
     for include in ctx.includes:
         if (source := find(include.properties, lambda k: k.key.lower() == "source")) == None:
             raise TranslationError("Include block must define a `source` property indicating the file to be included.", include.location)
@@ -138,6 +136,7 @@ def processIncludes(mode: TranslationMode, cycle: List[str], ctx: LoadContext):
             raise TranslationError(f"Could not find the source file specified by {source.value} for inclusion.", source.location)
         
         ## now translate the source file
+        print(f"Starting to load included file {location}")
         include_context = loadFile(location, cycle + [ctx.filename])
 
         ## if we specified a namespace, the imported names need to be prefixed with that namespace.
@@ -191,14 +190,15 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
     with open(file) as f:
         contents = ini.parse(f.read(), ctx.ini_context)
 
-    mode = TranslationMode.MTL_MODE if file.endswith(".mtl") or file.endswith(".inc") else TranslationMode.CNS_MODE
-    parseTarget(contents, mode, ctx)
+    ctx.mode = TranslationMode.MTL_MODE if file.endswith(".mtl") or file.endswith(".inc") else TranslationMode.CNS_MODE
+    print(f"Parsing file from {file} using mode = {'MTL' if ctx.mode == TranslationMode.MTL_MODE else 'CNS'}")
+    parseTarget(contents, ctx.mode, ctx)
     # create a virtual include for libmtl.inc.
     # libmtl.inc has several required types for the builtins to function.
     # only include this on the primary file.
     if len(cycle) == 0:
         ctx.includes.insert(0, INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal()))
-    processIncludes(mode, cycle, ctx)
+    processIncludes(cycle, ctx)
 
     return ctx
 
@@ -250,13 +250,13 @@ def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext,
 
     return None
 
-def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinition]) -> bool:
+def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinition], location: Location) -> bool:
     if type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]: return False
 
     ## if the maybe-enum is unscoped, we may still match it with the automatic enum list provided.
     if "." not in e:
         for en in autoEnums:
-            if matchesEnumValue(type, f"{en.name}.{e}", []): return True
+            if matchesEnumValue(type, f"{en.name}.{e}", [], location): return True
         return False
 
     ## we want to split the enum into scope and value.
@@ -270,9 +270,9 @@ def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinitio
     ## determine if the value matches a FLAG value. each flag value is a single character, match on each character.
     if type.category == TypeCategory.FLAG or type.category == TypeCategory.STRING_FLAG:
         for chara in value:
-            if find(type.members, lambda k: k.lower() == chara.lower()) == None: raise TranslationError(f"Flag constant {chara} does not exist on flag type {type.name}", type.location)
+            if find(type.members, lambda k: k.lower() == chara.lower()) == None: raise TranslationError(f"Flag constant {chara} does not exist on flag type {type.name}", location)
         return True
-    raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", type.location)
+    raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", location)
 
 def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: TranslationContext, autoEnums: List[TypeDefinition] = [], isForTrigger: bool = False) -> str:
     ## for multivalue, handle single case here. true multivalue handled below.
@@ -300,7 +300,7 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return resolveAlias(local.type, ctx)
         elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower())) != None:
             return resolveAlias(trigger.type, ctx)
-        elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums))) != None:
+        elif (enum := find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums, tree.location))) != None:
             ## this matches on both enums and flags.
             return resolveAlias(enum.name, ctx)
         else:
@@ -425,7 +425,7 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
             return []
         elif find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower() and len(k.params) == 0):
             return []
-        elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums)) != None:
+        elif find(ctx.types, lambda k: matchesEnumValue(k, tree.operator, autoEnums, tree.location)) != None:
             return []
         else:
             return [GlobalParameter(tree.operator, "")]
@@ -588,6 +588,7 @@ def replaceTriggersInner(ctx: TranslationContext) -> bool:
     return replaced
 
 def replaceTriggers(ctx: TranslationContext):
+    print("Start applying template replacements in statedefs...")
     ## wrapper for a function that repeatedly replaces triggers until no more triggers need replacing.
     ## this is because triggers can invoke other triggers in their definition, so one pass may not resolve every trigger.
     ## limit this to some number of iterations to prevent it from running forever.
@@ -598,6 +599,7 @@ def replaceTriggers(ctx: TranslationContext):
         iterations += 1
         if iterations > 20:
             raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal())
+    print("Start completed template replacements")
         
 def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
     ## type check every property in a statedef.
@@ -747,6 +749,7 @@ def replaceTemplates(ctx: TranslationContext):
     ## wrapper for a function that repeatedly replaces templates until no more templates need replacing.
     ## this is because templates can invoke other templates in their definition, so one pass may not resolve every template.
     ## limit this to some number of iterations to prevent it from running forever.
+    print("Start applying template replacements in statedefs...")
     iterations = 0
     madeReplacement = True
     while madeReplacement:
@@ -754,8 +757,10 @@ def replaceTemplates(ctx: TranslationContext):
         iterations += 1
         if iterations > 20:
             raise TranslationError("Template replacement failed to complete after 20 iterations.", compiler_internal())
+    print("Successfully completed template replacement.")
 
 def preTranslateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
+    print("Start first-pass state definition processing...")
     ## this does a very early portion of statedef translation.
     ## essentially it just builds a StateDefinition object from each StateDefinitionSection object.
     ## this makes it easier to do the next tasks (template/trigger replacement).
@@ -780,8 +785,10 @@ def preTranslateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext)
             state_controllers.append(controller)
 
         ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_definition.location))
+    print(f"Successfully resolved {len(ctx.statedefs)} state definitions")
 
 def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
+    print("Start loading template definitions...")
     for template_definition in load_ctx.templates:
         ## determine final template name and check if it is already in use.
         template_name = template_definition.name if template_definition.namespace == None else f"{template_definition.namespace}.{template_definition.name}"
@@ -817,8 +824,10 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
             template_states.append(controller)
         
         ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))
+    print(f"Successfully resolved {len(ctx.templates)} template definitions")
 
 def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
+    print("Start loading trigger function definitions...")
     for trigger_definition in load_ctx.triggers:
         trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
         
@@ -851,6 +860,7 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
             raise TranslationError(f"Could not match type {result_type} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
 
         ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type.name, None, params, trigger_definition.value, trigger_definition.location))
+    print(f"Successfully resolved {len(ctx.triggers)} trigger function definitions")
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
     for struct_definition in load_ctx.struct_definitions:
@@ -871,8 +881,10 @@ def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
         
         ## append this to the type list, in translation context we make no distincition between structures and other types.
         ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.location))
+    print(f"Successfully resolved {len(ctx.types)} type and structure definitions")
 
 def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
+    print(f"Start processing type definitions...")
     for type_definition in load_ctx.type_definitions:
         ## determine final type name and check if it is already in use.
         type_name = type_definition.name if type_definition.namespace == None else f"{type_definition.namespace}.{type_definition.name}"

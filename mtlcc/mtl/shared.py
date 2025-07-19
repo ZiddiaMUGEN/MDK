@@ -161,6 +161,7 @@ class LoadContext:
     type_definitions: List[TypeDefinitionSection]
     struct_definitions: List[StructureDefinitionSection]
     includes: List[INISection]
+    mode: 'TranslationMode'
 
     def __init__(self, fn: str):
         self.filename = fn
