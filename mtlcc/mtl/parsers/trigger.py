@@ -77,6 +77,11 @@ trigger_grammar = Lark(
     """
 )
 
+def recursiveReverse(tree: TriggerTree):
+    tree.children.reverse()
+    for child in tree.children:
+        recursiveReverse(child)
+
 def parseTrigger(line: str, location: Location) -> TriggerTree:
     try:
         tree = trigger_grammar.parse(line)
@@ -85,7 +90,7 @@ def parseTrigger(line: str, location: Location) -> TriggerTree:
         if len(flattened.stack) != 1:
             raise TranslationError("Failed to identify a single node from trigger input.", location)
         result = flattened.stack[0]
-        result.children.reverse()
+        recursiveReverse(result)
         return result
     except TranslationError as te:
         raise te
