@@ -20,6 +20,9 @@ def getBaseTypes() -> List[TypeDefinition]:
         TypeDefinition("byte", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number())),
         TypeDefinition("char", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number())),
         TypeDefinition("bool", TypeCategory.BUILTIN, 1, [], Location("mtl/builtins.py", line_number())),
+        ## this is a special type which is used to represent a type in the compiler state.
+        ## if it's used at runtime, it is replaced with the integer ID of the type it represents.
+        TypeDefinition("type", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number())),
         ## this is a special int type which can support character prefixes. it's used for things like sounds and anims.
         ## it's not legal to create a variable with this type.
         TypeDefinition("cint", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number())),

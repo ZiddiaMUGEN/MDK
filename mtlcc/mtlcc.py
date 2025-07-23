@@ -270,7 +270,7 @@ def matchesEnumValue(type: TypeDefinition, e: str, autoEnums: List[TypeDefinitio
     ## determine if the value matches a FLAG value. each flag value is a single character, match on each character.
     if type.category == TypeCategory.FLAG or type.category == TypeCategory.STRING_FLAG:
         for chara in value:
-            if find(type.members, lambda k: k.lower() == chara.lower()) == None: raise TranslationError(f"Flag constant {chara} does not exist on flag type {type.name}", location)
+            if find(type.members, lambda k: k.lower() == chara.lower()) == None: raise TranslationError(f"Flag constant {chara} does not exist on enum type {type.name}", location)
         return True
     raise TranslationError(f"Enumeration constant {value} does not exist on enum type {type.name}", location)
 
@@ -296,6 +296,8 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return "bool"
         elif tryParseCint(tree.operator) != None:
             return "cint"
+        elif find(ctx.types, lambda k: k.name.lower() == tree.operator.lower()) != None:
+            return "type"
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
             return resolveAlias(local.type, ctx)
         elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == tree.operator.lower())) != None:
@@ -329,6 +331,17 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
     ## handle explicit function calls.
     ## this is very similar to operators. find the matching trigger and use the output type provided.
     if tree.node == TriggerTreeNode.FUNCTION_CALL:
+        ## special handling for the `cast` operator, because we do not have any support for generics currently.
+        if tree.operator == "cast":
+            if tree.children[1].node != TriggerTreeNode.ATOM:
+                raise TranslationError("Second argument to cast() must be a type name, not an expression.", tree.children[1].location)
+            if child_types[1] != "type":
+                raise TranslationError("Second argument to cast() must be a type name, not an expression.", tree.children[1].location)
+            target_type = find(ctx.types, lambda k: k.name.lower() == tree.children[1].operator.lower())
+            if target_type == None:
+                raise TranslationError(f"Second argument to cast() must be a valid type name, could not find a type named {tree.children[1].operator}.", tree.children[0].location)
+            return resolveAlias(tree.children[1].operator, ctx)
+
         function_call = findTriggerBySignature(tree.operator, child_types, ctx, tree.location)
         if function_call == None:
             raise TranslationError(f"Could not find any matching overload for trigger {tree.operator} with input types {', '.join(child_types)}.", tree.location)
@@ -351,24 +364,23 @@ def parseLocalParameter(local: INIProperty, ctx: TranslationContext) -> StatePar
     if tree.node == TriggerTreeNode.MULTIVALUE: tree = tree.children[0]
 
     ## check the operator is correct and the first node is an atom
-    ## keep in mind the tree constructs right-to-left so children[1] is the first child node.
     if tree.node != TriggerTreeNode.BINARY_OP or tree.operator != "=":
         raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
-    if tree.children[1].node != TriggerTreeNode.ATOM:
+    if tree.children[0].node != TriggerTreeNode.ATOM:
         raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
     ## the second node can be either ATOM (for type name) or FUNCTION_CALL with a single child (for default value)
-    if tree.children[0].node != TriggerTreeNode.ATOM and tree.children[0].node != TriggerTreeNode.FUNCTION_CALL:
+    if tree.children[1].node != TriggerTreeNode.ATOM and tree.children[1].node != TriggerTreeNode.FUNCTION_CALL:
         raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
-    if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL and len(tree.children[0].children) != 1:
+    if tree.children[1].node == TriggerTreeNode.FUNCTION_CALL and len(tree.children[1].children) != 1:
         raise TranslationError("Local definitions must follow the format <local name> = <local type>(<optional default>).", tree.location)
-    local_type = tree.children[0].operator
-    default_value = tree.children[0].children[0] if tree.children[0].node == TriggerTreeNode.FUNCTION_CALL else None
+    local_type = tree.children[1].operator
+    default_value = tree.children[1].children[1] if tree.children[1].node == TriggerTreeNode.FUNCTION_CALL else None
 
     ## check the type specified for the local exists
     if find(ctx.types, lambda k: k.name == local_type) == None:
         raise TranslationError(f"A local was declared with a type of {local_type} but that type does not exist.", tree.location)
 
-    return StateParameter(tree.children[1].operator.strip(), local_type, tree.location, default_value)
+    return StateParameter(tree.children[0].operator.strip(), local_type, tree.location, default_value)
 
 def parseStateController(state: StateControllerSection, ctx: TranslationContext):
     ## determine the type of controller to be used
@@ -431,13 +443,27 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
             return [GlobalParameter(tree.operator, "")]
         
     result: List[GlobalParameter] = []
-    for child in tree.children:
-        result += findUndefinedGlobalsInTrigger(child, table, ctx, autoEnums)
+        
+    ## for a multivalue case, we may be passed several autoEnum values for each value.
+    if tree.node == TriggerTreeNode.MULTIVALUE:
+        subindex = 0
+        for child in tree.children:
+            if subindex < len(autoEnums):
+                nextAutoEnum = [autoEnums[subindex]]
+            elif len(autoEnums) != 0:
+                nextAutoEnum = [autoEnums[-1]] ## for repetition operator
+            else:
+                nextAutoEnum = []
+            subindex += 1
+            result += findUndefinedGlobalsInTrigger(child, table, ctx, nextAutoEnum)
+    else:
+        for child in tree.children:
+            result += findUndefinedGlobalsInTrigger(child, table, ctx, autoEnums)
 
     ## if this node is an assignment, and the LHS is for a globalparameter, get the type of the RHS.
-    if len(result) > 0 and tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[1].node == TriggerTreeNode.ATOM:
-        target = tree.children[1].operator
-        rtype = runTypeCheck(tree.children[0], [TriggerParameter(p.name, p.type, p.location) for p in table], ctx)
+    if len(result) > 0 and tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[0].node == TriggerTreeNode.ATOM:
+        target = tree.children[0].operator
+        rtype = runTypeCheck(tree.children[1], [TriggerParameter(p.name, p.type, p.location) for p in table], ctx)
         result += [GlobalParameter(target, rtype)]
 
     return result
@@ -460,7 +486,7 @@ def findUndefinedGlobals(state: StateController, table: List[StateParameter], ct
         expected_prop = find(controller_type.params, lambda k: k.name.lower() == name)
         enums_flags: List[TypeDefinition] = []
         if expected_prop != None:
-            expected_typedefs = unpackTypes(expected_prop.type, ctx)
+            expected_typedefs = unpackTypes(resolveAlias(expected_prop.type, ctx), ctx)
             if expected_typedefs != None:
                 enums_flags = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
         result += findUndefinedGlobalsInTrigger(state.properties[name], table, ctx, enums_flags)

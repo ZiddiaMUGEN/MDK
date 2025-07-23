@@ -84,7 +84,9 @@ def parseTrigger(line: str, location: Location) -> TriggerTree:
         flattened.visit(tree)
         if len(flattened.stack) != 1:
             raise TranslationError("Failed to identify a single node from trigger input.", location)
-        return flattened.stack[0]
+        result = flattened.stack[0]
+        result.children.reverse()
+        return result
     except TranslationError as te:
         raise te
     except:

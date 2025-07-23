@@ -60,12 +60,8 @@ def resolveAlias(type: str, ctx: TranslationContext, cycle: List[str] = []) -> s
     ## if the input type is not an alias, return the input type
     if (alias := find(ctx.types, lambda k: k.name == type and k.category == TypeCategory.ALIAS)) == None:
         return type
-
-    ## otherwise, drill through to the source type
-    if (source := unpackTypes(alias.members[0], ctx)) == None:
-        raise TranslationError(f"Could not resolve alias from type {type} to {alias.members[0]}", alias.location)
     
-    return resolveAlias(source[0].name, ctx, cycle + [type])
+    return resolveAlias(alias.members[0], ctx, cycle + [type])
 
 ## attempts to convert a concrete type to a union type.
 def typeConvertUnion(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
