@@ -59,6 +59,27 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
         
         ctx.types.append(TypeDefinition(type_name, type_category, target_size, type_members, type_definition.location))
 
+def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
+    for struct_definition in load_ctx.struct_definitions:
+        ## determine final type name and check if it is already in use.
+        type_name = struct_definition.name if struct_definition.namespace == None else f"{struct_definition.namespace}.{struct_definition.name}"
+        if (original := find_type(type_name, ctx)) != None:
+            raise TranslationError(f"Type with name {type_name} was redefined: original definition at {original.location.filename}:{original.location.line}", struct_definition.location)
+        
+        ## check that all members of the struct are known types
+        ## also, sum the total size of the structure.
+        struct_size = 0
+        struct_members: list[str] = []
+        for member_name in struct_definition.members.properties:
+            if (member := find_type(member_name.value, ctx)) == None:
+                raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but this type does not exist.", member_name.location)
+            struct_size += member.size
+            struct_members.append(f"{member_name.key}:{member.name}")
+        
+        ## append this to the type list, in translation context we make no distincition between structures and other types.
+        ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.location))
+    print(f"Successfully resolved {len(ctx.types)} type and structure definitions")
+
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
 
