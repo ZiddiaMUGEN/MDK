@@ -1,348 +1,383 @@
-from typing import List
+from mtl.types.context import TranslationContext
+from mtl.types.translation import *
+from mtl.utils.compiler import line_number, find, TranslationError
+from mtl.utils.conversion import get_widest_match
 
-from mtl.utils import find, typeConvertWidest, line_number
-from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, TriggerDefinition, TriggerParameter, TriggerCategory, Expression, TemplateDefinition, TemplateCategory, TemplateParameter, Location, StructParameter
-from mtl.error import TranslationError
+BUILTIN_INT = TypeDefinition("int", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_FLOAT = TypeDefinition("float", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_SHORT = TypeDefinition("short", TypeCategory.BUILTIN, 16, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_BYTE = TypeDefinition("byte", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_CHAR = TypeDefinition("char", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_BOOL = TypeDefinition("bool", TypeCategory.BUILTIN, 1, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_CINT = TypeDefinition("cint", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_STRING = TypeDefinition("string", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_TYPE = TypeDefinition("type", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_VECTOR = TypeDefinition("vector", TypeCategory.STRUCTURE, 32, ["X:float", "Y:float"], Location("mtl/builtins.py", line_number()))
 
-def getBaseTypes() -> List[TypeDefinition]:
+BUILTIN_STATETYPE = TypeDefinition("StateType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "L", "U"], Location("mtl/builtins.py", line_number()))
+BUILTIN_MOVETYPE = TypeDefinition("MoveType", TypeCategory.STRING_ENUM, 32, ["A", "I", "H", "U"], Location("mtl/builtins.py", line_number()))
+BUILTIN_PHYSICSTYPE = TypeDefinition("PhysicsType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "N", "U"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HITTYPE = TypeDefinition("HitType", TypeCategory.STRING_FLAG, 32, ["S", "C", "A"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HITATTR = TypeDefinition("HitAttr", TypeCategory.STRING_FLAG, 32, ["N", "S", "H", "A", "T", "P"], Location("mtl/builtins.py", line_number()))
+BUILTIN_TRANSTYPE = TypeDefinition("TransType", TypeCategory.STRING_ENUM, 32, ["add", "add1", "sub", "none"], Location("mtl/builtins.py", line_number()))
+BUILTIN_ASSERTTYPE = TypeDefinition("AssertType", TypeCategory.STRING_ENUM, 32, ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"], Location("mtl/builtins.py", line_number()))
+BUILTIN_BINDTYPE = TypeDefinition("BindType", TypeCategory.STRING_ENUM, 32, ["Foot", "Mid", "Head"], Location("mtl/builtins.py", line_number()))
+BUILTIN_POSTYPE = TypeDefinition("PosType", TypeCategory.STRING_ENUM, 32, ["P1", "P2", "Front", "Back", "Left", "Right", "None"], Location("mtl/builtins.py", line_number()))
+BUILTIN_WAVETYPE = TypeDefinition("WaveType", TypeCategory.STRING_ENUM, 32, ["Sine", "Square", "SineSquare", "Off"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HELPERTYPE = TypeDefinition("HelperType", TypeCategory.STRING_ENUM, 32, ["Normal", "Player", "Proj"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HITFLAG = TypeDefinition("HitFlag", TypeCategory.STRING_FLAG, 32, ["H", "L", "A", "M", "F", "D", "+", "-"], Location("mtl/builtins.py", line_number()))
+BUILTIN_GUARDFLAG = TypeDefinition("GuardFlag", TypeCategory.STRING_FLAG, 32, ["H", "L", "A", "M"], Location("mtl/builtins.py", line_number()))
+BUILTIN_TEAMTYPE = TypeDefinition("TeamType", TypeCategory.STRING_ENUM, 32, ["E", "B", "F"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HITANIMTYPE = TypeDefinition("HitAnimType", TypeCategory.STRING_ENUM, 32, ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"], Location("mtl/builtins.py", line_number()))
+BUILTIN_ATTACKTYPE = TypeDefinition("AttackType", TypeCategory.STRING_ENUM, 32, ["High", "Low", "Trip", "None"], Location("mtl/builtins.py", line_number()))
+BUILTIN_PRIORITYTYPE = TypeDefinition("PriorityType", TypeCategory.STRING_ENUM, 32, ["Hit", "Miss", "Dodge"], Location("mtl/builtins.py", line_number()))
+BUILTIN_HITVARTYPE = TypeDefinition("HitVarType", TypeCategory.STRING_ENUM, 32, ["isbound"], Location("mtl/builtins.py", line_number()))
+BUILTIN_CONSTTYPE = TypeDefinition("ConstType", TypeCategory.STRING_ENUM, 32, ["movement.yaccel"], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_NUMERIC = TypeDefinition("numeric", TypeCategory.UNION, 32, ["int", "float"], Location("mtl/builtins.py", line_number()))
+BUILTIN_SPARKNO = TypeDefinition("sparkno", TypeCategory.UNION, 32, ["cint", "int"], Location("mtl/builtins.py", line_number()))
+
+def getBaseTypes() -> list[TypeDefinition]:
     return [
-        TypeDefinition("int", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("float", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("short", TypeCategory.BUILTIN, 16, [], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("byte", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("char", TypeCategory.BUILTIN, 8, [], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("bool", TypeCategory.BUILTIN, 1, [], Location("mtl/builtins.py", line_number())),
+        BUILTIN_INT,
+        BUILTIN_FLOAT,
+        BUILTIN_SHORT,
+        BUILTIN_BYTE,
+        BUILTIN_CHAR,
+        BUILTIN_BOOL,
         ## this is a special type which is used to represent a type in the compiler state.
         ## if it's used at runtime, it is replaced with the integer ID of the type it represents.
-        TypeDefinition("type", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number())),
+        BUILTIN_TYPE,
         ## this is a special int type which can support character prefixes. it's used for things like sounds and anims.
         ## it's not legal to create a variable with this type.
-        TypeDefinition("cint", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number())),
+        BUILTIN_CINT,
         ## this represents strings, which are not legal to construct.
-        TypeDefinition("string", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number())),
+        BUILTIN_STRING,
         ## these are built-in structure types
-        TypeDefinition("vector", TypeCategory.STRUCTURE, 32, [StructParameter("X", "float"), StructParameter("Y", "float")], Location("mtl/builtins.py", line_number())),
+        BUILTIN_VECTOR,
         ## these are built-in enum/flag types
-        TypeDefinition("StateType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "L", "U"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("MoveType", TypeCategory.STRING_ENUM, 32, ["A", "I", "H", "U"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("PhysicsType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "N", "U"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitType", TypeCategory.STRING_FLAG, 32, ["S", "C", "A"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitAttr", TypeCategory.STRING_FLAG, 32, ["N", "S", "H", "A", "T", "P"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("TransType", TypeCategory.STRING_ENUM, 32, ["add", "add1", "sub", "none"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("AssertType", TypeCategory.STRING_ENUM, 32, ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("BindType", TypeCategory.STRING_ENUM, 32, ["Foot", "Mid", "Head"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("PosType", TypeCategory.STRING_ENUM, 32, ["P1", "P2", "Front", "Back", "Left", "Right", "None"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("WaveType", TypeCategory.STRING_ENUM, 32, ["Sine", "Square", "SineSquare", "Off"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HelperType", TypeCategory.STRING_ENUM, 32, ["Normal", "Player", "Proj"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitFlag", TypeCategory.STRING_FLAG, 32, ["H", "L", "A", "M", "F", "D", "+", "-"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("GuardFlag", TypeCategory.STRING_FLAG, 32, ["H", "L", "A", "M"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("TeamType", TypeCategory.STRING_ENUM, 32, ["E", "B", "F"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitAnimType", TypeCategory.STRING_ENUM, 32, ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("AttackType", TypeCategory.STRING_ENUM, 32, ["High", "Low", "Trip", "None"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("PriorityType", TypeCategory.STRING_ENUM, 32, ["Hit", "Miss", "Dodge"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitVarType", TypeCategory.STRING_ENUM, 32, ["isbound"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("ConstType", TypeCategory.STRING_ENUM, 32, ["movement.yaccel"], Location("mtl/builtins.py", line_number())),
+        BUILTIN_STATETYPE,
+        BUILTIN_MOVETYPE,
+        BUILTIN_PHYSICSTYPE,
+        BUILTIN_HITTYPE,
+        BUILTIN_HITATTR,
+        BUILTIN_TRANSTYPE,
+        BUILTIN_ASSERTTYPE,
+        BUILTIN_BINDTYPE,
+        BUILTIN_POSTYPE,
+        BUILTIN_WAVETYPE,
+        BUILTIN_HELPERTYPE,
+        BUILTIN_HITFLAG,
+        BUILTIN_GUARDFLAG,
+        BUILTIN_TEAMTYPE,
+        BUILTIN_HITANIMTYPE,
+        BUILTIN_ATTACKTYPE,
+        BUILTIN_PRIORITYTYPE,
+        BUILTIN_HITVARTYPE,
+        BUILTIN_CONSTTYPE,
+        ## built-in union types
+        BUILTIN_NUMERIC
     ]
 
-def getBaseTriggers() -> List[TriggerDefinition]:
+def getBaseTriggers() -> list[TriggerDefinition]:
     return [
         ## MUGEN trigger functions
-        TriggerDefinition("abs", "numeric", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("acos", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AiLevel", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Alive", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Anim", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimElem", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimElemNo", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimElemTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimElemTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AnimTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("asin", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("atan", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("AuthorName", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("BackEdgeBodyDist", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("BackEdgeDist", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("CanRecover", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ceil", "int", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Command", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("cond", "T", None, [TriggerParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Const", "numeric", None, [TriggerParameter("param_name", "ConstType")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Const240p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Const480p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Const720p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("cos", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Ctrl", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("DrawGame", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("e", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("exp", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Facing", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("floor", "int", None, [TriggerParameter("exprn", "float")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("FrontEdgeBodyDist", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("FrontEdgeDist", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("fvar", "float", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("GameHeight", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("GameTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("GameWidth", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("GetHitVar", "numeric", None, [TriggerParameter("param_name", "HitVarType")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitCount", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitFall", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitOver", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitPauseTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitShakeOver", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitVel", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ID", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("ifelse", "T", None, [TriggerParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("InGuardDist", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("IsHelper", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("IsHelper", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("IsHomeTeam", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Life", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("LifeMax", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ln", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("log", "float", None, [TriggerParameter("exp1", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Lose", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("LoseKO", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("LoseTime", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MatchNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MatchOver", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MoveContact", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MoveGuarded", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MoveHit", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("MoveReversed", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumEnemy", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumExplod", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumExplod", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumPartner", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumProj", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumProjID", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumTarget", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("NumTarget", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P1Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2BodyDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2Dist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2Life", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2StateNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P3Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P4Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("PalNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ParentDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("pi", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Pos", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Power", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("PowerMax", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("PlayerIDExist", "bool", None, [TriggerParameter("ID_number", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("PrevStateNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjCancelTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjCancelTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjContactTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjContactTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjGuardedTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjGuardedTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjHitTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ProjHitTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Random", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("RootDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("RoundNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("RoundsExisted", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("RoundState", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ScreenPos", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("SelfAnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("SelfAnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("sin", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("StateNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("StageVar", "string", None, [TriggerParameter("param_name", "StageVarType")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("sysfvar", "float", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("sysvar", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("tan", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("TeamSide", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("TicksPerSecond", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Time", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("var", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Vel", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Win", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("WinKO", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("WinTime", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("WinPerfect", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("abs", BUILTIN_NUMERIC, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("acos", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AiLevel", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Alive", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Anim", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimElem", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimElemNo", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimElemTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimElemTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AnimTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("asin", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("atan", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("AuthorName", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("BackEdgeBodyDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("BackEdgeDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("CanRecover", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ceil", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Command", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        #TriggerDefinition("cond", "T", None, [TypeParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const", BUILTIN_NUMERIC, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const240p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const480p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const720p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("cos", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Ctrl", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("DrawGame", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("e", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("exp", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Facing", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("floor", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("FrontEdgeBodyDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("FrontEdgeDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("fvar", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("GameHeight", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("GameTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("GameWidth", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("GetHitVar", BUILTIN_NUMERIC, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitCount", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitFall", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitPauseTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitShakeOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitVel", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ID", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        #TriggerDefinition("ifelse", "T", None, [TypeParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("InGuardDist", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("IsHelper", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("IsHelper", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("IsHomeTeam", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Life", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("LifeMax", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ln", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("log", BUILTIN_FLOAT, None, [TypeParameter("exp1", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Lose", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("LoseKO", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("LoseTime", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MatchNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MatchOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MoveContact", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MoveGuarded", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MoveHit", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("MoveReversed", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumEnemy", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumExplod", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumExplod", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumPartner", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumProj", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumProjID", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumTarget", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("NumTarget", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P1Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2BodyDist", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2Dist", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2Life", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2StateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P3Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P4Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("PalNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ParentDist", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("pi", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Pos", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Power", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("PowerMax", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("PlayerIDExist", BUILTIN_BOOL, None, [TypeParameter("ID_number", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("PrevStateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjCancelTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjCancelTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjContactTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjContactTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjGuardedTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjGuardedTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjHitTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ProjHitTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Random", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("RootDist", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("RoundNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("RoundsExisted", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("RoundState", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ScreenPos", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("SelfAnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("SelfAnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("sin", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("StateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        #TriggerDefinition("StageVar", BUILTIN_STRING, None, [TypeParameter("param_name", "StageVarType")], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("sysfvar", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("sysvar", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("tan", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("TeamSide", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("TicksPerSecond", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Time", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("var", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Vel", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Win", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("WinKO", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("WinTime", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("WinPerfect", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
 
         ## builtin operator functions
-        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!", "bool", builtin_not, [TriggerParameter("expr", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator-", "int", builtin_negate, [TriggerParameter("expr", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", "float", builtin_negate, [TriggerParameter("expr", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", BUILTIN_INT, builtin_negate, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", BUILTIN_FLOAT, builtin_negate, [TypeParameter("expr", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator~", "int", builtin_bitnot, [TriggerParameter("expr", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator~", BUILTIN_INT, builtin_bitnot, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator+", "int", builtin_add, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator+", "float", builtin_add, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", "int", builtin_sub, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", "float", builtin_sub, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator*", "int", builtin_mult, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator*", "float", builtin_mult, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator/", "int", builtin_div, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator/", "float", builtin_div, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator%", "int", builtin_div, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator**", "int", builtin_exp, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator**", "float", builtin_exp, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator+", BUILTIN_INT, builtin_add, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator+", BUILTIN_FLOAT, builtin_add, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", BUILTIN_INT, builtin_sub, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator-", BUILTIN_FLOAT, builtin_sub, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator*", BUILTIN_INT, builtin_mult, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator*", BUILTIN_FLOAT, builtin_mult, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator/", BUILTIN_INT, builtin_div, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator/", BUILTIN_FLOAT, builtin_div, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator%", BUILTIN_INT, builtin_div, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator**", BUILTIN_INT, builtin_exp, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator**", BUILTIN_FLOAT, builtin_exp, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "string"), TriggerParameter("expr2", "string")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "string"), TriggerParameter("expr2", "string")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator&", "int", builtin_bitand, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator|", "int", builtin_bitor, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^", "int", builtin_bitxor, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator&", BUILTIN_INT, builtin_bitand, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator|", BUILTIN_INT, builtin_bitor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^", BUILTIN_INT, builtin_bitxor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator:=", "int", builtin_assign, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator:=", BUILTIN_INT, builtin_assign, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator<", "bool", builtin_lt, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator<=", "bool", builtin_lte, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>", "bool", builtin_gt, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>=", "bool", builtin_gte, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>", BUILTIN_BOOL, builtin_gt, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>=", BUILTIN_BOOL, builtin_gte, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator<", "bool", builtin_lt, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator<=", "bool", builtin_lte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>", "bool", builtin_gt, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>=", "bool", builtin_gte, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>", BUILTIN_BOOL, builtin_gt, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator>=", BUILTIN_BOOL, builtin_gte, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
-        TriggerDefinition("operator&&", "bool", builtin_and, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator||", "bool", builtin_or, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool...?")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^^", "bool", builtin_xor, [TriggerParameter("expr1", "bool"), TriggerParameter("expr2", "bool")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator&&", BUILTIN_BOOL, builtin_and, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator||", BUILTIN_BOOL, builtin_or, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator^^", BUILTIN_BOOL, builtin_xor, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR)
     ]
 
-def builtin_not(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+def builtin_not(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     if (result := find(ctx.types, lambda k: k.name == "bool")) != None:
         return Expression(result, f"(!{exprs[0].value})")
     raise TranslationError("Failed to find the `bool` type in project, check if builtins are broken.", Location("mtl/builtins.py", line_number()))
 
-def builtin_negate(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+def builtin_negate(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(exprs[0].type, f"(-{exprs[0].value})")
 
-def builtin_bitnot(exprs: List[Expression], ctx: TranslationContext) -> Expression:
+def builtin_bitnot(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(exprs[0].type, f"(~{exprs[0].value})")
 
-def builtin_binary(exprs: List[Expression], ctx: TranslationContext, op: str) -> Expression:
-    if (result := typeConvertWidest(exprs[0].type, exprs[1].type, ctx, Location("mtl/builtins.py", line_number()))) != None:
+def builtin_binary(exprs: list[Expression], ctx: TranslationContext, op: str) -> Expression:
+    if (result := get_widest_match(exprs[0].type, exprs[1].type, ctx)) != None:
         return Expression(result, f"({exprs[0].value} {op} {exprs[1].value})")
     raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
 
-def builtin_add(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "+")
-def builtin_sub(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "-")
-def builtin_mult(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "*")
-def builtin_div(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "/")
-def builtin_mod(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
-def builtin_exp(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
-def builtin_xor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
-def builtin_eq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "=")
-def builtin_neq(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "!=")
-def builtin_bitand(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
-def builtin_bitor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
-def builtin_bitxor(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
-def builtin_assign(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ":=")
-def builtin_lt(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<")
-def builtin_lte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<=")
-def builtin_gt(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">")
-def builtin_gte(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">=")
+def builtin_add(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "+")
+def builtin_sub(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "-")
+def builtin_mult(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "*")
+def builtin_div(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "/")
+def builtin_mod(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
+def builtin_exp(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
+def builtin_xor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
+def builtin_eq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "=")
+def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "!=")
+def builtin_bitand(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
+def builtin_bitor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
+def builtin_bitxor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
+def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ":=")
+def builtin_lt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<")
+def builtin_lte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<=")
+def builtin_gt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">")
+def builtin_gte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">=")
 
 # special cases. these accept variable inputs to support trigger collapsing.
 ## TODO: support variable inputs properly...
-def builtin_and(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
-def builtin_or(exprs: List[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
+def builtin_and(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
+def builtin_or(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
 
-def getBaseTemplates() -> List[TemplateDefinition]:
+def getBaseTemplates() -> list[TemplateDefinition]:
     return [
-        TemplateDefinition("AfterImage", [TemplateParameter("time", "int", False), TemplateParameter("length", "int", False), TemplateParameter("palcolor", "int", False), TemplateParameter("palinvertall", "bool", False), TemplateParameter("palbright", "int,int,int", False), TemplateParameter("palcontrast", "int,int,int", False), TemplateParameter("palpostbright", "int,int,int", False), TemplateParameter("paladd", "int,int,int", False), TemplateParameter("palmul", "float,float,float", False), TemplateParameter("timegap", "int", False), TemplateParameter("framegap", "int", False), TemplateParameter("trans", "TransType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AfterImageTime", [TemplateParameter("time", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AngleAdd", [TemplateParameter("value", "float", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AngleDraw", [TemplateParameter("value", "float", False), TemplateParameter("scale", "float,float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AngleMul", [TemplateParameter("value", "float", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AngleSet", [TemplateParameter("value", "float", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AssertSpecial", [TemplateParameter("flag", "AssertType", True), TemplateParameter("flag2", "AssertType", False), TemplateParameter("flag3", "AssertType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AttackDist", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("AttackMulSet", [TemplateParameter("value", "float", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("BindToParent", [TemplateParameter("time", "int", False), TemplateParameter("facing", "int", False), TemplateParameter("pos", "float,float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("BindToRoot", [TemplateParameter("time", "int", False), TemplateParameter("facing", "int", False), TemplateParameter("pos", "float,float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("BindToTarget", [TemplateParameter("time", "int", False), TemplateParameter("id", "int", False), TemplateParameter("pos", "float,float,BindType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ChangeAnim", [TemplateParameter("value", "int", True), TemplateParameter("elem", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ChangeAnim2", [TemplateParameter("value", "int", True), TemplateParameter("elem", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ChangeState", [TemplateParameter("value", "int", True), TemplateParameter("ctrl", "bool", False), TemplateParameter("anim", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+         TemplateDefinition("AfterImage", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("length", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palcolor", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palinvertall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("palbright", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palcontrast", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palpostbright", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("paladd", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palmul", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("timegap", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("framegap", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AfterImageTime", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AngleAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AngleDraw", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AngleMul", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AngleSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AssertSpecial", [TemplateParameter("flag", [TypeSpecifier(BUILTIN_ASSERTTYPE)], True), TemplateParameter("flag2", [TypeSpecifier(BUILTIN_ASSERTTYPE)], False), TemplateParameter("flag3", [TypeSpecifier(BUILTIN_ASSERTTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AttackDist", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AttackMulSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("BindToParent", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("BindToRoot", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("BindToTarget", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_BINDTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ChangeAnim", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("elem", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ChangeAnim2", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("elem", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ChangeState", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("ctrl", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("anim", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("ClearClipboard", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("CtrlSet", [TemplateParameter("ctrl", "bool", False), TemplateParameter("value", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("DefenceMulSet", [TemplateParameter("value", "float", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("CtrlSet", [TemplateParameter("ctrl", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("DefenceMulSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("DestroySelf", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("DisplayToClipboard", [TemplateParameter("text", "string", True), TemplateParameter("params", "vector", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("EnvColor", [TemplateParameter("value", "int,int,int", False), TemplateParameter("time", "int", False), TemplateParameter("under", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("EnvShake", [TemplateParameter("time", "int", True), TemplateParameter("freq", "float", False), TemplateParameter("ampl", "int", False), TemplateParameter("phase", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Explod", [TemplateParameter("anim", "int", True), TemplateParameter("id", "int", False), TemplateParameter("pos", "float,float", False), TemplateParameter("postype", "PosType", False), TemplateParameter("facing", "int", False), TemplateParameter("vfacing", "int", False), TemplateParameter("bindtime", "int", False), TemplateParameter("vel", "float,float", False), TemplateParameter("accel", "float,float", False), TemplateParameter("random", "int,int", False), TemplateParameter("removetime", "int", False), TemplateParameter("supermove", "bool", False), TemplateParameter("supermovetime", "int", False), TemplateParameter("pausemovetime", "int", False), TemplateParameter("scale", "float,float", False), TemplateParameter("sprpriority", "int", False), TemplateParameter("ontop", "bool", False), TemplateParameter("shadow", "bool", False), TemplateParameter("ownpal", "bool", False), TemplateParameter("removeongethit", "bool", False), TemplateParameter("ignorehitpause", "bool", False), TemplateParameter("trans", "TransType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ExplodBindTime", [TemplateParameter("id", "int", False), TemplateParameter("time", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ForceFeedback", [TemplateParameter("waveform", "WaveType", False), TemplateParameter("time", "int", False), TemplateParameter("freq", "int,float,float,float", False), TemplateParameter("ampl", "int,float,float,float", False), TemplateParameter("self", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("DisplayToClipboard", [TemplateParameter("text", [TypeSpecifier(BUILTIN_STRING)], True), TemplateParameter("params", [TypeSpecifier(BUILTIN_VECTOR)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("EnvColor", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("under", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("EnvShake", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("freq", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("phase", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Explod", [TemplateParameter("anim", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vfacing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("bindtime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("accel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("removetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("supermove", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ontop", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("shadow", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ownpal", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("removeongethit", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ignorehitpause", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ExplodBindTime", [TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ForceFeedback", [TemplateParameter("waveform", [TypeSpecifier(BUILTIN_WAVETYPE)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("freq", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("self", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("FallEnvShake", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("GameMakeint", [TemplateParameter("value", "int", False), TemplateParameter("under", "bool", False), TemplateParameter("pos", "float,float", False), TemplateParameter("random", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("GameMakeint", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("under", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Gravity", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Helper", [TemplateParameter("helpertype", "HelperType", False), TemplateParameter("name", "string", False), TemplateParameter("id", "int", False), TemplateParameter("pos", "float,float", False), TemplateParameter("postype", "PosType", False), TemplateParameter("facing", "int", False), TemplateParameter("stateno", "int", False), TemplateParameter("keyctrl", "bool", False), TemplateParameter("ownpal", "bool", False), TemplateParameter("supermovetime", "int", False), TemplateParameter("pausemovetime", "int", False), TemplateParameter("size.xscale", "float", False), TemplateParameter("size.yscale", "float", False), TemplateParameter("size.ground.back", "int", False), TemplateParameter("size.ground.front", "int", False), TemplateParameter("size.air.back", "int", False), TemplateParameter("size.ait.front", "int", False), TemplateParameter("size.height", "int", False), TemplateParameter("size.proj.doscale", "int", False), TemplateParameter("size.head.pos", "int,int", False), TemplateParameter("size.mid.pos", "int,int", False), TemplateParameter("size.shadowoffset", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitAdd", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitBy", [TemplateParameter("value", "HitString", False), TemplateParameter("value2", "HitString", False), TemplateParameter("time", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitDef", [TemplateParameter("attr", "HitString", True), TemplateParameter("hitflag", "HitFlag", False), TemplateParameter("guardflag", "GuardFlag", False), TemplateParameter("affectteam", "TeamType", False), TemplateParameter("animtype", "HitAnimType", False), TemplateParameter("air.animtype", "HitAnimType", False), TemplateParameter("fall.animtype", "HitAnimType", False), TemplateParameter("priority", "int,PriorityType", False), TemplateParameter("damage", "int,int", False), TemplateParameter("pausetime", "int,int", False), TemplateParameter("guard.pausetime", "int,int", False), TemplateParameter("sparkno", "SparkIndex", False), TemplateParameter("guard.sparkno", "SparkIndex", False), TemplateParameter("sparkxy", "int,int", False), TemplateParameter("hitsound", "cint,int", False), TemplateParameter("guardsound", "cint,int", False), TemplateParameter("ground.type", "AttackType", False), TemplateParameter("air.type", "AttackType", False), TemplateParameter("ground.slidetime", "int", False), TemplateParameter("guard.slidetime", "int", False), TemplateParameter("ground.hittime", "int", False), TemplateParameter("guard.hittime", "int", False), TemplateParameter("air.hittime", "int", False), TemplateParameter("guard.ctrltime", "int", False), TemplateParameter("guard.dist", "int", False), TemplateParameter("yaccel", "float", False), TemplateParameter("ground.velocity", "float", False), TemplateParameter("guard.velocity", "float", False), TemplateParameter("air.velocity", "float,float", False), TemplateParameter("airguard.velocity", "float,float", False), TemplateParameter("ground.cornerpush.veloff", "float", False), TemplateParameter("air.cornerpush.veloff", "float", False), TemplateParameter("down.cornerpush.veloff", "float", False), TemplateParameter("guard.cornerpush.veloff", "float", False), TemplateParameter("airguard.cornerpush.veloff", "float", False), TemplateParameter("airguard.ctrltime", "int", False), TemplateParameter("air.juggle", "int", False), TemplateParameter("mindist", "int,int", False), TemplateParameter("maxdist", "int,int", False), TemplateParameter("snap", "int,int", False), TemplateParameter("p1sprpriority", "int", False), TemplateParameter("p2sprpriority", "int", False), TemplateParameter("p1facing", "int", False), TemplateParameter("p1getp2facing", "int", False), TemplateParameter("p2facing", "int", False), TemplateParameter("p1stateno", "int", False), TemplateParameter("p2stateno", "int", False), TemplateParameter("p2getp1state", "bool", False), TemplateParameter("forcestand", "bool", False), TemplateParameter("fall", "bool", False), TemplateParameter("fall.xvelocity", "float", False), TemplateParameter("fall.yvelocity", "float", False), TemplateParameter("fall.recover", "bool", False), TemplateParameter("fall.recovertime", "int", False), TemplateParameter("fall.damage", "int", False), TemplateParameter("air.fall", "bool", False), TemplateParameter("forcenofall", "bool", False), TemplateParameter("down.velocity", "float,float", False), TemplateParameter("down.hittime", "int", False), TemplateParameter("down.bounce", "bool", False), TemplateParameter("id", "int", False), TemplateParameter("chainid", "int", False), TemplateParameter("nochainid", "int,int", False), TemplateParameter("hitonce", "bool", False), TemplateParameter("kill", "bool", False), TemplateParameter("guard.kill", "bool", False), TemplateParameter("fall.kill", "bool", False), TemplateParameter("numhits", "int", False), TemplateParameter("getpower", "int,int", False), TemplateParameter("givepower", "int,int", False), TemplateParameter("palfx.time", "int", False), TemplateParameter("palfx.mul", "int,int,int", False), TemplateParameter("palfx.add", "int,int,int", False), TemplateParameter("envshake.time", "int", False), TemplateParameter("envshake.freq", "float", False), TemplateParameter("envshake.ampl", "int", False), TemplateParameter("envshake.phase", "float", False), TemplateParameter("fall.envshake.time", "int", False), TemplateParameter("fall.envshake.freq", "float", False), TemplateParameter("fall.envshake.ampl", "int", False), TemplateParameter("fall.envshake.phase", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Helper", [TemplateParameter("helpertype", [TypeSpecifier(BUILTIN_HELPERTYPE)], False), TemplateParameter("name", [TypeSpecifier(BUILTIN_STRING)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("keyctrl", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ownpal", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.xscale", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("size.yscale", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("size.ground.back", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.ground.front", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.air.back", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.ait.front", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.height", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.proj.doscale", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.head.pos", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.mid.pos", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("size.shadowoffset", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitBy", [TemplateParameter("value", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], False), TemplateParameter("value2", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitDef", [TemplateParameter("attr", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], True), TemplateParameter("hitflag", [TypeSpecifier(BUILTIN_HITFLAG)], False), TemplateParameter("guardflag", [TypeSpecifier(BUILTIN_GUARDFLAG)], False), TemplateParameter("affectteam", [TypeSpecifier(BUILTIN_TEAMTYPE)], False), TemplateParameter("animtype", [TypeSpecifier(BUILTIN_HITANIMTYPE)], False), TemplateParameter("air.animtype", [TypeSpecifier(BUILTIN_HITANIMTYPE)], False), TemplateParameter("fall.animtype", [TypeSpecifier(BUILTIN_HITANIMTYPE)], False), TemplateParameter("priority", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_PRIORITYTYPE, False)], False), TemplateParameter("damage", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausetime", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guard.pausetime", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("sparkno", [TypeSpecifier(BUILTIN_SPARKNO)], False), TemplateParameter("guard.sparkno", [TypeSpecifier(BUILTIN_SPARKNO)], False), TemplateParameter("sparkxy", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("hitsound", [TypeSpecifier(BUILTIN_CINT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guardsound", [TypeSpecifier(BUILTIN_CINT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ground.type", [TypeSpecifier(BUILTIN_ATTACKTYPE)], False), TemplateParameter("air.type", [TypeSpecifier(BUILTIN_ATTACKTYPE)], False), TemplateParameter("ground.slidetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guard.slidetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ground.hittime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guard.hittime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("air.hittime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guard.ctrltime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("guard.dist", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("yaccel", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ground.velocity", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("guard.velocity", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("air.velocity", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("airguard.velocity", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ground.cornerpush.veloff", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("air.cornerpush.veloff", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("down.cornerpush.veloff", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("guard.cornerpush.veloff", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("airguard.cornerpush.veloff", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("airguard.ctrltime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("air.juggle", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("mindist", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("maxdist", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("snap", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1getp2facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2getp1state", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("forcestand", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("fall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("fall.xvelocity", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("fall.yvelocity", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("fall.recover", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("fall.recovertime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fall.damage", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("air.fall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("forcenofall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("down.velocity", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("down.hittime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("down.bounce", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("chainid", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("nochainid", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("hitonce", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("kill", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("guard.kill", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("fall.kill", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("numhits", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("getpower", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("givepower", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palfx.time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palfx.mul", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("palfx.add", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("envshake.time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("envshake.freq", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("envshake.ampl", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("envshake.phase", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("fall.envshake.time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fall.envshake.freq", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("fall.envshake.ampl", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fall.envshake.phase", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitFallDamage", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitFallSet", [TemplateParameter("value", "int", False), TemplateParameter("xvel", "float", False), TemplateParameter("yvel", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitFallSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("xvel", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("yvel", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitFallVel", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitOverride", [TemplateParameter("attr", "HitString", True), TemplateParameter("stateno", "int", False), TemplateParameter("slot", "int", False), TemplateParameter("time", "int", False), TemplateParameter("forceair", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitVelSet", [TemplateParameter("x", "bool", False), TemplateParameter("y", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("LifeAdd", [TemplateParameter("value", "int", True), TemplateParameter("kill", "bool", False), TemplateParameter("absolute", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("LifeSet", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("MakeDust", [TemplateParameter("pos", "int,int", False), TemplateParameter("pos2", "float,float", False), TemplateParameter("spacing", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ModifyExplod", [TemplateParameter("id", "int", True), TemplateParameter("int", "int", False), TemplateParameter("pos", "float,float", False), TemplateParameter("postype", "PosType", False), TemplateParameter("facing", "int", False), TemplateParameter("vfacing", "int", False), TemplateParameter("bindtime", "int", False), TemplateParameter("vel", "float,float", False), TemplateParameter("accel", "float,float", False), TemplateParameter("random", "int,int", False), TemplateParameter("removetime", "int", False), TemplateParameter("supermove", "bool", False), TemplateParameter("supermovetime", "int", False), TemplateParameter("pausemovetime", "int", False), TemplateParameter("scale", "float,float", False), TemplateParameter("sprpriority", "int", False), TemplateParameter("ontop", "bool", False), TemplateParameter("shadow", "bool", False), TemplateParameter("ownpal", "bool", False), TemplateParameter("removeongethit", "bool", False), TemplateParameter("ignorehitpause", "bool", False), TemplateParameter("trans", "TransType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitOverride", [TemplateParameter("attr", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], True), TemplateParameter("stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("slot", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("forceair", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitVelSet", [TemplateParameter("x", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("LifeAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("kill", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("absolute", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("LifeSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("MakeDust", [TemplateParameter("pos", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos2", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("spacing", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ModifyExplod", [TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("int", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vfacing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("bindtime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("accel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("removetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("supermove", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ontop", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("shadow", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ownpal", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("removeongethit", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ignorehitpause", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("MoveHitReset", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("NotHitBy", [TemplateParameter("value", "HitString", False), TemplateParameter("value2", "HitString", False), TemplateParameter("time", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("NotHitBy", [TemplateParameter("value", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], False), TemplateParameter("value2", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Null", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Offset", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PalFX", [TemplateParameter("time", "int", False), TemplateParameter("add", "int,int,int", False), TemplateParameter("mul", "int,int,int", False), TemplateParameter("sinadd", "int,int,int,int", False), TemplateParameter("invertall", "bool", False), TemplateParameter("color", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ParentVarAdd", [TemplateParameter("v", "int", False), TemplateParameter("fv", "int", False), TemplateParameter("value", "numeric", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ParentVarSet", [TemplateParameter("v", "int", False), TemplateParameter("fv", "int", False), TemplateParameter("value", "numeric", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Pause", [TemplateParameter("time", "int", True), TemplateParameter("endcmdbuftime", "int", False), TemplateParameter("movetime", "int", False), TemplateParameter("pausebg", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PlayerPush", [TemplateParameter("value", "bool", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PlaySnd", [TemplateParameter("value", "cint,int", True), TemplateParameter("volumescale", "float", False), TemplateParameter("channel", "int", False), TemplateParameter("lowpriority", "bool", False), TemplateParameter("freqmul", "float", False), TemplateParameter("loop", "bool", False), TemplateParameter("pan", "int", False), TemplateParameter("abspan", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PosAdd", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PosFreeze", [TemplateParameter("value", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PosSet", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PowerAdd", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("PowerSet", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Projectile", [TemplateParameter("projid", "int", False), TemplateParameter("projint", "int", False), TemplateParameter("projhitint", "int", False), TemplateParameter("projremint", "int", False), TemplateParameter("projscale", "float,float", False), TemplateParameter("projremove", "bool", False), TemplateParameter("projremovetime", "int", False), TemplateParameter("velocity", "float,float", False), TemplateParameter("remvelocity", "float,float", False), TemplateParameter("accel", "float,float", False), TemplateParameter("velmul", "float,float", False), TemplateParameter("projhits", "int", False), TemplateParameter("projmisstime", "int", False), TemplateParameter("projpriority", "int", False), TemplateParameter("projsprpriority", "int", False), TemplateParameter("projedgebound", "int", False), TemplateParameter("projstagebound", "int", False), TemplateParameter("projheightbound", "int,int", False), TemplateParameter("offset", "int,int", False), TemplateParameter("postype", "PosType", False), TemplateParameter("projshadow", "bool", False), TemplateParameter("supermovetime", "int", False), TemplateParameter("pausemovetime", "int", False), TemplateParameter("afterimage.time", "int", False), TemplateParameter("afterimage.length", "int", False), TemplateParameter("afterimage.palcolor", "int", False), TemplateParameter("afterimage.palinvertall", "bool", False), TemplateParameter("afterimage.palbright", "int,int,int", False), TemplateParameter("afterimage.palcontrast", "int,int,int", False), TemplateParameter("afterimage.palpostbright", "int,int,int", False), TemplateParameter("afterimage.paladd", "int,int,int", False), TemplateParameter("afterimage.palmul", "float,float,float", False), TemplateParameter("afterimage.timegap", "int", False), TemplateParameter("afterimage.framegap", "int", False), TemplateParameter("afterimage.trans", "TransType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("RemapPal", [TemplateParameter("source", "int,int", True), TemplateParameter("dest", "int,int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("RemoveExplod", [TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ReversalDef", [TemplateParameter("reversal.attr", "HitString", True), TemplateParameter("pausetime", "int,int", False), TemplateParameter("sparkno", "int", False), TemplateParameter("hitsound", "int,int", False), TemplateParameter("p1stateno", "int", False), TemplateParameter("p2stateno", "int", False), TemplateParameter("p1sprpriority", "int", False), TemplateParameter("p2sprpriority", "int", False), TemplateParameter("sparkxy", "int,int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ScreenBound", [TemplateParameter("value", "bool", False), TemplateParameter("movecamera", "bool,bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("SelfState", [TemplateParameter("value", "int", True), TemplateParameter("ctrl", "bool", False), TemplateParameter("anim", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("SprPriority", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("StateTypeSet", [TemplateParameter("statetype", "StateType", False), TemplateParameter("movetype", "MoveType", False), TemplateParameter("physics", "PhysicsType", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("SndPan", [TemplateParameter("channel", "int", True), TemplateParameter("pan", "int", True), TemplateParameter("abspan", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("StopSnd", [TemplateParameter("channel", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("SuperPause", [TemplateParameter("time", "int", False), TemplateParameter("anim", "int", False), TemplateParameter("sound", "int,int", False), TemplateParameter("pos", "float,float", False), TemplateParameter("darken", "bool", False), TemplateParameter("p2defmul", "float", False), TemplateParameter("poweradd", "int", False), TemplateParameter("unhittable", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetBind", [TemplateParameter("time", "int", False), TemplateParameter("id", "int", False), TemplateParameter("pos", "float,float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetDrop", [TemplateParameter("excludeid", "int", False), TemplateParameter("keepone", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetFacing", [TemplateParameter("value", "int", True), TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetLifeAdd", [TemplateParameter("value", "int", True), TemplateParameter("id", "int", False), TemplateParameter("kill", "bool", False), TemplateParameter("absolute", "bool", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetPowerAdd", [TemplateParameter("value", "int", True), TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetState", [TemplateParameter("value", "int", True), TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetVelAdd", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False), TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("TargetVelSet", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False), TemplateParameter("id", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Trans", [TemplateParameter("trans", "TransType", True), TemplateParameter("alpha", "int,int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Offset", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PalFX", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("add", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("mul", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("sinadd", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("invertall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("color", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ParentVarAdd", [TemplateParameter("v", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fv", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_NUMERIC)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ParentVarSet", [TemplateParameter("v", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fv", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_NUMERIC)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Pause", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("endcmdbuftime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("movetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausebg", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PlayerPush", [TemplateParameter("value", [TypeSpecifier(BUILTIN_BOOL)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PlaySnd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_CINT), TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("volumescale", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("channel", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("lowpriority", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("freqmul", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("loop", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("pan", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("abspan", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PosAdd", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PosFreeze", [TemplateParameter("value", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PosSet", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PowerAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("PowerSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Projectile", [TemplateParameter("projid", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projint", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projhitint", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projremint", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projscale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("projremove", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("projremovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("velocity", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("remvelocity", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("accel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("velmul", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("projhits", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projmisstime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projsprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projedgebound", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projstagebound", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("projheightbound", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("offset", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("projshadow", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.length", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.palcolor", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.palinvertall", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("afterimage.palbright", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.palcontrast", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.palpostbright", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.paladd", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.palmul", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("afterimage.timegap", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.framegap", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("afterimage.trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("RemapPal", [TemplateParameter("source", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("dest", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("RemoveExplod", [TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ReversalDef", [TemplateParameter("reversal.attr", [TypeSpecifier(BUILTIN_HITTYPE), TypeSpecifier(BUILTIN_HITATTR, False, True)], True), TemplateParameter("pausetime", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("sparkno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("hitsound", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2stateno", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p1sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("p2sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("sparkxy", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ScreenBound", [TemplateParameter("value", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("movecamera", [TypeSpecifier(BUILTIN_BOOL), TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("SelfState", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("ctrl", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("anim", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("SprPriority", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("StateTypeSet", [TemplateParameter("statetype", [TypeSpecifier(BUILTIN_STATETYPE)], False), TemplateParameter("movetype", [TypeSpecifier(BUILTIN_MOVETYPE)], False), TemplateParameter("physics", [TypeSpecifier(BUILTIN_PHYSICSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("SndPan", [TemplateParameter("channel", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("pan", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("abspan", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("StopSnd", [TemplateParameter("channel", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("SuperPause", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("anim", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("sound", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("darken", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("p2defmul", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("poweradd", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("unhittable", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetBind", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetDrop", [TemplateParameter("excludeid", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("keepone", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetFacing", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetLifeAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("kill", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("absolute", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetPowerAdd", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetState", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetVelAdd", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("TargetVelSet", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Trans", [TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], True), TemplateParameter("alpha", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Turn", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VarAdd", [TemplateParameter("v", "int", False), TemplateParameter("fv", "int", False), TemplateParameter("value", "numeric", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VarSet", [TemplateParameter("v", "int", False), TemplateParameter("fv", "int", False), TemplateParameter("value", "numeric", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VarRandom", [TemplateParameter("v", "int", True), TemplateParameter("range", "int,int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VarRangeSet", [TemplateParameter("value", "int", True), TemplateParameter("fvalue", "float", True), TemplateParameter("first", "int", False), TemplateParameter("last", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VelAdd", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VelMul", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VelSet", [TemplateParameter("x", "float", False), TemplateParameter("y", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("VictoryQuote", [TemplateParameter("value", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("Width", [TemplateParameter("edge", "int,int", False), TemplateParameter("player", "int,int", False), TemplateParameter("value", "int,int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN)
+        TemplateDefinition("VarAdd", [TemplateParameter("v", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fv", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_NUMERIC)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VarSet", [TemplateParameter("v", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("fv", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_NUMERIC)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VarRandom", [TemplateParameter("v", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("range", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VarRangeSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("fvalue", [TypeSpecifier(BUILTIN_FLOAT)], True), TemplateParameter("first", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("last", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VelAdd", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VelMul", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VelSet", [TemplateParameter("x", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("y", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("VictoryQuote", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("Width", [TemplateParameter("edge", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("player", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN)
     ]

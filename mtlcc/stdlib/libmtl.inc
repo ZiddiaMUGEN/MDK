@@ -10,12 +10,6 @@ type = alias
 source = byte
 
 [Define Type]
-name = numeric
-type = union
-member = float
-member = int
-
-[Define Type]
 name = SparkIndex
 type = union
 member = int
