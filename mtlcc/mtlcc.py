@@ -203,7 +203,7 @@ def loadFile(file: str, cycle: List[str]) -> LoadContext:
     return ctx
 
 def findTriggerBySignature(name: str, types: List[str], ctx: TranslationContext, location: Location) -> Union[TriggerDefinition, None]:
-    matches = list(filter(lambda k: k.name == name, ctx.triggers))
+    matches = list(filter(lambda k: k.name.lower() == name.lower(), ctx.triggers))
 
     # iterate each match
     for match in matches:
@@ -296,6 +296,8 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return "bool"
         elif tryParseCint(tree.operator) != None:
             return "cint"
+        elif tryParseString(tree.operator) != None:
+            return "string"
         elif find(ctx.types, lambda k: k.name.lower() == tree.operator.lower()) != None:
             return "type"
         elif (local := find(locals, lambda k: k.name == tree.operator)) != None:
@@ -307,11 +309,46 @@ def runTypeCheck(tree: TriggerTree, locals: List[TriggerParameter], ctx: Transla
             return resolveAlias(enum.name, ctx)
         else:
             raise TranslationError(f"Could not determine type from expression {tree.operator}.", tree.location)
-    
+        
+    ## for structure access, need to determine the type of the structure being accessed.
+    ## then determine the type of the field.
+    if tree.node == TriggerTreeNode.STRUCT_ACCESS:
+        struct_identifier = tree.operator.split(" ")[0]
+        struct_access = tree.operator.split(" ")[1]
+        if (local := find(locals, lambda k: k.name == struct_identifier)) != None:
+            if (local_type := find(ctx.types, lambda k: k.name == local.type and k.category == TypeCategory.STRUCTURE)) != None:
+                ## matches a Struct-backed trigger, fetch the type of the field
+                if (local_member := find(local_type.members, lambda k: k.name.lower() == struct_access.lower())) == None:
+                    raise TranslationError(f"Attempted to access an unknown member {struct_access} on struct with type {local_type.name}", tree.location)
+                return local_member.type
+            raise TranslationError(f"Attempted to access a structure member {struct_access} on local named {struct_identifier}, but the local is not a structure type.", tree.location)
+        elif (trigger := find(ctx.triggers, lambda k: k.name.lower() == struct_identifier.lower())) != None:
+            if (trigger_type := find(ctx.types, lambda k: k.name == trigger.type and k.category == TypeCategory.STRUCTURE)) != None:
+                ## matches a Struct-backed trigger, fetch the type of the field
+                if (trigger_member := find(trigger_type.members, lambda k: k.name.lower() == struct_access.lower())) == None:
+                    raise TranslationError(f"Attempted to access an unknown member {struct_access} on struct with type {trigger_type.name}", tree.location)
+                return trigger_member.type
+            raise TranslationError(f"Attempted to access a structure member {struct_access} on trigger {struct_identifier}, but this trigger does not return a structure type.", tree.location)
+        else:
+            raise TranslationError(f"Could not determine structure type from identifier {struct_identifier}", tree.location)
+
     ## do a depth-first search on the tree. determine the type of each node, then apply types to each operator to determine the result type.
     child_types: List[str] = []
-    for child in tree.children:
-        child_types.append(runTypeCheck(child, locals, ctx, autoEnums, isForTrigger = isForTrigger))
+    if tree.node == TriggerTreeNode.MULTIVALUE:
+        ## for a multivalue case, we may be passed several autoEnum values for each value.
+        subindex = 0
+        for child in tree.children:
+            if subindex < len(autoEnums):
+                nextAutoEnum = [autoEnums[subindex]]
+            elif len(autoEnums) != 0:
+                nextAutoEnum = [autoEnums[-1]] ## for repetition operator
+            else:
+                nextAutoEnum = []
+            subindex += 1
+            child_types.append(runTypeCheck(child, locals, ctx, nextAutoEnum, isForTrigger = isForTrigger))
+    else:
+        for child in tree.children:
+            child_types.append(runTypeCheck(child, locals, ctx, autoEnums, isForTrigger = isForTrigger))
 
     ## process operators using operator functions.
     ## no need to evaluate anything at this stage, just return the stated return type of the operator.
@@ -431,7 +468,7 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
         ## then, check if the name exists in the provided variable table.
         ## finally, check if the name exists in the trigger context. triggers which do not take parameters may optionally be used without brackets (e.g. `Alive` instead of `Alive()`)
         ## which would be parsed as an ATOM instead of a FUNCTION_CALL.
-        if tryParseInt(tree.operator) != None or tryParseFloat(tree.operator) != None or tryParseBool(tree.operator) != None or tryParseCint(tree.operator) != None:
+        if tryParseInt(tree.operator) != None or tryParseFloat(tree.operator) != None or tryParseBool(tree.operator) != None or tryParseCint(tree.operator) != None or tryParseString(tree.operator) != None:
             return []
         elif find(table, lambda k: k.name == tree.operator) != None:
             return []
@@ -443,9 +480,12 @@ def findUndefinedGlobalsInTrigger(tree: TriggerTree, table: List[StateParameter]
             return [GlobalParameter(tree.operator, "")]
         
     result: List[GlobalParameter] = []
-        
-    ## for a multivalue case, we may be passed several autoEnum values for each value.
+
+    ## for STRUCT_ACCESS, it is basically an ATOM which accesses a field. for purpose of finding globals we can just discard it.
+
+    ## TODO: this needs to be able to handle FUNCTION_CALL with enum-type inputs (e.g. `gethitvar`)
     if tree.node == TriggerTreeNode.MULTIVALUE:
+        ## for a multivalue case, we may be passed several autoEnum values for each value.
         subindex = 0
         for child in tree.children:
             if subindex < len(autoEnums):
@@ -483,7 +523,7 @@ def findUndefinedGlobals(state: StateController, table: List[StateParameter], ct
         ## and pass them directly to runTypeCheck.
         ## for this we need to look up the expected result for this prop, and then unpack it into types,
         ## and determine any enums or flags to inject.
-        expected_prop = find(controller_type.params, lambda k: k.name.lower() == name)
+        expected_prop = find(controller_type.params, lambda k: k.name.lower() == name.lower())
         enums_flags: List[TypeDefinition] = []
         if expected_prop != None:
             expected_typedefs = unpackTypes(resolveAlias(expected_prop.type, ctx), ctx)
@@ -576,7 +616,7 @@ def tryReplaceTriggerCall(tree: TriggerTree, target: TriggerDefinition, locals: 
         convert_locals = [TriggerParameter(local.name, local.type) for local in locals]
         convert_globals = [TriggerParameter(g.name, g.type) for g in ctx.globals]
         auto_enums: List[TypeDefinition] = []
-        expected_typedefs = unpackTypes(target.type, ctx)
+        expected_typedefs = unpackTypes(resolveAlias(target.type, ctx), ctx)
         if expected_typedefs != None:
             auto_enums = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
         for index in range(len(target.params)):
@@ -658,19 +698,19 @@ def runTypeCheckGlobal(statedef: StateDefinition, ctx: TranslationContext):
             expected_prop = find(controller_type.params, lambda k: k.name.lower() == prop)
             enums_flags: List[TypeDefinition] = []
             if expected_prop != None:
-                expected_typedefs = unpackTypes(expected_prop.type, ctx)
+                expected_typedefs = unpackTypes(resolveAlias(expected_prop.type, ctx), ctx)
                 if expected_typedefs != None:
                     enums_flags = [td for td in expected_typedefs if td.category in [TypeCategory.FLAG, TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]]
 
             result_type = runTypeCheck(controller.properties[prop], globals_convert + locals_convert, ctx, enums_flags)
-            result_typedefs = unpackTypes(result_type, ctx)
+            result_typedefs = unpackTypes(resolveAlias(result_type, ctx), ctx)
             if result_typedefs == None:
                 raise TranslationError(f"Could not find any type with descriptor {result_type}.", controller.properties[prop].location)            
             
             ## expected_prop could be None if the prop isn't expected on this controller/template.
             ## we already emitted a warning for this earlier anyway.
             if expected_prop != None:
-                if not unpackAndMatch(result_type, expected_prop.type, ctx):
+                if not unpackAndMatch(resolveAlias(result_type, ctx), resolveAlias(expected_prop.type, ctx), ctx):
                     raise TranslationError(f"Could not match type {result_type} to expected type {expected_prop.type} on controller {controller_type.name}.", controller.properties[prop].location)
         
 def createGlobalsTable(ctx: TranslationContext):

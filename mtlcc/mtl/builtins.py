@@ -1,16 +1,8 @@
 from typing import List
-from inspect import currentframe
 
-from mtl.utils import find, typeConvertWidest
-from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, TriggerDefinition, TriggerParameter, TriggerCategory, Expression, TemplateDefinition, TemplateCategory, TemplateParameter, Location
+from mtl.utils import find, typeConvertWidest, line_number
+from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, TriggerDefinition, TriggerParameter, TriggerCategory, Expression, TemplateDefinition, TemplateCategory, TemplateParameter, Location, StructParameter
 from mtl.error import TranslationError
-
-def line_number() -> int:
-    cf = currentframe()
-    if cf != None and cf.f_back != None:
-        return cf.f_back.f_lineno
-    else:
-        return 0
 
 def getBaseTypes() -> List[TypeDefinition]:
     return [
@@ -26,11 +18,16 @@ def getBaseTypes() -> List[TypeDefinition]:
         ## this is a special int type which can support character prefixes. it's used for things like sounds and anims.
         ## it's not legal to create a variable with this type.
         TypeDefinition("cint", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number())),
+        ## this represents strings, which are not legal to construct.
+        TypeDefinition("string", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number())),
+        ## these are built-in structure types
+        TypeDefinition("vector", TypeCategory.STRUCTURE, 32, [StructParameter("X", "float"), StructParameter("Y", "float")], Location("mtl/builtins.py", line_number())),
+        ## these are built-in enum/flag types
         TypeDefinition("StateType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "L", "U"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("MoveType", TypeCategory.STRING_ENUM, 32, ["A", "I", "H", "U"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("PhysicsType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "N", "U"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("HitType", TypeCategory.STRING_FLAG, 32, ["S", "C", "A"], Location("mtl/builtins.py", line_number())),
-        TypeDefinition("HitAttr", TypeCategory.STRING_FLAG, 32, ["N", "S", "H", "A", "T"], Location("mtl/builtins.py", line_number())),
+        TypeDefinition("HitAttr", TypeCategory.STRING_FLAG, 32, ["N", "S", "H", "A", "T", "P"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("TransType", TypeCategory.STRING_ENUM, 32, ["add", "add1", "sub", "none"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("AssertType", TypeCategory.STRING_ENUM, 32, ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("BindType", TypeCategory.STRING_ENUM, 32, ["Foot", "Mid", "Head"], Location("mtl/builtins.py", line_number())),
@@ -42,6 +39,9 @@ def getBaseTypes() -> List[TypeDefinition]:
         TypeDefinition("TeamType", TypeCategory.STRING_ENUM, 32, ["E", "B", "F"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("HitAnimType", TypeCategory.STRING_ENUM, 32, ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"], Location("mtl/builtins.py", line_number())),
         TypeDefinition("AttackType", TypeCategory.STRING_ENUM, 32, ["High", "Low", "Trip", "None"], Location("mtl/builtins.py", line_number())),
+        TypeDefinition("PriorityType", TypeCategory.STRING_ENUM, 32, ["Hit", "Miss", "Dodge"], Location("mtl/builtins.py", line_number())),
+        TypeDefinition("HitVarType", TypeCategory.STRING_ENUM, 32, ["isbound"], Location("mtl/builtins.py", line_number())),
+        TypeDefinition("ConstType", TypeCategory.STRING_ENUM, 32, ["movement.yaccel"], Location("mtl/builtins.py", line_number())),
     ]
 
 def getBaseTriggers() -> List[TriggerDefinition]:
@@ -68,7 +68,7 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("ceil", "int", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Command", "string", None, [], None, Location("mtl/builtins.py", line_number())),
         #TriggerDefinition("cond", "T", None, [TriggerParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("Const", "numeric", None, [TriggerParameter("param_name", "ConstType")], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const", "numeric", None, [TriggerParameter("param_name", "ConstType")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const240p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const480p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const720p", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
@@ -85,13 +85,13 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("GameHeight", "float", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("GameTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("GameWidth", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("GetHitVar", "numeric", None, [TriggerParameter("param_name", "HitVarType")], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("GetHitVar", "numeric", None, [TriggerParameter("param_name", "HitVarType")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitCount", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitFall", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitOver", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitPauseTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitShakeOver", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("HitVel", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("HitVel", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("ID", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         #TriggerDefinition("ifelse", "T", None, [TriggerParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
         TriggerDefinition("InGuardDist", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
@@ -121,17 +121,17 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("NumTarget", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("NumTarget", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P1Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2BodyDist", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("P2Dist", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2BodyDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("P2Dist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P2Life", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P2Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P2StateNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P3Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("P4Name", "string", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("PalNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ParentDist", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ParentDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("pi", "float", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Pos", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Pos", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Power", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("PowerMax", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("PlayerIDExist", "bool", None, [TriggerParameter("ID_number", "int")], None, Location("mtl/builtins.py", line_number())),
@@ -145,11 +145,11 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("ProjHitTime", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("ProjHitTime", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Random", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("RootDist", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("RootDist", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("RoundNo", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("RoundsExisted", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("RoundState", "int", None, [], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("ScreenPos", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ScreenPos", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("SelfAnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("SelfAnimExist", "bool", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("sin", "float", None, [TriggerParameter("exprn", "numeric")], None, Location("mtl/builtins.py", line_number())),
@@ -162,7 +162,7 @@ def getBaseTriggers() -> List[TriggerDefinition]:
         TriggerDefinition("TicksPerSecond", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Time", "int", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("var", "int", None, [TriggerParameter("exprn", "int")], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Vel", "float,float", None, [], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Vel", "vector", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Win", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("WinKO", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("WinTime", "bool", None, [], None, Location("mtl/builtins.py", line_number())),
@@ -192,8 +192,10 @@ def getBaseTriggers() -> List[TriggerDefinition]:
 
         TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", "bool", builtin_eq, [TriggerParameter("expr1", "string"), TriggerParameter("expr2", "string")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "float"), TriggerParameter("expr2", "float")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", "bool", builtin_neq, [TriggerParameter("expr1", "string"), TriggerParameter("expr2", "string")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         TriggerDefinition("operator&", "int", builtin_bitand, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator|", "int", builtin_bitor, [TriggerParameter("expr1", "int"), TriggerParameter("expr2", "int")], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
@@ -288,7 +290,7 @@ def getBaseTemplates() -> List[TemplateDefinition]:
         TemplateDefinition("Helper", [TemplateParameter("helpertype", "HelperType", False), TemplateParameter("name", "string", False), TemplateParameter("id", "int", False), TemplateParameter("pos", "float,float", False), TemplateParameter("postype", "PosType", False), TemplateParameter("facing", "int", False), TemplateParameter("stateno", "int", False), TemplateParameter("keyctrl", "bool", False), TemplateParameter("ownpal", "bool", False), TemplateParameter("supermovetime", "int", False), TemplateParameter("pausemovetime", "int", False), TemplateParameter("size.xscale", "float", False), TemplateParameter("size.yscale", "float", False), TemplateParameter("size.ground.back", "int", False), TemplateParameter("size.ground.front", "int", False), TemplateParameter("size.air.back", "int", False), TemplateParameter("size.ait.front", "int", False), TemplateParameter("size.height", "int", False), TemplateParameter("size.proj.doscale", "int", False), TemplateParameter("size.head.pos", "int,int", False), TemplateParameter("size.mid.pos", "int,int", False), TemplateParameter("size.shadowoffset", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitAdd", [TemplateParameter("value", "int", True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitBy", [TemplateParameter("value", "HitString", False), TemplateParameter("value2", "HitString", False), TemplateParameter("time", "int", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("HitDef", [TemplateParameter("attr", "HitString", True), TemplateParameter("hitflag", "HitFlag", False), TemplateParameter("guardflag", "GuardFlag", False), TemplateParameter("affectteam", "TeamType", False), TemplateParameter("animtype", "HitAnimType", False), TemplateParameter("air.animtype", "HitAnimType", False), TemplateParameter("fall.animtype", "HitAnimType", False), TemplateParameter("priority", "int,PriorityType", False), TemplateParameter("damage", "int,int", False), TemplateParameter("pausetime", "int,int", False), TemplateParameter("guard.pausetime", "int,int", False), TemplateParameter("sparkno", "cint", False), TemplateParameter("guard.sparkno", "cint", False), TemplateParameter("sparkxy", "int,int", False), TemplateParameter("hitsound", "cint,int", False), TemplateParameter("guardsound", "cint,int", False), TemplateParameter("ground.type", "AttackType", False), TemplateParameter("air.type", "AttackType", False), TemplateParameter("ground.slidetime", "int", False), TemplateParameter("guard.slidetime", "int", False), TemplateParameter("ground.hittime", "int", False), TemplateParameter("guard.hittime", "int", False), TemplateParameter("air.hittime", "int", False), TemplateParameter("guard.ctrltime", "int", False), TemplateParameter("guard.dist", "int", False), TemplateParameter("yaccel", "float", False), TemplateParameter("ground.velocity", "float,float", False), TemplateParameter("guard.velocity", "float", False), TemplateParameter("air.velocity", "float,float", False), TemplateParameter("airguard.velocity", "float,float", False), TemplateParameter("ground.cornerpush.veloff", "float", False), TemplateParameter("air.cornerpush.veloff", "float", False), TemplateParameter("down.cornerpush.veloff", "float", False), TemplateParameter("guard.cornerpush.veloff", "float", False), TemplateParameter("airguard.cornerpush.veloff", "float", False), TemplateParameter("airguard.ctrltime", "int", False), TemplateParameter("air.juggle", "int", False), TemplateParameter("mindist", "int,int", False), TemplateParameter("maxdist", "int,int", False), TemplateParameter("snap", "int,int", False), TemplateParameter("p1sprpriority", "int", False), TemplateParameter("p2sprpriority", "int", False), TemplateParameter("p1facing", "int", False), TemplateParameter("p1getp2facing", "int", False), TemplateParameter("p2facing", "int", False), TemplateParameter("p1stateno", "int", False), TemplateParameter("p2stateno", "int", False), TemplateParameter("p2getp1state", "bool", False), TemplateParameter("forcestand", "bool", False), TemplateParameter("fall", "bool", False), TemplateParameter("fall.xvelocity", "float", False), TemplateParameter("fall.yvelocity", "float", False), TemplateParameter("fall.recover", "bool", False), TemplateParameter("fall.recovertime", "int", False), TemplateParameter("fall.damage", "int", False), TemplateParameter("air.fall", "bool", False), TemplateParameter("forcenofall", "bool", False), TemplateParameter("down.velocity", "float,float", False), TemplateParameter("down.hittime", "int", False), TemplateParameter("down.bounce", "bool", False), TemplateParameter("id", "int", False), TemplateParameter("chainid", "int", False), TemplateParameter("nochainid", "int,int", False), TemplateParameter("hitonce", "bool", False), TemplateParameter("kill", "bool", False), TemplateParameter("guard.kill", "bool", False), TemplateParameter("fall.kill", "bool", False), TemplateParameter("numhits", "int", False), TemplateParameter("getpower", "int,int", False), TemplateParameter("givepower", "int,int", False), TemplateParameter("palfx.time", "int", False), TemplateParameter("palfx.mul", "int,int,int", False), TemplateParameter("palfx.add", "int,int,int", False), TemplateParameter("envshake.time", "int", False), TemplateParameter("envshake.freq", "float", False), TemplateParameter("envshake.ampl", "int", False), TemplateParameter("envshake.phase", "float", False), TemplateParameter("fall.envshake.time", "int", False), TemplateParameter("fall.envshake.freq", "float", False), TemplateParameter("fall.envshake.ampl", "int", False), TemplateParameter("fall.envshake.phase", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("HitDef", [TemplateParameter("attr", "HitString", True), TemplateParameter("hitflag", "HitFlag", False), TemplateParameter("guardflag", "GuardFlag", False), TemplateParameter("affectteam", "TeamType", False), TemplateParameter("animtype", "HitAnimType", False), TemplateParameter("air.animtype", "HitAnimType", False), TemplateParameter("fall.animtype", "HitAnimType", False), TemplateParameter("priority", "int,PriorityType", False), TemplateParameter("damage", "int,int", False), TemplateParameter("pausetime", "int,int", False), TemplateParameter("guard.pausetime", "int,int", False), TemplateParameter("sparkno", "SparkIndex", False), TemplateParameter("guard.sparkno", "SparkIndex", False), TemplateParameter("sparkxy", "int,int", False), TemplateParameter("hitsound", "cint,int", False), TemplateParameter("guardsound", "cint,int", False), TemplateParameter("ground.type", "AttackType", False), TemplateParameter("air.type", "AttackType", False), TemplateParameter("ground.slidetime", "int", False), TemplateParameter("guard.slidetime", "int", False), TemplateParameter("ground.hittime", "int", False), TemplateParameter("guard.hittime", "int", False), TemplateParameter("air.hittime", "int", False), TemplateParameter("guard.ctrltime", "int", False), TemplateParameter("guard.dist", "int", False), TemplateParameter("yaccel", "float", False), TemplateParameter("ground.velocity", "float", False), TemplateParameter("guard.velocity", "float", False), TemplateParameter("air.velocity", "float,float", False), TemplateParameter("airguard.velocity", "float,float", False), TemplateParameter("ground.cornerpush.veloff", "float", False), TemplateParameter("air.cornerpush.veloff", "float", False), TemplateParameter("down.cornerpush.veloff", "float", False), TemplateParameter("guard.cornerpush.veloff", "float", False), TemplateParameter("airguard.cornerpush.veloff", "float", False), TemplateParameter("airguard.ctrltime", "int", False), TemplateParameter("air.juggle", "int", False), TemplateParameter("mindist", "int,int", False), TemplateParameter("maxdist", "int,int", False), TemplateParameter("snap", "int,int", False), TemplateParameter("p1sprpriority", "int", False), TemplateParameter("p2sprpriority", "int", False), TemplateParameter("p1facing", "int", False), TemplateParameter("p1getp2facing", "int", False), TemplateParameter("p2facing", "int", False), TemplateParameter("p1stateno", "int", False), TemplateParameter("p2stateno", "int", False), TemplateParameter("p2getp1state", "bool", False), TemplateParameter("forcestand", "bool", False), TemplateParameter("fall", "bool", False), TemplateParameter("fall.xvelocity", "float", False), TemplateParameter("fall.yvelocity", "float", False), TemplateParameter("fall.recover", "bool", False), TemplateParameter("fall.recovertime", "int", False), TemplateParameter("fall.damage", "int", False), TemplateParameter("air.fall", "bool", False), TemplateParameter("forcenofall", "bool", False), TemplateParameter("down.velocity", "float,float", False), TemplateParameter("down.hittime", "int", False), TemplateParameter("down.bounce", "bool", False), TemplateParameter("id", "int", False), TemplateParameter("chainid", "int", False), TemplateParameter("nochainid", "int,int", False), TemplateParameter("hitonce", "bool", False), TemplateParameter("kill", "bool", False), TemplateParameter("guard.kill", "bool", False), TemplateParameter("fall.kill", "bool", False), TemplateParameter("numhits", "int", False), TemplateParameter("getpower", "int,int", False), TemplateParameter("givepower", "int,int", False), TemplateParameter("palfx.time", "int", False), TemplateParameter("palfx.mul", "int,int,int", False), TemplateParameter("palfx.add", "int,int,int", False), TemplateParameter("envshake.time", "int", False), TemplateParameter("envshake.freq", "float", False), TemplateParameter("envshake.ampl", "int", False), TemplateParameter("envshake.phase", "float", False), TemplateParameter("fall.envshake.time", "int", False), TemplateParameter("fall.envshake.freq", "float", False), TemplateParameter("fall.envshake.ampl", "int", False), TemplateParameter("fall.envshake.phase", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitFallDamage", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitFallSet", [TemplateParameter("value", "int", False), TemplateParameter("xvel", "float", False), TemplateParameter("yvel", "float", False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("HitFallVel", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),

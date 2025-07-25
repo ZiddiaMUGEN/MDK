@@ -1,6 +1,6 @@
 ## Translation Process
 
-Translation happens in several phases. This document goes into implementation details on how an input file should be converted into valid CNS.
+Translation happens in several phases. This document goes into details on how an input file should be converted into valid CNS.
 
 ### 1. INI Processing
 
@@ -120,7 +120,7 @@ For triggers which specify parameters, that means that the parameters being pass
 
 Triggers are permitted to reference other user-defined triggers, so this process must be repeated until all triggers are resolved. It is permitted for the compiler to apply a maximum iteration count for trigger resolution.
 
-### Variable Allocation
+### 11. Variable Allocation
 
 The compiler should determine the total storage needed for globals based on the size of their types. The compiler can also determine the maximum local table size from all statedefs. This then informs the compiler on how it needs to allocate variables.
 

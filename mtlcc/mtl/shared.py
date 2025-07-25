@@ -34,6 +34,7 @@ class TriggerTreeNode(Enum):
     INTERVAL_OP = 2
     FUNCTION_CALL = 3
     ATOM = 4
+    STRUCT_ACCESS = 5
 
 @dataclass
 class TriggerTree:
@@ -190,6 +191,11 @@ class TypeCategory(Enum):
     BUILTIN_DENY = 100 # builtin types which you cannot allocate.
 
 @dataclass
+class StructParameter:
+    name: str
+    type: str
+
+@dataclass
 class TypeDefinition:
     name: str
     category: TypeCategory
@@ -200,7 +206,8 @@ class TypeDefinition:
     # - for UNION, there can be as many members as needed, with matching sizes.
     # - for ENUM, the members define the valid values the enumeration can take; enumeration IDs are assigned in order.
     # - for FLAG, the members define the valid flag values which can be set; a maximum of 32 members can be added.
-    members: List[str]
+    # - for STRUCTURE, the members are a mapping from a name to a type.
+    members: List[Union[StructParameter, str]]
     location: Location
 
 @dataclass

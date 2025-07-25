@@ -10,6 +10,15 @@ from inspect import getframeinfo, stack
 from mtl.shared import TranslationContext, TypeDefinition, TypeCategory, Location
 from mtl.error import TranslationError
 
+from inspect import currentframe
+
+def line_number() -> int:
+    cf = currentframe()
+    if cf != None and cf.f_back != None:
+        return cf.f_back.f_lineno
+    else:
+        return 0
+
 def compiler_internal() -> Location:
     caller = getframeinfo(stack()[1][0])
     return Location(caller.filename, caller.lineno)
@@ -38,6 +47,12 @@ def tryParseCint(input: str) -> Optional[str]:
     # cint: an int with a prefix F or S.
     # special type to support sounds and spark numbers. CNS has very weird syntax.
     if (input.startswith("F") or input.startswith("S")) and tryParseInt(input[1:]):
+        return input
+    return None
+
+def tryParseString(input: str) -> Optional[str]:
+    # string: if it's wrapped with quotes, accept it.
+    if input.startswith("\"") and input.endswith("\""):
         return input
     return None
 
@@ -111,9 +126,22 @@ def typeConvertOrdered(type1: TypeDefinition, type2: TypeDefinition, ctx: Transl
         return typeConvertUnion(type2, type1, ctx, location)
     elif type2.category == TypeCategory.UNION and type1.category != TypeCategory.UNION:
         return typeConvertUnion(type1, type2, ctx, location)
+    
+    ## convert `int` to `bool` to satisfy CNS
+    if type1.name == "int" and type2.name == "bool":
+        return type1
 
     ## could not convert.
     return None
+
+def typeConvertOrderedStr(type1: str, type2: str, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
+    if (t1 := find(ctx.types, lambda k: k.name == type1)) == None:
+        return None
+    
+    if (t2 := find(ctx.types, lambda k: k.name == type2)) == None:
+        return None
+    
+    return typeConvertOrdered(t1, t2, ctx, location)
 
 ## attempts to convert type1 to type2, and type2 to type1; returns the widest result.
 def typeConvertWidest(type1: TypeDefinition, type2: TypeDefinition, ctx: TranslationContext, location: Location) -> Union[TypeDefinition, None]:
@@ -149,7 +177,8 @@ def unpackTypes(base_type: str, ctx: TranslationContext) -> Optional[List[TypeDe
 ## there is an assumption here that `base_type` is a resolved type and will not contain extra syntax.
 def unpackAndMatch(base_type: str, target_type: str, ctx: TranslationContext) -> bool:
     if "," not in base_type and "," not in target_type:
-        return resolveAlias(base_type, ctx) == resolveAlias(target_type.replace("?", "").replace("...", ""), ctx)
+        return typeConvertOrderedStr(resolveAlias(base_type, ctx), resolveAlias(target_type.replace("?", "").replace("...", ""), ctx), ctx, Location("mtl/utils.py", line_number())) != None
+        #return resolveAlias(base_type, ctx) == resolveAlias(target_type.replace("?", "").replace("...", ""), ctx)
     ## break each type into its component types
     base_components = [resolveAlias(component.strip(), ctx) for component in base_type.split(",")]
     target_components = [component.strip() for component in base_type.split(",")]
@@ -160,11 +189,13 @@ def unpackAndMatch(base_type: str, target_type: str, ctx: TranslationContext) ->
         if find(ctx.types, lambda k: k.name == base_components[index]) == None: return False
         target_type = resolveAlias(target_components[index].replace("?", "").replace("...", ""), ctx)
         ## ensure the current type matches the target
-        if base_components[index] != target_type: return False
+        if typeConvertOrderedStr(resolveAlias(base_components[index], ctx), resolveAlias(target_type, ctx), ctx, Location("mtl/utils.py", line_number())) == None:
+            return False
         ## if the target has the repetition syntax, we should iterate remaining components of base_components and ensure they all match the repeated target.
         if index < len(target_components) and target_components[index].endswith("?"):
             while index < len(base_components):
-                if base_components[index] != target_type: return False
+                if typeConvertOrderedStr(resolveAlias(base_components[index], ctx), resolveAlias(target_type, ctx), ctx, Location("mtl/utils.py", line_number())) == None:
+                    return False
                 index += 1
             break
 

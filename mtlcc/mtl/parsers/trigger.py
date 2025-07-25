@@ -174,7 +174,7 @@ class TriggerVisitor(Visitor_Recursive[Token]):
             for child in tree.children:
                 if isinstance(child, Tree) and child.data == "atom":
                     operands.append(self.stack.pop())
-            self.stack.append(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.children[0].value, operands, self.location))
+            self.stack.append(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.children[0].value.strip(), operands, self.location))
 
     def atom(self, tree: Tree[Token]):
         if len(tree.children) == 0:
@@ -184,4 +184,9 @@ class TriggerVisitor(Visitor_Recursive[Token]):
             ## but the brackets are just to enforce precedence in the parser, we essentially don't need to do anything here!
             pass
         elif isinstance(tree.children[0], Token):
-            self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip(), [], self.location))
+            ## structure access is separated by a space character.
+            ## we want to be able to identify struct accesses.
+            if " " in tree.children[0].value.strip():
+                self.stack.append(TriggerTree(TriggerTreeNode.STRUCT_ACCESS, tree.children[0].value.strip(), [], self.location))
+            else:
+                self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip(), [], self.location))
