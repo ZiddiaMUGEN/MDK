@@ -117,7 +117,7 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
 
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
-        result_type = type_check(trigger_definition.value, param_defs, ctx, trigger_definition.location)
+        result_type = type_check(trigger_definition.value, param_defs, ctx)
         ## trigger returns and trigger expressions are only permitted to have one return type currently.
         ## ensure only one type was returned.
         if result_type == None or len(result_type) != 1:
@@ -161,14 +161,13 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
         template_states: list[StateController] = []
         for state in template_definition.states:
             controller = parse_controller(state, ctx)
-            ## run findUndefinedGlobals against this controller to determine any global variable usage.
-            ## the variable table we pass contains only the locals and the parameters, so all globals in this case are undefined.
-            ## templates which use undefined global variables will be rejected as templates can't use globals.
-            ## we must also pass the list of triggers so the function can identify parameter-less trigger calls.
-            temp_params = [TypeParameter(p.name, p.type[0].type) for p in template_params]
-            undefineds = search_globals(controller, temp_params + template_locals, ctx)
-            if len(undefineds) != 0:
-                raise TranslationError(f"Template uses global variables named {', '.join([u.name for u in undefineds])}, but templates cannot define or use globals.", state.location)
+            ## to determine if there are any globals in use, we can just call `type_check`
+            ## the type checker will throw an error if it does not recognize any symbol.
+            for trigger_group in controller.triggers:
+                for trigger in controller.triggers[trigger_group].triggers:
+                    type_check(trigger, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx)
+            for property in controller.properties:
+                type_check(controller.properties[property], [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx)
             template_states.append(controller)
         
         ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))
