@@ -2,17 +2,11 @@ from typing import Optional, TypeVar, Callable
 
 from mtl.types.context import TranslationContext
 from mtl.types.trigger import TriggerTree, TriggerTreeNode
+from mtl.types.shared import TranslationError
 from mtl.types.translation import *
 from mtl.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT, BUILTIN_TYPE
 
-from mtl.utils.compiler import find_type, find_trigger, find, equals_insensitive, get_widest_match
-
-T = TypeVar('T')
-def _tryparse(input: str, fn: Callable[[str], T]) -> Optional[T]:
-    try:
-        return fn(input)
-    except:
-        return None
+from mtl.utils.compiler import find_type, find_trigger, find, equals_insensitive, get_widest_match, _tryparse
 
 def parse_builtin(input: str) -> Optional[TypeDefinition]:
     ## parses the input string to see if it matches any built-in type.
@@ -52,8 +46,7 @@ def get_struct_target(input: str, table: list[TypeParameter], ctx: TranslationCo
     ## return the identified target type
     return target_type
 
-## TODO: this needs to have a way to bubble type-checking errors up to the calling function.
-def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> Optional[list[TypeSpecifier]]:
+def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, loc: Location) -> Optional[list[TypeSpecifier]]:
     ## runs a type check against a single tree. this assesses that the types of the components used in the tree
     ## are correct and any operators used in the tree are valid.
     ## this returns a list of Specifiers because the tree can potentially have multiple results (e.g. for multivalues)
@@ -75,15 +68,15 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
             return [TypeSpecifier(BUILTIN_TYPE)]
         else:
             ## in other cases the token was not recognized, so we return None.
-            return None
+            raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", loc)
     elif tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
         ## unary and binary operators will have an `operator` trigger which describes the inputs and outputs.
         ## first determine the type of each input.
         inputs: list[TypeDefinition] = []
         for child in tree.children:
             # if any child fails type checking, bubble that up
-            if (child_type := type_check(child, table, ctx)) == None:
-                return None
+            if (child_type := type_check(child, table, ctx, loc)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", loc)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
             if len(child_type) != 1: return None
@@ -92,14 +85,14 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if (match := find_trigger(f"operator{tree.operator}", inputs, ctx)) != None:
             return [TypeSpecifier(match.type)]
         ## if no match exists, the trigger does not exist.
-        return None
+        raise TranslationError(f"No matching operator overload was found for operator {tree.operator} and child types {', '.join([i.name for i in inputs])}", loc)
     elif tree.node == TriggerTreeNode.MULTIVALUE:
         ## multivalue operators can have one or more results. need to run the type check on each child,
         ## and return the list of type specifiers.
         specs: list[TypeSpecifier] = []
         for child in tree.children:
-            if (child_type := type_check(child, table, ctx)) == None:
-                return None
+            if (child_type := type_check(child, table, ctx, loc)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from multivalued operator.", loc)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
             specs.append(child_type[0])
@@ -109,8 +102,8 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## determine the widened type match and return that as the type of the interval.
         specs: list[TypeSpecifier] = []
         for child in tree.children:
-            if (child_type := type_check(child, table, ctx)) == None:
-                return None
+            if (child_type := type_check(child, table, ctx, loc)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from interval operator.", loc)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
             specs.append(child_type[0])
@@ -118,7 +111,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if len(specs) != 2: return None
         ## get the widest matching type
         if (match := get_widest_match(specs[0].type, specs[1].type, ctx)) == None:
-            return None
+            raise TranslationError(f"Input types {specs[0].type} and {specs[1].type} to interval operator could not be resolved to a common type.", loc)
         return [TypeSpecifier(match)]
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
         ## function calls (trigger calls) have the trigger name and the parameters as children.
@@ -126,8 +119,8 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         inputs: list[TypeDefinition] = []
         for child in tree.children:
             # if any child fails type checking, bubble that up
-            if (child_type := type_check(child, table, ctx)) == None:
-                return None
+            if (child_type := type_check(child, table, ctx, loc)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression in trigger {tree.operator}.", loc)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
             if len(child_type) != 1: return None
@@ -136,11 +129,11 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if (match := find_trigger(tree.operator, inputs, ctx)) != None:
             return [TypeSpecifier(match.type)]
         ## if no match exists, the trigger does not exist.
-        return None
+        raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator} and child types {', '.join([i.name for i in inputs])}", loc)
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
         if (struct_type := get_struct_target(tree.operator, table, ctx)) == None:
-            return None
+            raise TranslationError(f"Could not determine the type of the struct member access given by {tree.operator}.", loc)
         return [TypeSpecifier(struct_type)]
     
     ## fallback which should never be reachable!

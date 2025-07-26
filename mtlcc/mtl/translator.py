@@ -1,6 +1,8 @@
 from mtl.types.context import LoadContext, TranslationContext
 from mtl.types.translation import *
-from mtl.utils.compiler import TranslationError, find_type, find_trigger, unpack_types, find, get_type_match
+from mtl.types.shared import TranslationError
+
+from mtl.utils.compiler import find_type, find_trigger, find_template, unpack_types, find, get_type_match, parse_local, parse_controller
 from mtl.utils.checker import type_check
 from mtl import builtins
 
@@ -93,17 +95,17 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
             raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.location.filename}:{matching_type.location.line}: type names are reserved for type initialization.", trigger_definition.location)
         
         # identify matches by name, then inspect type signature
-        param_types = [param.value for param in trigger_definition.params.properties] if trigger_definition.params != None else []
+        param_types = [param for param in trigger_definition.params.properties] if trigger_definition.params != None else []
         ## need to resolve the types in param_types to a list of types.
-        param_defs: list[TypeDefinition] = []
+        param_defs: list[TypeParameter] = []
         for param in param_types:
-            if (t := find_type(param, ctx)) == None:
+            if (t := find_type(param.value, ctx)) == None:
                 return None
             if t.category == TypeCategory.BUILTIN_DENY:
                 raise TranslationError(f"Trigger with name {trigger_name} has a parameter with type {t.name}, but user-defined triggers are not permitted to use this type.", trigger_definition.location)
-            param_defs.append(t)
+            param_defs.append(TypeParameter(param.key, t))
         ## now try to find a matching overload.
-        matched = find_trigger(trigger_name, param_defs, ctx)
+        matched = find_trigger(trigger_name, [param.type for param in param_defs], ctx)
         if matched != None:
             raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {matched.location.filename}:{matched.location.line}", trigger_definition.location)
 
@@ -112,27 +114,65 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
             raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.location)
         if trigger_type.category == TypeCategory.BUILTIN_DENY:
             raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type}, but user-defined triggers are not permitted to use this type.", trigger_definition.location)
-        
-        ## ensure the type of all parameters for the trigger are known
-        params: list[TypeParameter] = []
-        if trigger_definition.params != None:
-            for parameter in trigger_definition.params.properties:
-                if (matching_type := find(ctx.types, lambda k: k.name == parameter.value)) == None:
-                    raise TranslationError(f"Trigger parameter {parameter.key} declares a type of {parameter.value} but that type is not known.", parameter.location)
-                params.append(TypeParameter(parameter.key, matching_type))
 
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
-        result_type = type_check(trigger_definition.value, params, ctx)
+        result_type = type_check(trigger_definition.value, param_defs, ctx, trigger_definition.location)
         ## trigger returns and trigger expressions are only permitted to have one return type currently.
         ## ensure only one type was returned.
         if result_type == None or len(result_type) != 1:
-            return None
+            raise TranslationError(f"Could not determine the result type for trigger expression.", trigger_definition.location)
         if not get_type_match(result_type[0].type, trigger_type, ctx):
             raise TranslationError(f"Could not match type {result_type[0].type.name} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
 
-        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type, None, params, trigger_definition.value, trigger_definition.location))
+        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type, None, param_defs, trigger_definition.value, trigger_definition.location))
     print(f"Successfully resolved {len(ctx.triggers)} trigger function definitions")
+
+def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
+    print("Start loading template definitions...")
+    for template_definition in load_ctx.templates:
+        ## determine final template name and check if it is already in use.
+        template_name = template_definition.name if template_definition.namespace == None else f"{template_definition.namespace}.{template_definition.name}"
+        if (original := find_template(template_name, ctx)) != None:
+            raise TranslationError(f"Template with name {template_name} was redefined: original definition at {original.location.filename}:{original.location.line}", template_definition.location)
+        
+        ## determine the type and default value of any local declarations
+        template_locals: list[TypeParameter] = []
+        for local in template_definition.locals:
+            if (local_param := parse_local(local.value, ctx, local.location)) == None:
+                raise TranslationError(f"Could not parse local variable for template from expression {local.value}", local.location)
+            if local_param.type.category == TypeCategory.BUILTIN_DENY:
+                raise TranslationError(f"Template with name {template_name} declares a local {local_param.name} with type {local_param.type.name}, but user-defined templates are not permitted to use this type.", template_definition.location)
+            template_locals.append(local_param)
+
+        ## determine the type of any parameter declarations
+        template_params: list[TemplateParameter] = []
+        if template_definition.params != None:
+            for param in template_definition.params.properties:
+                if (param_type := find_type(param.value, ctx)) == None:
+                    raise TranslationError(f"A template parameter was declared with a type of {param.value} but that type does not exist.", param.location)
+                if param_type.category == TypeCategory.BUILTIN_DENY:
+                    raise TranslationError(f"Template with name {template_name} declares a parameter with type {param_type.name}, but user-defined templates are not permitted to use this type.", template_definition.location)
+                ## user-defined templates can't specify tuples, so provide a single TypeSpecifier here.
+                template_params.append(TemplateParameter(param.key, [TypeSpecifier(param_type)]))
+
+        ## analyse all template states. in this stage we just want to confirm variable usage is correct.
+        ## type checking will happen later when we have substituted templates into their call sites.
+        template_states: list[StateController] = []
+        for state in template_definition.states:
+            controller = parse_controller(state, ctx)
+            ## run findUndefinedGlobals against this controller to determine any global variable usage.
+            ## the variable table we pass contains only the locals and the parameters, so all globals in this case are undefined.
+            ## templates which use undefined global variables will be rejected as templates can't use globals.
+            ## we must also pass the list of triggers so the function can identify parameter-less trigger calls.
+            temp_params = [TypeParameter(p.name, p.type[0].type) for p in template_params]
+            undefineds = search_globals(controller, temp_params + template_locals, ctx)
+            if len(undefineds) != 0:
+                raise TranslationError(f"Template uses global variables named {', '.join([u.name for u in undefineds])}, but templates cannot define or use globals.", state.location)
+            template_states.append(controller)
+        
+        ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))
+    print(f"Successfully resolved {len(ctx.templates)} template definitions")
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)

@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from mtl.types.ini import *
-from mtl.utils.compiler import TranslationError
+from mtl.types.shared import TranslationError
 
 # find any comment (delimited by `;`) and produce a line with it removed.
 def remove_comment(line: str, ctx: INIParserContext) -> str:

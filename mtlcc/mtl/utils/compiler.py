@@ -1,21 +1,22 @@
 from typing import Optional
 from typing import Callable, TypeVar
 
-import os
-
 from inspect import getframeinfo, stack
 from inspect import currentframe
 
-from mtl.types.shared import Location
+from mtl.types.shared import Location, TranslationError
 from mtl.types.context import TranslationContext
+from mtl.types.ini import StateControllerSection
+from mtl.types.trigger import TriggerTreeNode
 from mtl.types.translation import *
+from mtl.parser.trigger import parseTrigger
 
-class TranslationError(Exception):
-    message: str
-
-    def __init__(self, message: str, location: Location):
-        super().__init__(f"Translation error at {os.path.realpath(location.filename)}:{location.line}: {message}")
-        self.message = f"{os.path.realpath(location.filename)}:{location.line}: {message}"
+T = TypeVar('T')
+def _tryparse(input: str, fn: Callable[[str], T]) -> Optional[T]:
+    try:
+        return fn(input)
+    except:
+        return None
 
 def line_number() -> int:
     cf = currentframe()
@@ -42,6 +43,9 @@ def equals_insensitive(s1: str, s2: str) -> bool:
 
 def find_type(type_name: str, ctx: TranslationContext) -> Optional[TypeDefinition]:
     return find(ctx.types, lambda k: equals_insensitive(k.name, type_name))
+
+def find_template(template_name: str, ctx: TranslationContext) -> Optional[TemplateDefinition]:
+    return find(ctx.templates, lambda k: equals_insensitive(k.name, template_name))
 
 def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext) -> Optional[TriggerDefinition]:
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
@@ -154,3 +158,62 @@ def get_type_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationConte
 
     ## could not convert.
     return None
+
+def parse_local(decl: str, ctx: TranslationContext, loc: Location) -> Optional[TypeParameter]:
+    if len(decl.split("=")) < 2: return None
+    ## locals always have form `name = type`
+    ## they can also specify a default value as `name = type(default)`
+    local_name = decl.split("=")[0].strip()
+    local_exprn = decl.split("=")[1].strip()
+
+    ## convert the expression to a type
+    if (local_type := find_type(local_exprn.split("(")[0].strip(), ctx)) == None:
+        raise TranslationError(f"Could not parse local variable type specifier {local_exprn} to a type.", loc)
+
+    ## attempt to parse the default value to a tree
+    ## (default values are supposed to be const but that can be determined later)
+    if "(" in local_exprn:
+        default_value = parseTrigger(local_exprn.split("(")[1].split(")")[0].strip(), loc)
+    else:
+        default_value = None
+
+    return TypeParameter(local_name, local_type, default_value)
+
+def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> StateController:
+    ## parsing a state controller involves
+    if (type := find(state.properties, lambda k: equals_insensitive(k.key, "type"))) == None:
+        raise TranslationError("State controllers must declare a type property.", state.location)
+    ## check the controller type as it was parsed as if it is a trigger
+    if type.value.node == TriggerTreeNode.MULTIVALUE and len(type.value.children) == 1:
+        name = type.value.children[0].operator
+    elif type.value.node == TriggerTreeNode.ATOM:
+        name = type.value.operator
+    else:
+        raise TranslationError(f"Could not determine which template to use for state controller {type.value.operator}.", state.location)
+    
+    ## find the template (or builtin controller) to use for this state controller.
+    if (template := find_template(name, ctx)) == None:
+        raise TranslationError(f"Could not determine which template to use for state controller {name}.", state.location)
+    
+    ## for each property on the controller, we want to classify them into `triggers` or `properties` and assign to the appropriate group.
+    triggers: dict[int, TriggerGroup] = {}
+    properties: dict[str, TriggerTree] = {}
+    for prop in state.properties:
+        if prop.key == "type": continue
+        if prop.key.startswith("trigger"):
+            ## handle trigger groups
+            group = prop.key[7:].strip()
+            ## determine a numeric group ID
+            if group == "all": group_index = -1
+            else: group_index = _tryparse(group, int)
+            ## ensure group ID is numeric
+            if group_index == None: raise TranslationError(f"Could not determine the group ID for trigger group named {prop.key}", prop.location)
+            ## find the matching group
+            if group_index not in triggers: triggers[group_index] = TriggerGroup([])
+            triggers[group_index].triggers.append(prop.value)
+        else:
+            ## store the property
+            if prop.key in properties: raise TranslationError(f"Property {prop.key} was redefined in state controller.", prop.location)
+            properties[prop.key] = prop.value
+
+    return StateController(name, triggers, properties, state.location)

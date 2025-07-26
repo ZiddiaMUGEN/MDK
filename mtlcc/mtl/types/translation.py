@@ -64,9 +64,13 @@ class TemplateCategory(Enum):
     BUILTIN = 1
 
 @dataclass
+class TriggerGroup:
+    triggers: list[TriggerTree]
+
+@dataclass
 class StateController:
     name: str
-    triggers: dict[int, list[TriggerTree]]
+    triggers: dict[int, TriggerGroup]
     properties: dict[str, TriggerTree]
     location: Location
 

@@ -27,3 +27,13 @@ input = int
 ;;;;; Reflection Const Triggers
 ;; These provide access into compiler state and type information.
 ;[Define Trigger]
+[Define Template]
+name = testTemplate
+local = myTestVar = int
+
+[Define Parameters]
+myTestParam = float
+
+[State ]
+type = Null
+trigger1 = 1

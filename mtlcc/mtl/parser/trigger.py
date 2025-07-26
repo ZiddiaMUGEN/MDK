@@ -2,9 +2,8 @@ from lark import Lark, Token
 from lark.visitors import Visitor_Recursive
 from lark.tree import Tree
 
-from mtl.utils.compiler import TranslationError
 from mtl.types.trigger import TriggerTree, TriggerTreeNode
-from mtl.types.shared import Location
+from mtl.types.shared import Location, TranslationError
 
 trigger_grammar = Lark(
     """
@@ -65,7 +64,7 @@ trigger_grammar = Lark(
     LBRACKET: "("
     RBRACKET: ")"
     COMMA: ","
-    TOKEN: (CNAME) (CNAME|"-"|"+"|" "|".")*
+    TOKEN: (CNAME) (CNAME|" "|".")*
     STRING: QUOTE CNAME QUOTE
 
     QUOTE: "\\""
