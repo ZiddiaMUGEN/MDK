@@ -10,12 +10,6 @@ type = alias
 source = byte
 
 [Define Type]
-name = SparkIndex
-type = union
-member = int
-member = cint
-
-[Define Type]
 name = HitString
 type = alias
 source = HitType,HitAttr...?

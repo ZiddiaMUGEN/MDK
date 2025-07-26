@@ -32,6 +32,8 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
                 if property.key == "member":
                     if (target := find_type(property.value, ctx)) == None:
                         raise TranslationError(f"Union type {type_name} references source type {property.value}, but that type does not exist.", type_definition.location)
+                    if target.category == TypeCategory.BUILTIN_DENY:
+                        raise TranslationError(f"Union type {type_name} references source type {property.value}, but user-defined unions are not permitted to use that type.", type_definition.location)
                     if target_size == -1:
                         target_size = target.size
                     if target.size != target_size:
@@ -74,6 +76,8 @@ def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
         for member_name in struct_definition.members.properties:
             if (member := find_type(member_name.value, ctx)) == None:
                 raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but this type does not exist.", member_name.location)
+            if member.category == TypeCategory.BUILTIN_DENY:
+                raise TranslationError(f"Member {member_name.key} on structure {type_name} has type {member_name.value}, but user-defined structures are not permitted to use this type.", member_name.location)
             struct_size += member.size
             struct_members.append(f"{member_name.key}:{member.name}")
         
@@ -95,6 +99,8 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
         for param in param_types:
             if (t := find_type(param, ctx)) == None:
                 return None
+            if t.category == TypeCategory.BUILTIN_DENY:
+                raise TranslationError(f"Trigger with name {trigger_name} has a parameter with type {t.name}, but user-defined triggers are not permitted to use this type.", trigger_definition.location)
             param_defs.append(t)
         ## now try to find a matching overload.
         matched = find_trigger(trigger_name, param_defs, ctx)
@@ -104,6 +110,8 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
         ## ensure the expected type of the trigger is known
         if (trigger_type := find_type(trigger_definition.type, ctx)) == None:
             raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.location)
+        if trigger_type.category == TypeCategory.BUILTIN_DENY:
+            raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type}, but user-defined triggers are not permitted to use this type.", trigger_definition.location)
         
         ## ensure the type of all parameters for the trigger are known
         params: list[TypeParameter] = []

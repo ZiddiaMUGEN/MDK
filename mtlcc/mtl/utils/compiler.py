@@ -119,6 +119,12 @@ def get_type_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationConte
     ## if types match, t1 return the type.
     if t1 == t2: return t1
 
+    ## special handling for the `any` type, which should always convert to the other type
+    if t1.name == "any" and t2.name != "any":
+        return t2
+    if t2.name == "any" and t1.name != "any":
+        return t1
+
     ## this is based on section 1.1 of the spec.
 
     ## `int` is implicitly convertible to `float`

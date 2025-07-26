@@ -3,7 +3,7 @@ from typing import Optional, TypeVar, Callable
 from mtl.types.context import TranslationContext
 from mtl.types.trigger import TriggerTree, TriggerTreeNode
 from mtl.types.translation import *
-from mtl.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT
+from mtl.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT, BUILTIN_TYPE
 
 from mtl.utils.compiler import find_type, find_trigger, find, equals_insensitive, get_widest_match
 
@@ -70,6 +70,9 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         elif (var := find(table, lambda k: equals_insensitive(k.name, tree.operator))) != None:
             ## if a variable name from the provided variable table matches, accept it.
             return [TypeSpecifier(var.type)]
+        elif (type := find_type(tree.operator, ctx)) != None:
+            ## if a type name matches, the resulting type is just `type`
+            return [TypeSpecifier(BUILTIN_TYPE)]
         else:
             ## in other cases the token was not recognized, so we return None.
             return None

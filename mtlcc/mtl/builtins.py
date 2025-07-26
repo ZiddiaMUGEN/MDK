@@ -1,7 +1,9 @@
 from mtl.types.context import TranslationContext
 from mtl.types.translation import *
-from mtl.utils.compiler import line_number, find, TranslationError
+from mtl.utils.compiler import line_number, find_type, TranslationError
 from mtl.utils.compiler import get_widest_match
+
+BUILTIN_ANY = TypeDefinition("any", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number()))
 
 BUILTIN_INT = TypeDefinition("int", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
 BUILTIN_FLOAT = TypeDefinition("float", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
@@ -39,6 +41,7 @@ BUILTIN_SPARKNO = TypeDefinition("sparkno", TypeCategory.UNION, 32, ["cint", "in
 
 def getBaseTypes() -> list[TypeDefinition]:
     return [
+        BUILTIN_ANY,
         BUILTIN_INT,
         BUILTIN_FLOAT,
         BUILTIN_SHORT,
@@ -102,7 +105,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("CanRecover", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("ceil", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Command", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("cond", "T", None, [TypeParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("cond", BUILTIN_ANY, builtin_cond, [TypeParameter("condition", BUILTIN_BOOL), TypeParameter("exprn1", BUILTIN_ANY), TypeParameter("exprn2", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const", BUILTIN_NUMERIC, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const240p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const480p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
@@ -128,7 +131,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("HitShakeOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("HitVel", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("ID", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number())),
-        #TriggerDefinition("ifelse", "T", None, [TypeParameter("exp_cond", "bool, exp_true")], Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("ifelse", BUILTIN_ANY, builtin_cond, [TypeParameter("condition", BUILTIN_BOOL), TypeParameter("exprn1", BUILTIN_ANY), TypeParameter("exprn2", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("InGuardDist", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("IsHelper", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("IsHelper", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number())),
@@ -250,13 +253,24 @@ def getBaseTriggers() -> list[TriggerDefinition]:
 
         TriggerDefinition("operator&&", BUILTIN_BOOL, builtin_and, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator||", BUILTIN_BOOL, builtin_or, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^^", BUILTIN_BOOL, builtin_xor, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR)
+        TriggerDefinition("operator^^", BUILTIN_BOOL, builtin_xor, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+
+        ## builtin constant/compiler functions
+        TriggerDefinition("cast", BUILTIN_ANY, builtin_cast, [TypeParameter("expr", BUILTIN_ANY), TypeParameter("t", BUILTIN_TYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
     ]
 
+def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if exprs[1].type != exprs[2].type:
+        raise TranslationError(f"Conditional expression (cond and ifelse) must provide 2 expressions of the same type.", Location("mtl/builtins.py", line_number()))
+    return Expression(exprs[1].type, f"cond({exprs[0].value}, {exprs[1].value}, {exprs[2].value})")
+
+def builtin_cast(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if exprs[1].type != BUILTIN_TYPE or (target_type := find_type(exprs[1].value, ctx)) == None:
+        raise TranslationError(f"Second argument to cast must be a type name, not {exprs[1].value}", Location("mtl/builtins.py", line_number()))
+    return Expression(target_type, exprs[0].value)
+
 def builtin_not(exprs: list[Expression], ctx: TranslationContext) -> Expression:
-    if (result := find(ctx.types, lambda k: k.name == "bool")) != None:
-        return Expression(result, f"(!{exprs[0].value})")
-    raise TranslationError("Failed to find the `bool` type in project, check if builtins are broken.", Location("mtl/builtins.py", line_number()))
+    return Expression(BUILTIN_BOOL, f"(!{exprs[0].value})")
 
 def builtin_negate(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(exprs[0].type, f"(-{exprs[0].value})")
