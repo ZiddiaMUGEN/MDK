@@ -1,6 +1,7 @@
 from mtl.types.context import LoadContext, TranslationContext
 from mtl.types.translation import *
-from mtl.utils.compiler import TranslationError, find_type, unpack_types, find
+from mtl.utils.compiler import TranslationError, find_type, find_trigger, unpack_types, find, get_type_match
+from mtl.utils.checker import type_check
 from mtl import builtins
 
 def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
@@ -79,6 +80,51 @@ def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
         ## append this to the type list, in translation context we make no distincition between structures and other types.
         ctx.types.append(TypeDefinition(type_name, TypeCategory.STRUCTURE, struct_size, struct_members, struct_definition.location))
     print(f"Successfully resolved {len(ctx.types)} type and structure definitions")
+
+def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
+    print("Start loading trigger function definitions...")
+    for trigger_definition in load_ctx.triggers:
+        trigger_name = trigger_definition.name if trigger_definition.namespace == None else f"{trigger_definition.namespace}.{trigger_definition.name}"
+        if (matching_type := find_type(trigger_name, ctx)) != None:
+            raise TranslationError(f"Trigger with name {trigger_name} overlaps type name defined at {matching_type.location.filename}:{matching_type.location.line}: type names are reserved for type initialization.", trigger_definition.location)
+        
+        # identify matches by name, then inspect type signature
+        param_types = [param.value for param in trigger_definition.params.properties] if trigger_definition.params != None else []
+        ## need to resolve the types in param_types to a list of types.
+        param_defs: list[TypeDefinition] = []
+        for param in param_types:
+            if (t := find_type(param, ctx)) == None:
+                return None
+            param_defs.append(t)
+        ## now try to find a matching overload.
+        matched = find_trigger(trigger_name, param_defs, ctx)
+        if matched != None:
+            raise TranslationError(f"Trigger with name {trigger_name} was redefined: original definition at {matched.location.filename}:{matched.location.line}", trigger_definition.location)
+
+        ## ensure the expected type of the trigger is known
+        if (trigger_type := find_type(trigger_definition.type, ctx)) == None:
+            raise TranslationError(f"Trigger with name {trigger_name} declares a return type of {trigger_definition.type} but that type is not known.", trigger_definition.location)
+        
+        ## ensure the type of all parameters for the trigger are known
+        params: list[TypeParameter] = []
+        if trigger_definition.params != None:
+            for parameter in trigger_definition.params.properties:
+                if (matching_type := find(ctx.types, lambda k: k.name == parameter.value)) == None:
+                    raise TranslationError(f"Trigger parameter {parameter.key} declares a type of {parameter.value} but that type is not known.", parameter.location)
+                params.append(TypeParameter(parameter.key, matching_type))
+
+        ## run the type-checker against the trigger expression
+        ## the locals table for triggers is just the input params.
+        result_type = type_check(trigger_definition.value, params, ctx)
+        ## trigger returns and trigger expressions are only permitted to have one return type currently.
+        ## ensure only one type was returned.
+        if result_type == None or len(result_type) != 1:
+            return None
+        if not get_type_match(result_type[0].type, trigger_type, ctx):
+            raise TranslationError(f"Could not match type {result_type[0].type.name} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
+
+        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type, None, params, trigger_definition.value, trigger_definition.location))
+    print(f"Successfully resolved {len(ctx.triggers)} trigger function definitions")
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)

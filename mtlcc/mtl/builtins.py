@@ -1,7 +1,7 @@
 from mtl.types.context import TranslationContext
 from mtl.types.translation import *
 from mtl.utils.compiler import line_number, find, TranslationError
-from mtl.utils.conversion import get_widest_match
+from mtl.utils.compiler import get_widest_match
 
 BUILTIN_INT = TypeDefinition("int", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
 BUILTIN_FLOAT = TypeDefinition("float", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
