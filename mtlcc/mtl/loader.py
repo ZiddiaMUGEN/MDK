@@ -1,6 +1,7 @@
 import os
 
-from mtl.utils.compiler import find, compiler_internal, TranslationError
+from mtl.utils.func import find, compiler_internal
+from mtl.types.shared import TranslationError
 from mtl.types.context import LoadContext, TranslationMode
 from mtl.types.ini import *
 from mtl.parser import ini, trigger

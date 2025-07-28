@@ -82,7 +82,13 @@ A table identifying all local variables used by the template should be stored fo
 
 All state controller parameters should be checked to ensure only local and parameter variables are used. The use of global variables within templates is not permitted.
 
-### 7. Template Replacement
+The builtin `ignorehitpause` and `persistent` parameters need to be attached to all templates.
+
+### 7. State Definition Load
+
+
+
+### 8. Template Replacement
 
 For each statedef defined by the project, iterate the state controllers to identify uses of templates.
 
@@ -96,23 +102,23 @@ If the template declares locals, hoist the new (+ renamed) local definitions to 
 
 The triggers applied to the template call must be joined together, converted into a `triggerall` statement, and applied to all included state controllers.
 
-### 8. State Count Check
+### 9. State Count Check
 
 After template replacement, do a quick check to confirm all statedefs are below 512 states. This is a sanity check to ensure the character does not exceed limits imposed by MUGEN.
 
-### 9. First Pass Type Check / Global Identification
+### 10. First Pass Type Check / Global Identification
 
-For each state controller and state definition, identify all unrecognized global variables. This involves identifying all locals and all known globals and then checking for any newly-identified globals.
+For each state controller and state definition, identify all global variables. This involves identifying all locals and all known globals and then checking for any newly-assigned globals.
 
 The type of the global needs to be determined from the type of the expression which assigns to it. This could be either a walrus operator `:=` or a `VarSet` state controller.
 
-If a global is used, but never assigned, the compiler must emit an error. If a global is assigned values of two incompatible types, the compiler must emit an error.
+If a global is assigned values of two incompatible types, the compiler must emit an error.
 
 At this stage the type checker must validate all trigger statements. The return type of a user-defined trigger can be trusted (second pass type checking after trigger replacement will re-validate the types).
 
-At this stage the compiler can also identify cases where `var()` and `fvar()` triggers are used, and cases where `VarSet` assigns a value to an indexed var or fvar. The compiler is permitted to emit an error in these cases, or to attempt to identify the indices which are required by var and fvar. If the indices cannot be determined at compile-time (e.g. if the input to the `var` trigger is a non-const expression) the compiler must emit an error.
+At this stage the compiler can also identify cases where `var()` and `fvar()` triggers are used, and cases where `VarSet` assigns a value to an indexed var or fvar. The compiler will emit an error for all uses of indexed variables.
 
-### 10. Trigger Replacement
+### 11. Trigger Replacement
 
 For each state controller and state definition, identify uses of non-builtin triggers and replace those trigger uses with their expansions.
 
@@ -120,8 +126,8 @@ For triggers which specify parameters, that means that the parameters being pass
 
 Triggers are permitted to reference other user-defined triggers, so this process must be repeated until all triggers are resolved. It is permitted for the compiler to apply a maximum iteration count for trigger resolution.
 
-### 11. Variable Allocation
+### 12. Variable Allocation
 
 The compiler should determine the total storage needed for globals based on the size of their types. The compiler can also determine the maximum local table size from all statedefs. This then informs the compiler on how it needs to allocate variables.
 
-The compiler must assign floating-point types to `fvar` indices, and integral types to `var` indices. The compiler is permitted, but not required, to 'pack' variable usage (e.g. with 2 variables of type `short` requiring 16 bits each, the compiler may assign one variable to the upper 16 bits of `var(0)` and the other variable to the lower 16 bits).
+The compiler must assign floating-point types to `fvar` indices, and integral types to `var` indices. The compiler should aim to pack smaller variable types; variables should be aligned on byte boundaries.

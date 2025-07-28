@@ -36,4 +36,4 @@ myTestParam = float
 
 [State ]
 type = Null
-trigger1 = 1
+trigger1 = myTestParam * myTestVar + 5

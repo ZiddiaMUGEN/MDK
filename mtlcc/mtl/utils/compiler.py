@@ -1,8 +1,4 @@
 from typing import Optional
-from typing import Callable, TypeVar
-
-from inspect import getframeinfo, stack
-from inspect import currentframe
 
 from mtl.types.shared import Location, TranslationError
 from mtl.types.context import TranslationContext
@@ -10,36 +6,9 @@ from mtl.types.ini import StateControllerSection
 from mtl.types.trigger import TriggerTreeNode
 from mtl.types.translation import *
 from mtl.parser.trigger import parseTrigger
+from mtl.utils.func import *
 
-T = TypeVar('T')
-def _tryparse(input: str, fn: Callable[[str], T]) -> Optional[T]:
-    try:
-        return fn(input)
-    except:
-        return None
-
-def line_number() -> int:
-    cf = currentframe()
-    if cf != None and cf.f_back != None:
-        return cf.f_back.f_lineno
-    else:
-        return 0
-
-def compiler_internal() -> Location:
-    caller = getframeinfo(stack()[1][0])
-    return Location(caller.filename, caller.lineno)
-
-T = TypeVar('T')
-def find(l: list[T], p: Callable[[T], bool]) -> Optional[T]:
-    result = next(filter(p, l), None)
-    return result
-
-def get_all(l: list[T], p: Callable[[T], bool]) -> list[T]:
-    result = list(filter(p, l))
-    return result
-
-def equals_insensitive(s1: str, s2: str) -> bool:
-    return s1.lower() == s2.lower()
+import copy
 
 def find_type(type_name: str, ctx: TranslationContext) -> Optional[TypeDefinition]:
     return find(ctx.types, lambda k: equals_insensitive(k.name, type_name))
@@ -47,7 +16,7 @@ def find_type(type_name: str, ctx: TranslationContext) -> Optional[TypeDefinitio
 def find_template(template_name: str, ctx: TranslationContext) -> Optional[TemplateDefinition]:
     return find(ctx.templates, lambda k: equals_insensitive(k.name, template_name))
 
-def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext) -> Optional[TriggerDefinition]:
+def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext, loc: Location) -> Optional[TriggerDefinition]:
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     ## there may be multiple candidate matches, we need to check if the types provided as input match the types of the candidate.
     for match in all_matches:
@@ -56,7 +25,7 @@ def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: Tran
         if len(param_types) != len(match.params): continue
         matched = True
         for index in range(len(param_types)):
-            if get_type_match(param_types[index], match.params[index].type, ctx) == None:
+            if get_type_match(param_types[index], match.params[index].type, ctx, loc) == None:
                 matched = False
         ## if no types failed to match, we can return this type as the signature matches
         if matched: 
@@ -73,6 +42,14 @@ def resolve_alias(type: str, ctx: TranslationContext, loc: Location) -> str:
     if target_type.category != TypeCategory.ALIAS:
         return target_type.name
     return resolve_alias(target_type.members[0], ctx, loc)
+
+def resolve_alias_typed(type: TypeDefinition, ctx: TranslationContext, loc: Location) -> TypeDefinition:
+    ## recursively reduces an alias to its target type
+    if type.category != TypeCategory.ALIAS:
+        return type
+    if (target_type := find_type(type.members[0], ctx)) == None:
+        raise TranslationError(f"Could not find target type {type.members[0]} for alias with name {type.name}.", loc)
+    return resolve_alias_typed(target_type, ctx, loc)
 
 def unpack_types(type: str, ctx: TranslationContext, loc: Location) -> list[TypeSpecifier]:
     ## unpacks types in the form `t1,t2,t3` (multi-value types)
@@ -100,10 +77,10 @@ def unpack_types(type: str, ctx: TranslationContext, loc: Location) -> list[Type
 
     return result
 
-def get_widest_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationContext) -> Optional[TypeDefinition]:
+def get_widest_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationContext, loc: Location) -> Optional[TypeDefinition]:
     ## match t1 to t2, accepting any widening conversion which allows the types to match.
-    wide1 = get_type_match(t1, t2, ctx)
-    wide2 = get_type_match(t2, t1, ctx)
+    wide1 = get_type_match(t1, t2, ctx, loc, no_warn = True)
+    wide2 = get_type_match(t2, t1, ctx, loc, no_warn = True)
 
     if wide1 != None and wide2 != None:
         ## if both conversions work, return the widest
@@ -118,7 +95,10 @@ def get_widest_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationCon
         ## neither conversion worked, types are not compatible
         return None
 
-def get_type_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationContext) -> Optional[TypeDefinition]:
+def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationContext, loc: Location, no_warn: bool = False) -> Optional[TypeDefinition]:
+    t1 = resolve_alias_typed(t1_, ctx, loc)
+    t2 = resolve_alias_typed(t2_, ctx, loc)
+
     ## match t1 to t2, following type conversion rules.
     ## if types match, t1 return the type.
     if t1 == t2: return t1
@@ -139,7 +119,7 @@ def get_type_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationConte
     if t1.name == "float" and t2.name == "int":
         ## in a lot of builtin cases an alternative to convert `int` to `float` will be taken. so just warn and return None.
         ## if no alternative exists an error will be emitted anyway.
-        print(f"Warning: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
+        if not no_warn: print(f"Warning at {os.path.realpath(loc.filename)}:{loc.line}: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
         return None
     
     ## smaller builtin types can implicitly convert to wider ones (`bool`->`byte`->`short`->`int`)
@@ -153,8 +133,12 @@ def get_type_match(t1: TypeDefinition, t2: TypeDefinition, ctx: TranslationConte
     ## it's permitted to 'widen' a concrete type to a union type if the union type has a matching member
     if t2.category == TypeCategory.UNION:
         for member in t2.members:
-            if (target_type := find_type(member, ctx)) != None and (widened := get_type_match(t1, target_type, ctx)) != None:
+            if (target_type := find_type(member, ctx)) != None and (widened := get_type_match(t1, target_type, ctx, loc, no_warn)) != None:
                 return widened
+            
+    ## it's permitted to convert integer types directly to bool for CNS compatibility.
+    if t1.name in ["byte", "short", "int"] and t2.name == "bool":
+        return t2
 
     ## could not convert.
     return None
@@ -204,8 +188,8 @@ def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> 
             ## handle trigger groups
             group = prop.key[7:].strip()
             ## determine a numeric group ID
-            if group == "all": group_index = -1
-            else: group_index = _tryparse(group, int)
+            if group == "all": group_index = 0
+            else: group_index = tryparse(group, int)
             ## ensure group ID is numeric
             if group_index == None: raise TranslationError(f"Could not determine the group ID for trigger group named {prop.key}", prop.location)
             ## find the matching group
@@ -217,3 +201,249 @@ def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> 
             properties[prop.key] = prop.value
 
     return StateController(name, triggers, properties, state.location)
+
+def replace_recursive(tree: TriggerTree, old: TriggerTree, new: TriggerTree):
+    ## this iterates its children.
+    for subindex in range(len(tree.children)):
+        if tree.children[subindex] == old:
+            tree.children[subindex] = copy.deepcopy(new)
+        else:
+            replace_recursive(tree.children[subindex], old, new)
+
+def replace_expression(controller: StateController, old: TriggerTree, new: TriggerTree):
+    ## find instances of `old` in the controller and replace with `new`.
+    for group_id in controller.triggers:
+        for trigger in controller.triggers[group_id].triggers:
+            replace_recursive(trigger, old, new)
+    for property in controller.properties:
+        replace_recursive(controller.properties[property], old, new)
+
+def merge_by_operand(triggers: list[TriggerTree], op: str, loc: Location) -> TriggerTree:
+    ## recursively merges the list of triggers into a binary operator structure.
+    if len(triggers) == 1: return triggers[0]
+    return TriggerTree(TriggerTreeNode.BINARY_OP, op, [triggers[0], merge_by_operand(triggers[1:], op, loc)], loc)
+
+def merge_triggers(triggers: dict[int, TriggerGroup], location: Location) -> list[TriggerTree]:
+    ## take a list of triggers and merge them so they can be applied as `triggerall`.
+    ## this means a) translating any `triggerall` statements directly into the result;
+    result: list[TriggerTree] = triggers[0].triggers if 0 in triggers else []
+    ## b) combining other groups into AND/OR constructs.
+    all_groups: list[TriggerTree] = []
+    for group_index in triggers:
+        if group_index == 0: continue
+        group = triggers[group_index].triggers
+        ## combine all the triggers in the group into an AND construct
+        all_groups.append(merge_by_operand(group, "&&", location))
+    ## now combine all groups into an OR construct.
+    result.append(merge_by_operand(all_groups, "||", location))
+    return result
+
+def find_globals(tree: TriggerTree, locals: list[TypeParameter], ctx: TranslationContext) -> list[TypeParameter]:
+    ## recursively identifies assignment statements.
+    if tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[0].node == TriggerTreeNode.ATOM:
+        ## ensure to check globals on RHS expression first!!
+        result: list[TypeParameter] = []
+        result += find_globals(tree.children[1], locals, ctx)
+
+        ## only include if the LHS does not match a known local
+        if find(locals, lambda k: equals_insensitive(k.name, tree.children[0].operator)) == None:
+            target_type = type_check(tree.children[1], locals, ctx)
+            if target_type == None or len(target_type) == 0:
+                raise TranslationError(f"Could not identify target type of global {tree.children[0].operator} from its assignment.", tree.location)
+            if len(target_type) != 1:
+                raise TranslationError(f"Target type of global {tree.children[0].operator} was a tuple, but globals cannot contain tuples.", tree.location)
+            result.append(TypeParameter(tree.children[0].operator, target_type[0].type, location = tree.location))
+        return result
+    elif tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[0].node == TriggerTreeNode.FUNCTION_CALL:
+        if tree.children[0].operator.lower() in ["var", "fvar", "sysvar", "sysfvar"]:
+            raise TranslationError(f"State controller sets indexed variable which is not currently supported by MTL.", tree.location)
+        raise TranslationError(f"Attempted to assign a value to a trigger expression {tree.children[0].operator}.", tree.location)
+    else:
+        result: list[TypeParameter] = []
+        for child in tree.children:
+            result += find_globals(child, locals, ctx)
+        return result
+
+def get_struct_target(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
+    ## first find the target at the top level
+    components = input.split(" ")
+    struct_name = components[0].strip()
+    ## find the type of this struct, from either triggers or locals
+    struct_type: Optional[TypeDefinition] = None
+    if (match := find_trigger(struct_name, [], ctx, compiler_internal())) != None:
+        struct_type = match.type
+    elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name))) != None:
+        struct_type = var.type
+    if struct_type == None: return None
+    if struct_type.category != TypeCategory.STRUCTURE: return None
+    ## now determine the type of the field being accessed
+    if (target := find(struct_type.members, lambda k: equals_insensitive(k.split(":")[0], components[1]))) == None:
+        return None
+    if (target_type := find_type(target.split(":")[1], ctx)) == None:
+        return None
+    ## if the target type is also a struct, and we have a secondary access, create a 'virtual local' for the target and recurse.
+    if target_type.category == TypeCategory.STRUCTURE and len(components) > 2:
+        new_struct_string = "_target " + " ".join(components[2:])
+        return get_struct_target(new_struct_string, [TypeParameter("_target", target_type)], ctx)
+    ## return the identified target type
+    return target_type
+
+def match_enum(input: str, enum: TypeDefinition) -> Optional[list[TypeSpecifier]]:
+    if not enum.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
+        return None
+    
+    if enum.category in [TypeCategory.ENUM, TypeCategory.STRING_ENUM] and includes_insensitive(input, enum.members):
+        ## for enum, input must exactly match a constant
+        return [TypeSpecifier(enum)]
+    elif enum.category in [TypeCategory.FLAG, TypeCategory.STRING_FLAG]:
+        ## for flag, each character of input must exactly match a constant
+        for c in input:
+            if not includes_insensitive(c, enum.members): return None
+        return [TypeSpecifier(enum)]
+    return None
+    
+
+def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None) -> Optional[list[TypeSpecifier]]:
+    ## runs a type check against a single tree. this assesses that the types of the components used in the tree
+    ## are correct and any operators used in the tree are valid.
+    ## this returns a list of Specifiers because the tree can potentially have multiple results (e.g. for multivalues)
+
+    ## handle each type of node individually.
+    if tree.node == TriggerTreeNode.ATOM:
+        ## the simplest case is ATOM, which is likely either a variable name, a parameter-less trigger name, or a built-in type.
+        if (parsed := parse_builtin(tree.operator)) != None:
+            ## handle the case where the token is a built-in type
+            return [TypeSpecifier(parsed)]
+        elif (trigger := find_trigger(tree.operator, [], ctx, tree.location)) != None:
+            ## if a trigger name matches, and the trigger has an overload which takes no parameters, accept it.
+            return [TypeSpecifier(trigger.type)]
+        elif (var := find(table, lambda k: equals_insensitive(k.name, tree.operator))) != None:
+            ## if a variable name from the provided variable table matches, accept it.
+            return [TypeSpecifier(var.type)]
+        elif (type := find_type(tree.operator, ctx)) != None:
+            ## if a type name matches, the resulting type is just `type`
+            return [TypeSpecifier(BUILTIN_TYPE)]
+        elif expected != None and len(expected) == 1 and expected[0].type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
+            ## if an expected type was passed, and the type is ENUM or FLAG,
+            ## attempt to match the value to enum constants.
+            return match_enum(tree.operator, expected[0].type)
+        else:
+            ## in other cases the token was not recognized, so we return None.
+            raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)
+    elif tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
+        ## unary and binary operators will have an `operator` trigger which describes the inputs and outputs.
+        ## first determine the type of each input.
+        inputs: list[TypeDefinition] = []
+        for child in tree.children:
+            # if any child fails type checking, bubble that up
+            if (child_type := type_check(child, table, ctx)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
+            # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
+            # as parameters. so simplify here.
+            if len(child_type) != 1: return None
+            inputs.append(child_type[0].type)
+        ## now try to find a trigger which matches the child types.
+        if (match := find_trigger(f"operator{tree.operator}", inputs, ctx, tree.location)) != None:
+            return [TypeSpecifier(match.type)]
+        ## if no match exists, the trigger does not exist.
+        raise TranslationError(f"No matching operator overload was found for operator {tree.operator} and child types {', '.join([i.name for i in inputs])}", tree.location)
+    elif tree.node == TriggerTreeNode.MULTIVALUE:
+        ## multivalue operators can have one or more results. need to run the type check on each child,
+        ## and return the list of type specifiers.
+        specs: list[TypeSpecifier] = []
+        for index in range(len(tree.children)):
+            child = tree.children[index]
+            
+            ## pass an expected type down the tree.
+            if expected == None or len(expected) == 0:
+                next_expected = None
+            elif index < len(expected):
+                next_expected = [expected[index]]
+            elif expected[-1].repeat:
+                next_expected = [expected[-1]]
+            else:
+                next_expected = None
+
+            if (child_type := type_check(child, table, ctx, next_expected)) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from multivalued operator.", tree.location)
+            ## it is not possible to nest multi-values. unpack the child
+            if len(child_type) != 1: return None
+            specs.append(child_type[0])
+        return specs
+    elif tree.node == TriggerTreeNode.INTERVAL_OP:
+        ## interval operators have 2 children, which should have matching or coercible types.
+        ## determine the widened type match and return that as the type of the interval.
+        specs: list[TypeSpecifier] = []
+        for child in tree.children:
+            if (child_type := type_check(child, table, ctx, expected = [TypeSpecifier(BUILTIN_FLOAT)])) == None:
+                raise TranslationError(f"Could not determine the type of subexpression from interval operator.", tree.location)
+            ## it is not possible to nest multi-values. unpack the child
+            if len(child_type) != 1: return None
+            specs.append(child_type[0])
+        ## confirm exactly 2 children
+        if len(specs) != 2: return None
+        ## get the widest matching type
+        if (match := get_widest_match(specs[0].type, specs[1].type, ctx, tree.location)) == None:
+            raise TranslationError(f"Input types {specs[0].type} and {specs[1].type} to interval operator could not be resolved to a common type.", tree.location)
+        return [TypeSpecifier(match)]
+    elif tree.node == TriggerTreeNode.FUNCTION_CALL:
+        ## function calls (trigger calls) have the trigger name and the parameters as children.
+        ## determine the child types, then identify the trigger overload which matches it.
+
+        ## it's a slight mess, but we need to test EACH target trigger overload in case they take an enum as input.
+        ## triggers can't accept optional/repeated args yet so we can simplify slightly.
+        target_triggers = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, tree.operator) and len(tree.children) == len(k.params))
+
+        inputs: list[TypeDefinition] = []
+        for index in range(len(tree.children)):
+            child = tree.children[index]
+
+            # if any child fails type checking, bubble that up
+            result_type: list[TypeSpecifier] = []
+            for t in target_triggers:
+                ## pass an expected type down the tree.
+                if len(t.params) == 0:
+                    next_expected = None
+                else:
+                    next_expected = [TypeSpecifier(t.params[index].type)]
+
+                if (child_type := type_check(child, table, ctx, expected = next_expected)) != None:
+                    result_type = child_type
+                    break
+            # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
+            # as parameters. so simplify here.
+            if len(result_type) != 1:
+                raise TranslationError(f"Could not determine the type of subexpression in trigger {tree.operator}.", tree.location)
+            inputs.append(result_type[0].type)
+        ## now try to find a trigger which matches the child types.
+        if (match := find_trigger(tree.operator, inputs, ctx, tree.location)) != None:
+            return [TypeSpecifier(match.type)]
+        ## if no match exists, the trigger does not exist.
+        raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator} and child types {', '.join([i.name for i in inputs])}", tree.location)
+    elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
+        ## struct access contains the access information in the operator.
+        if (struct_type := get_struct_target(tree.operator, table, ctx)) == None:
+            raise TranslationError(f"Could not determine the type of the struct member access given by {tree.operator}.", tree.location)
+        return [TypeSpecifier(struct_type)]
+    
+    ## fallback which should never be reachable!
+    return None
+
+def match_tuple(source: list[TypeSpecifier], target: TemplateParameter, ctx: TranslationContext, loc: Location):
+    ## early-exit for obvious cases
+    if len(source) > 0 and len(target.type) == 0:
+        raise TranslationError(f"Failed to match type: target type {target.name} does not contain members, but input does.", loc)
+    if len(source) == 0 and len(target.type) == 0: return
+    ## iterate each value in `source`
+    for index in range(len(source)):
+        source_type = source[index]
+        if index > len(target.type) and not target.type[-1].repeat:
+            raise TranslationError(f"Failed to match type: input type has more members, but target type {target.name} has no repeated member.", loc)
+        target_type = target.type[index] if index < len(target.type) else target.type[-1]
+        if get_type_match(source_type.type, target_type.type, ctx, loc) == None:
+            raise TranslationError(f"Failed to match type: could not match input type {source_type.type.name} to target type {target_type.type.name}.", loc)
+    ## confirm any remaining are not required
+    if len(target.type) > len(source):
+        for index in range(len(source), len(target.type)):
+            if target.type[index].required:
+                raise TranslationError(f"Failed to match tuple type: target member with type {target.type[index].type.name} is required but was not present.", loc)

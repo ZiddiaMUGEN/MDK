@@ -19,6 +19,18 @@ class TriggerTree:
     children: list['TriggerTree']
     location: Location
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TriggerTree):
+            return False
+        if self.node != other.node or self.operator.lower() != other.operator.lower():
+            return False
+        if len(self.children) != len(other.children):
+            return False
+        for subindex in range(len(self.children)):
+            if self.children[subindex] != other.children[subindex]:
+                return False
+        return True
+
     def _string(self, indent: int) -> str:
         result = "\t" * indent
         result += str(self.node)

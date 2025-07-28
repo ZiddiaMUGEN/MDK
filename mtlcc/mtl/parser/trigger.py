@@ -128,7 +128,14 @@ class TriggerVisitor(Visitor_Recursive[Token]):
         self.parse_binary(tree)
 
     def add(self, tree: Tree[Token]):
-        self.parse_binary(tree)
+        ## special case: +/- suffix on a token which is incorrectly interpreted as a BINARY_OP
+        if self.stack[-1].node == TriggerTreeNode.ATOM and self.stack[-1].operator == "":
+            if len(tree.children) == 3 and isinstance(tree.children[1], Token):
+                self.stack.pop() # ignore empty operator
+                atom = self.stack.pop()
+                self.stack.append(TriggerTree(TriggerTreeNode.ATOM, f"{atom.operator}{tree.children[1]}", [], self.location))
+        else:
+            self.parse_binary(tree)
 
     def comp(self, tree: Tree[Token]):
         self.parse_binary(tree)
