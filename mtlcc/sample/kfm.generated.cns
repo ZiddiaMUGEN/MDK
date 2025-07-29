@@ -1,0 +1,3105 @@
+;!mtl-debug VERSION_HEADER 20250729.01
+
+;!mtl-debug TYPE_DEFINITION vector BUILTIN_STRUCTURE 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:23
+;!mtl-debug-next X:float
+;!mtl-debug-next Y:float
+;!mtl-debug TYPE_DEFINITION numeric UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:46
+;!mtl-debug-next int
+;!mtl-debug-next float
+;!mtl-debug TYPE_DEFINITION prefixed_int UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:47
+;!mtl-debug-next cint
+;!mtl-debug-next int
+;!mtl-debug TYPE_DEFINITION sprite ALIAS 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:48
+;!mtl-debug-next prefixed_int
+;!mtl-debug TYPE_DEFINITION sound ALIAS 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:49
+;!mtl-debug-next prefixed_int
+;!mtl-debug TYPE_DEFINITION anim ALIAS 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:50
+;!mtl-debug-next prefixed_int
+;!mtl-debug TYPE_DEFINITION bool8 ALIAS 8 /home/jsmith/MDK/mtlcc/stdlib/libmtl.inc:7
+;!mtl-debug-next byte
+;!mtl-debug TYPE_DEFINITION HitString ALIAS 64 /home/jsmith/MDK/mtlcc/stdlib/libmtl.inc:12
+;!mtl-debug-next HitType,HitAttr...?
+
+;!mtl-debug VARIABLE_TABLE 60
+;!mtl-debug-next 0 32
+;!mtl-debug-next 1 9
+;!mtl-debug-next 2 32
+;!mtl-debug VARIABLE_ALLOCATION myGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:18
+;!mtl-debug-next 0 0 var(0)
+;!mtl-debug VARIABLE_ALLOCATION isHoldingForward bool /home/jsmith/MDK/mtlcc/sample/kfm.cns:19
+;!mtl-debug-next 1 0 var(1)
+;!mtl-debug VARIABLE_ALLOCATION myThirdGlobal bool /home/jsmith/MDK/mtlcc/sample/kfm.cns:20
+;!mtl-debug-next 1 8 var(1) & 256
+;!mtl-debug VARIABLE_ALLOCATION mySecondGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:30
+;!mtl-debug-next 2 0 var(2)
+
+;!mtl-debug VARIABLE_TABLE 40
+
+[Statedef 170];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:4
+;!mtl-debug VARIABLE_ALLOCATION pm915vqo_myTestVar int /home/jsmith/MDK/mtlcc:0
+;!mtl-debug-next 3 0 var(3)
+type = S
+anim = 170
+ctrl = 0
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:10
+type = NotHitBy
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:12
+value = SCA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:13
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:14
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/libmtl.inc:37
+type = Null
+trigger1 = ((1 * (var(3))) + 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/libmtl.inc:39
+triggerall = (var(0) := 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:18
+triggerall = (var(1) := (((1) & 2) * 1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:19
+triggerall = (var(1) := (((1) & 2) * 256));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:20
+triggerall = (Alive || (StateNo = 5050));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:16
+ignorehitpause = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:24
+persistent = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:25
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:27
+type = VarSet
+trigger1 = (!(!(var(0))));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:29
+var(2) = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:30
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:32
+type = VarSet
+trigger1 = (!(!(var(0))));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:34
+var(1) = (((1) & 2) * 256);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:35
+
+
+[Statedef 180];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:40
+type = S
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:43
+type = ChangeState
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:45
+value = 181;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:46
+
+
+[Statedef 181];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:51
+type = S
+anim = 181
+ctrl = 0
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:57
+type = NotHitBy
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:59
+value = SCA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:60
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:61
+
+
+[Statedef 191];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:66
+type = S
+anim = 190
+ctrl = 0
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:72
+type = ChangeAnim
+trigger1 = (RoundState = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:74
+value = 190;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:75
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:77
+type = AssertSpecial
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:79
+flag = Intro;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:80
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:82
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:84
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:85
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:89
+type = Explod
+trigger1 = (RoundState != 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:91
+persistent = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:92
+anim = 191;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:93
+postype = p1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:94
+pos = 260, (-90);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:95
+velocity = (-4.2), (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:96
+accel = 0, .32;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:97
+removetime = 48;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:98
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:100
+type = Explod
+trigger1 = ((AnimElemTime(7)) = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:102
+anim = 192;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:103
+postype = p1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:104
+pos = 60, (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:105
+velocity = 2, (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:106
+accel = 0, .32;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:107
+removetime = 35;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:108
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:113
+type = PlaySnd
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:115
+value = F5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:116
+volume = (-40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:117
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:119
+type = PlaySnd
+trigger1 = ((AnimElemTime(7)) = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:121
+value = F5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:122
+volume = (-80);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:123
+
+
+[Statedef 195];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:128
+type = S
+movetype = I
+physics = S
+anim = 195
+ctrl = 0
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:137
+type = CtrlSet
+trigger1 = (Time = 40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:139
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:140
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:142
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:144
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:145
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:146
+
+
+[Statedef 200];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:152
+type = S
+movetype = A
+physics = S
+anim = 200
+ctrl = 0
+poweradd = 10
+juggle = 1
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:164
+type = HitDef
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:166
+attr = S, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:167
+damage = 23, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:168
+animtype = Light;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:169
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:170
+hitflag = MAF;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:171
+priority = 3, Hit;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:172
+pausetime = 8, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:174
+sparkno = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:175
+sparkxy = (-10), (-76);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:176
+hitsound = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:178
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:179
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:180
+ground.slidetime = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:181
+ground.hittime = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:182
+ground.velocity = (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:183
+airguard.velocity = (-1.9), (-.8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:184
+air.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:185
+air.velocity = (-1.4), (-3.0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:186
+air.hittime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:188
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:190
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:192
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:193
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:195
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:197
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:198
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:199
+
+
+[Statedef 210];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:216
+type = S
+movetype = A
+physics = S
+anim = 210
+ctrl = 0
+poweradd = 30
+juggle = 4
+sprpriority = -1
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:227
+type = Width
+trigger1 = (((AnimElemTime(2)) >= 0) && ((AnimElemTime(7)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:229
+value = 15, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:230
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:232
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:234
+value = 0, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:235
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:237
+type = HitDef
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:239
+attr = S, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:240
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:241
+damage = 57;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:242
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:243
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:244
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:245
+sparkxy = (-10), (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:246
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:247
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:248
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:249
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:250
+ground.hittime = 16;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:251
+ground.velocity = (-5.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:252
+air.velocity = (-2.5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:253
+forcenofall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:254
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:256
+type = ChangeAnim
+trigger1 = (((AnimElemTime(5)) > 0) && ((AnimElemTime(6)) <= 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:258
+trigger1 = MoveContact;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:259
+ignorehitpause = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:260
+persistent = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:261
+value = 210;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:262
+elem = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:263
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:265
+type = SprPriority
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:267
+value = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:268
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:270
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:272
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:273
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:274
+
+
+[Statedef 230];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:279
+type = S
+movetype = A
+physics = S
+anim = 230
+ctrl = 0
+poweradd = 11
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:290
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:292
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:293
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:295
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:297
+attr = S, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:298
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:299
+damage = 26;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:300
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:301
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:302
+sparkno = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:303
+sparkxy = (-10), (-37);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:304
+hitsound = 5, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:305
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:306
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:307
+ground.slidetime = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:308
+ground.hittime = 14;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:309
+ground.velocity = (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:310
+air.velocity = (-2.5), (-3.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:311
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:313
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:315
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:316
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:317
+
+
+[Statedef 240];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:322
+type = S
+movetype = A
+physics = S
+anim = 240
+ctrl = 0
+poweradd = 30
+juggle = 5
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:333
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:335
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:336
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:338
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:340
+attr = S, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:341
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:342
+damage = 63;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:343
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:344
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:345
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:346
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:347
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:348
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:349
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:350
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:351
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:352
+ground.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:353
+air.velocity = (-2.2), (-3.2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:354
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:356
+type = PosAdd
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:358
+x = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:359
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:361
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:363
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:364
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:365
+
+
+[Statedef 400];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:383
+type = C
+movetype = A
+physics = C
+anim = 400
+ctrl = 0
+poweradd = 8
+juggle = 5
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:393
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:395
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:396
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:398
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:400
+attr = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:401
+damage = 23;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:402
+priority = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:403
+animtype = Light;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:404
+hitflag = MAF;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:405
+guardflag = L;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:406
+pausetime = 10, 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:407
+sparkno = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:408
+sparkxy = (-10), (-42);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:409
+hitsound = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:410
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:411
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:412
+ground.slidetime = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:413
+ground.hittime = 9;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:414
+ground.velocity = (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:415
+air.velocity = (-1.5), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:416
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:418
+type = CtrlSet
+trigger1 = (Time = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:420
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:421
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:423
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:425
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:426
+
+
+[Statedef 410];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:437
+type = C
+movetype = A
+physics = C
+anim = 410
+ctrl = 0
+poweradd = 25
+juggle = 6
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:447
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:449
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:450
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:453
+type = HitDef
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:455
+attr = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:456
+damage = 37;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:457
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:458
+hitflag = MAF;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:459
+guardflag = M;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:460
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:461
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:462
+sparkxy = (-10), (-55);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:463
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:464
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:465
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:466
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:467
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:468
+ground.velocity = (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:469
+air.velocity = (-3), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:470
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:473
+type = HitDef
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:475
+attr = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:476
+damage = 36;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:477
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:478
+hitflag = MAF;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:479
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:480
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:481
+sparkxy = (-10), (-83);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:482
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:483
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:484
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:485
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:486
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:487
+ground.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:488
+air.velocity = (-3), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:489
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:491
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:493
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:494
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:495
+
+
+[Statedef 430];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:500
+type = C
+movetype = A
+physics = C
+anim = 430
+ctrl = 0
+poweradd = 11
+juggle = 5
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:510
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:512
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:513
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:515
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:517
+attr = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:518
+damage = 28;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:519
+animtype = Light;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:520
+hitflag = MAFD;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:521
+guardflag = L;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:522
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:523
+sparkno = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:524
+sparkxy = (-10), (-8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:525
+hitsound = 5, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:526
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:527
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:528
+ground.slidetime = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:529
+ground.hittime = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:530
+ground.velocity = (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:531
+air.velocity = (-2), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:532
+down.velocity = (-5), 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:533
+down.hittime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:534
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:536
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:538
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:539
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:540
+
+
+[Statedef 440];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:550
+type = C
+movetype = A
+physics = C
+anim = 440
+ctrl = 0
+poweradd = 35
+juggle = 7
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:560
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:562
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:563
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:565
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:567
+attr = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:568
+damage = 72;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:569
+hitflag = MAFD;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:570
+guardflag = L;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:571
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:572
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:573
+sparkxy = (-5), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:574
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:575
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:576
+ground.type = Trip;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:577
+ground.slidetime = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:578
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:579
+ground.velocity = (-1.5), (-2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:580
+air.velocity = (-1.2), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:581
+guard.velocity = (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:582
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:583
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:585
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:587
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:588
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:589
+
+
+[Statedef 600];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:594
+type = A
+movetype = A
+physics = A
+anim = 600
+ctrl = 0
+poweradd = 5
+juggle = 2
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:604
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:606
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:607
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:609
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:611
+attr = A, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:612
+damage = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:613
+guardflag = HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:614
+priority = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:615
+pausetime = 7, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:616
+sparkno = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:617
+sparkxy = (-10), (-58);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:618
+hitsound = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:619
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:620
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:621
+ground.slidetime = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:622
+ground.hittime = 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:623
+ground.velocity = (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:624
+air.velocity = (-1.3), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:625
+air.hittime = 14;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:626
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:628
+type = CtrlSet
+trigger1 = (Time = 17);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:630
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:631
+
+
+[Statedef 610];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:636
+type = A
+movetype = A
+physics = A
+anim = 610
+ctrl = 0
+poweradd = 30
+juggle = 4
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:646
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:648
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:649
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:651
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:653
+attr = A, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:654
+damage = 72;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:655
+guardflag = HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:656
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:657
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:658
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:659
+sparkxy = (-10), (-55);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:660
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:661
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:662
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:663
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:664
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:665
+ground.hittime = 14;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:666
+ground.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:667
+air.velocity = (-3), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:668
+
+
+[Statedef 630];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:673
+type = A
+movetype = A
+physics = A
+anim = 630
+ctrl = 0
+poweradd = 10
+juggle = 3
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:683
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:685
+value = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:686
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:688
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:690
+attr = A, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:691
+damage = 26;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:692
+guardflag = HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:693
+priority = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:694
+pausetime = 8, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:695
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:696
+sparkxy = (-5), (-35);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:697
+hitsound = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:698
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:699
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:700
+ground.slidetime = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:701
+ground.hittime = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:702
+ground.velocity = (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:703
+air.velocity = (-2), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:704
+air.hittime = 14;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:705
+
+
+[Statedef 640];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:710
+type = A
+movetype = A
+physics = A
+anim = 640
+ctrl = 0
+poweradd = 30
+juggle = 4
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:720
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:722
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:723
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:725
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:727
+attr = A, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:728
+damage = 70;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:729
+guardflag = HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:730
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:731
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:732
+sparkno = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:733
+sparkxy = (-10), (-40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:734
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:735
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:736
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:737
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:738
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:739
+ground.hittime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:740
+ground.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:741
+air.velocity = (-3), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:742
+
+
+[Statedef 800];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:760
+type = S
+movetype = A
+physics = S
+anim = 800
+ctrl = 0
+juggle = 0
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:776
+type = HitDef
+Trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:778
+attr = S, NT;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:779
+hitflag = M-;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:780
+priority = 1, Miss;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:781
+sparkno = (-1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:782
+p1sprpriority = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:783
+p1facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:785
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:786
+p1stateno = 810;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:787
+p2stateno = 820;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:788
+guard.dist = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:789
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:790
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:792
+type = ChangeState
+Trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:794
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:795
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:796
+
+
+[Statedef 810];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:814
+type = S
+movetype = A
+physics = N
+anim = 810
+poweradd = 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:824
+type = VarSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:826
+var(1) = ((((Command = "holdfwd")) & 2) * 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:827
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:829
+type = PlaySnd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:831
+value = 1, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:832
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:834
+type = PlaySnd
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:836
+value = 800, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:837
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:839
+type = TargetBind
+trigger1 = ((AnimElemTime(2)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:841
+pos = 28, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:842
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:844
+type = Width
+trigger1 = (((AnimElemTime(2)) >= 0) && ((AnimElemTime(12)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:846
+edge = 60, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:847
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:849
+type = TargetBind
+trigger1 = (((AnimElemTime(2)) >= 0) && ((AnimElemTime(5)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:851
+pos = 58, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:852
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:854
+type = TargetBind
+trigger1 = (((AnimElemTime(5)) >= 0) && ((AnimElemTime(6)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:856
+pos = 47, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:857
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:859
+type = Turn
+trigger1 = (var(1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:861
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:862
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:864
+type = PosAdd
+trigger1 = (var(1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:866
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:867
+x = (-37);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:868
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:870
+type = TargetFacing
+trigger1 = (var(1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:872
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:873
+value = (-1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:874
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:876
+type = TargetBind
+trigger1 = (((AnimElemTime(6)) >= 0) && ((AnimElemTime(7)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:878
+pos = 41, (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:879
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:881
+type = TargetBind
+trigger1 = (((AnimElemTime(7)) >= 0) && ((AnimElemTime(8)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:883
+pos = 25, (-75);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:884
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:886
+type = TargetBind
+trigger1 = (((AnimElemTime(8)) >= 0) && ((AnimElemTime(9)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:888
+pos = 15, (-90);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:889
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:891
+type = TargetBind
+trigger1 = (((AnimElemTime(9)) >= 0) && ((AnimElemTime(10)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:893
+pos = (-5), (-96);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:894
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:896
+type = TargetBind
+trigger1 = (((AnimElemTime(10)) >= 0) && ((AnimElemTime(11)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:898
+pos = (-14), (-90);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:899
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:901
+type = TargetBind
+trigger1 = (AnimElem = 11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:903
+pos = (-50), (-50);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:904
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:906
+type = TargetLifeAdd
+trigger1 = (AnimElem = 11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:908
+value = (-78);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:909
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:911
+type = TargetState
+trigger1 = (AnimElem = 11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:913
+value = 821;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:914
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:916
+type = Turn
+trigger1 = (AnimElem = 12);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:918
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:920
+type = PosAdd
+trigger1 = (AnimElem = 15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:922
+x = (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:923
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:925
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:927
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:928
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:929
+
+
+[Statedef 820];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:942
+type = A
+movetype = H
+physics = N
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:948
+type = ChangeAnim2
+Trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:950
+value = 820;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:951
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:955
+type = SelfState
+trigger1 = (!(GetHitVar(isbound)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:957
+value = 5050;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:958
+
+
+[Statedef 821];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:968
+type = A
+movetype = H
+physics = N
+poweradd = 40
+velset = 2.8, -7
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:975
+type = VelAdd
+Trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:977
+y = .4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:978
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:980
+type = ChangeState
+triggerall = (Vel Y > 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:982
+triggerall = (Pos Y >= (-20));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:983
+triggerall = Alive;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:984
+triggerall = CanRecover;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:985
+trigger1 = (Command = "recovery");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:986
+value = 5200;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:987
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:989
+type = SelfState
+triggerall = (Vel Y > 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:991
+triggerall = Alive;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:992
+triggerall = CanRecover;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:993
+trigger1 = (Command = "recovery");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:994
+value = 5210;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:995
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:997
+type = SelfState
+trigger1 = (Vel Y > 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:999
+trigger1 = (Pos Y >= 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1000
+value = 5100;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1001
+
+
+[Statedef 1000];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1018
+type = S
+movetype = A
+physics = S
+anim = 1000
+ctrl = 0
+poweradd = 55
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1029
+type = PlaySnd
+trigger1 = (Time = 8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1031
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1032
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1034
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1036
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1037
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1039
+type = PosAdd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1041
+trigger2 = (AnimElem = 13);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1042
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1043
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1045
+type = PosAdd
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1047
+x = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1048
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1050
+type = HitDef
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1052
+trigger1 = (p2bodydist X < 40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1053
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1054
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1055
+damage = 90, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1056
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1057
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1058
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1059
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1060
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1061
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1062
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1063
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1064
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1065
+ground.velocity = (-4), (-3.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1066
+air.velocity = (-4), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1067
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1068
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1070
+type = HitDef
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1072
+trigger1 = (p2bodydist X >= 40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1073
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1074
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1075
+damage = 85, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1076
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1077
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1078
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1079
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1080
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1081
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1082
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1083
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1084
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1085
+ground.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1086
+air.velocity = (-4), (-2.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1087
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1089
+type = PosAdd
+trigger1 = (AnimElem = 9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1091
+x = (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1092
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1094
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1096
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1097
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1098
+
+
+[Statedef 1010];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1103
+type = S
+movetype = A
+physics = S
+anim = 1010
+ctrl = 0
+poweradd = 60
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1114
+type = PlaySnd
+trigger1 = (Time = 9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1116
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1117
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1119
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1121
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1122
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1124
+type = PosAdd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1126
+trigger2 = (AnimElem = 13);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1127
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1128
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1130
+type = PosAdd
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1132
+x = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1133
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1135
+type = VelSet
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1137
+x = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1138
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1140
+type = HitDef
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1142
+trigger1 = (p2bodydist X < 40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1143
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1144
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1145
+damage = 90, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1146
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1147
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1148
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1149
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1150
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1151
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1152
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1153
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1154
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1155
+ground.velocity = (-4), (-3.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1156
+air.velocity = (-4), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1157
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1158
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1160
+type = HitDef
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1162
+trigger1 = (p2bodydist X >= 40);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1163
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1164
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1165
+damage = 85, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1166
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1167
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1168
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1169
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1170
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1171
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1172
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1173
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1174
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1175
+ground.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1176
+air.velocity = (-4), (-2.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1177
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1179
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1181
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1182
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1183
+
+
+[Statedef 1020];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1194
+type = S
+movetype = A
+physics = N
+anim = 1020
+ctrl = 0
+poweradd = -330
+juggle = 6
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1205
+type = VelMul
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1207
+x = (.85 * cond(((AnimElemTime(6)) < 0), 1, .8));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1208
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1210
+type = AfterImage
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1212
+length = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1213
+PalBright = 30, 30, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1214
+PalContrast = 70, 70, 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1215
+PalAdd = (-10), (-10), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1216
+PalMul = .85, .85, .50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1217
+TimeGap = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1218
+FrameGap = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1219
+Trans = Add;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1220
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1221
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1223
+type = AfterImageTime
+trigger1 = ((AnimElemTime(8)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1225
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1226
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1228
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1230
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1231
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1232
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1233
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1235
+type = PlaySnd
+trigger1 = (Time = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1237
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1238
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1240
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1242
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1243
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1245
+type = PosAdd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1247
+trigger2 = (AnimElem = 12);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1248
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1249
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1251
+type = PosAdd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1253
+x = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1254
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1256
+type = VelSet
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1258
+x = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1259
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1261
+type = HitDef
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1263
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1264
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1265
+damage = 95, 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1266
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1267
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1268
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1269
+pausetime = 8, 7;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1270
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1271
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1272
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1273
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1274
+ground.slidetime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1275
+ground.hittime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1276
+ground.velocity = (-8), (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1277
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1278
+air.velocity = (-8), (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1279
+airguard.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1280
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1281
+p2stateno = 1025;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1282
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1283
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1285
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1287
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1288
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1289
+
+
+[Statedef 1025];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1295
+type = A
+movetype = H
+physics = N
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1301
+type = ChangeAnim2
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1303
+value = 1025;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1304
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1306
+type = ChangeState
+trigger1 = (HitShakeOver = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1308
+value = 1026;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1309
+
+
+[Statedef 1026];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1314
+type = A
+movetype = H
+physics = N
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1319
+type = HitVelSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1321
+x = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1322
+y = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1323
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1325
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1327
+y = .45;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1328
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1330
+type = ScreenBound
+triggerall = (Pos y < (-15));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1332
+trigger1 = (BackEdgeBodyDist < 65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1333
+trigger2 = (FrontEdgeBodyDist < 65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1334
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1335
+movecamera = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1336
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1338
+type = ChangeState
+triggerall = (Pos y < (-15));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1340
+trigger1 = (BackEdgeBodyDist <= 20);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1341
+trigger2 = (FrontEdgeBodyDist <= 20);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1342
+value = 1027;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1343
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1345
+type = SelfState
+trigger1 = ((Vel y > 0) && (Pos y >= 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1347
+value = 5100;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1348
+
+
+[Statedef 1027];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1353
+type = A
+movetype = H
+physics = N
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1358
+type = Turn
+trigger1 = ((Time = 0) && (FrontEdgeBodyDist <= 30));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1360
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1362
+type = PosAdd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1364
+x = (15 - BackEdgeBodyDist);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1365
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1367
+type = PosFreeze
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1369
+x = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1370
+y = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1371
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1373
+type = ScreenBound
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1375
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1376
+movecamera = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1377
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1379
+type = Explod
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1381
+anim = F72;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1382
+pos = 0, ((floor(screenpos y)) - 50);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1383
+postype = back;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1384
+sprpriority = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1385
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1387
+type = ChangeAnim2
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1389
+value = 1027;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1390
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1392
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1394
+value = F7, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1395
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1397
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1399
+value = 1028;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1400
+
+
+[Statedef 1028];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1405
+type = A
+movetype = H
+physics = N
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1410
+type = NotHitBy
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1412
+value = , NA, NP;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1413
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1415
+type = VelSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1417
+y = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1418
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1420
+type = VelSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1422
+x = 1.6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1423
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1425
+type = Turn
+trigger1 = ((Time = 0) && (BackEdgeDist < 30));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1427
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1429
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1431
+y = .35;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1432
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1434
+type = ChangeAnim
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1436
+trigger1 = (!(SelfAnimExist(5052)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1437
+value = 5050;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1438
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1440
+type = ChangeAnim
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1442
+trigger1 = (SelfAnimExist(5052));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1443
+value = 5052;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1444
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1446
+type = ChangeAnim
+trigger1 = (Vel Y > (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1448
+trigger1 = (Anim = 5050);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1449
+trigger1 = (SelfAnimExist(5060));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1450
+persistent = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1451
+value = 5060;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1452
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1454
+type = ChangeAnim
+trigger1 = (Vel Y > (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1456
+trigger1 = (Anim = 5052);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1457
+trigger1 = (SelfAnimExist(5062));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1458
+persistent = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1459
+value = 5062;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1460
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1462
+type = SelfState
+trigger1 = ((Vel y > 0) && (Pos y >= 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1464
+value = 5100;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1465
+
+
+[Statedef 1050];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1481
+type = S
+movetype = A
+physics = S
+anim = 1050
+ctrl = 0
+poweradd = 55
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1492
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1494
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1495
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1497
+type = Null
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1499
+x = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1500
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1502
+type = PosAdd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1504
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1505
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1507
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1509
+attr = A, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1510
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1511
+damage = 80, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1512
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1513
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1514
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1515
+sparkxy = (-10), (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1516
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1517
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1518
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1519
+ground.slidetime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1520
+ground.hittime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1521
+ground.velocity = (-3.5), (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1522
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1523
+air.velocity = (-3.5), (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1524
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1525
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1527
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1529
+value = 1051;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1530
+
+
+[Statedef 1051];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1548
+type = A
+movetype = A
+physics = N
+anim = 1051
+hitdefpersist = 1
+velset = 2, -6
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1556
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1558
+y = .45;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1559
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1561
+type = ChangeState
+trigger1 = ((Command = "a") || (Command = "b"));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1563
+trigger1 = (Vel y < (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1564
+value = 1055;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1565
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1567
+type = ChangeState
+trigger1 = ((Vel Y > 0) && (Pos Y >= (-10)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1569
+value = 1052;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1570
+
+
+[Statedef 1052];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1579
+type = S
+movetype = I
+physics = S
+anim = 1052
+sprpriority = 1
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1587
+type = PosSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1589
+y = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1590
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1592
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1594
+value = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1595
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1597
+type = CtrlSet
+trigger1 = ((AnimElemTime(3)) = (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1599
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1600
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1602
+type = PosAdd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1604
+x = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1605
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1607
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1609
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1610
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1611
+
+
+[Statedef 1055];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1615
+type = A
+movetype = A
+physics = N
+anim = 1055
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1621
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1623
+value = 100, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1624
+channel = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1625
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1627
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1629
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1630
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1632
+type = PosAdd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1634
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1635
+y = (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1636
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1638
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1640
+y = .45;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1641
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1643
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1645
+attr = A, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1646
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1647
+damage = (35 + ((PrevStateNo = 1061) * 5)), 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1648
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1649
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1650
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1651
+sparkxy = 0, (-90);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1652
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1653
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1654
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1655
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1656
+ground.hittime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1657
+ground.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1658
+guard.velocity = (-8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1659
+guard.ctrltime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1660
+air.velocity = (-4), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1661
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1662
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1663
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1665
+type = ChangeState
+trigger1 = ((Vel Y > 0) && (Pos Y >= (-5)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1667
+value = 1056;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1668
+
+
+[Statedef 1056];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1672
+type = S
+movetype = I
+physics = S
+anim = 1056
+sprpriority = 1
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1680
+type = PosSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1682
+y = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1683
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1685
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1687
+value = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1688
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1690
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1692
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1693
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1694
+
+
+[Statedef 1060];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1698
+type = S
+movetype = A
+physics = S
+anim = 1060
+ctrl = 0
+poweradd = 60
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1709
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1711
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1712
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1714
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1716
+x = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1717
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1719
+type = PosAdd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1721
+x = 21;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1722
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1724
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1726
+attr = A, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1727
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1728
+damage = 90, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1729
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1730
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1731
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1732
+sparkxy = (-10), (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1733
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1734
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1735
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1736
+ground.slidetime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1737
+ground.hittime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1738
+ground.velocity = (-3.5), (-7.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1739
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1740
+air.velocity = (-3.5), (-7.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1741
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1742
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1744
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1746
+value = 1061;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1747
+
+
+[Statedef 1061];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1751
+type = A
+movetype = A
+physics = N
+anim = 1061
+hitdefpersist = 1
+velset = 2.5, -7.5
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1759
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1761
+y = .45;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1762
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1764
+type = ChangeState
+trigger1 = ((Command = "a") || (Command = "b"));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1766
+trigger1 = (Vel y < (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1767
+value = 1055;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1768
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1770
+type = ChangeState
+trigger1 = ((Vel Y > 0) && (Pos Y >= (-10)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1772
+value = 1052;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1773
+
+
+[Statedef 1070];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1779
+type = S
+movetype = A
+physics = S
+anim = 1070
+ctrl = 0
+poweradd = -330
+juggle = 6
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1790
+type = AfterImage
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1792
+length = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1793
+PalBright = 30, 30, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1794
+PalContrast = 70, 70, 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1795
+PalAdd = (-10), (-10), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1796
+PalMul = .85, .85, .50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1797
+TimeGap = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1798
+FrameGap = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1799
+Trans = Add;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1800
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1801
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1803
+type = AfterImageTime
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1805
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1806
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1808
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1810
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1811
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1812
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1813
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1815
+type = PlaySnd
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1817
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1818
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1820
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1822
+x = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1823
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1825
+type = PosAdd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1827
+x = 21;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1828
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1830
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1832
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1833
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1834
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1835
+damage = 35, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1836
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1837
+hitflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1838
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1839
+pausetime = 8, 7;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1840
+sparkxy = (-10), (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1841
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1842
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1843
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1844
+ground.slidetime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1845
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1846
+ground.velocity = (-2), (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1847
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1848
+air.velocity = (-2), (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1849
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1850
+fall.animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1851
+fall.recovertime = 30;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1852
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1854
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1856
+value = 1071;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1857
+
+
+[Statedef 1071];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1861
+type = A
+movetype = A
+physics = N
+anim = 1071
+velset = 2.5, -9
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1868
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1870
+time = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1871
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1872
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1873
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1875
+type = AfterImageTime
+trigger1 = (Vel Y < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1877
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1878
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1880
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1882
+y = .5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1883
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1885
+type = VelAdd
+trigger1 = (Vel Y >= (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1887
+y = .2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1888
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1890
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1892
+attr = A, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1893
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1894
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1895
+damage = 68, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1896
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1897
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1898
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1899
+sparkxy = (-10), (-70);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1900
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1901
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1902
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1903
+ground.slidetime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1904
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1905
+ground.velocity = (-3), (-9.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1906
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1907
+air.velocity = (-3), (-9.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1908
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1909
+fall.recovertime = 30;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1910
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1912
+type = ChangeState
+trigger1 = ((Command = "a") || (Command = "b"));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1914
+trigger1 = (Vel y < (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1915
+trigger1 = (Time > 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1916
+value = 1075;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1917
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1919
+type = ChangeState
+trigger1 = ((Vel Y > 0) && (Pos Y >= (-10)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1921
+value = 1052;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1922
+
+
+[Statedef 1075];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1926
+type = A
+movetype = A
+physics = N
+anim = 1055
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1932
+type = AfterImageTime
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1934
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1935
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1937
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1939
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1940
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1941
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1942
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1944
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1946
+value = 100, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1947
+channel = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1948
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1950
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1952
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1953
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1955
+type = PosAdd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1957
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1958
+y = (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1959
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1961
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1963
+y = .45;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1964
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1966
+type = VelAdd
+trigger1 = (Vel Y >= (-1));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1968
+y = .2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1969
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1971
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1973
+attr = A, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1974
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1975
+damage = 42, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1976
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1977
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1978
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1979
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1980
+sparkxy = 0, (-90);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1981
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1982
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1983
+ground.type = High;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1984
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1985
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1986
+ground.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1987
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1988
+air.velocity = (-4), (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1989
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1990
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1991
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1993
+type = ChangeState
+trigger1 = ((Vel Y > 0) && (Pos Y >= (-5)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1995
+value = 1056;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:1996
+
+
+[Statedef 1100];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2012
+type = S
+movetype = A
+physics = S
+anim = 1100
+ctrl = 0
+poweradd = 55
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2023
+type = Width
+trigger1 = (((AnimElemTime(4)) >= 0) && ((AnimElemTime(13)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2025
+value = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2026
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2028
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2030
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2031
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2033
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2035
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2036
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2037
+damage = 52, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2038
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2039
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2040
+pausetime = 4, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2041
+sparkxy = 0, (-48);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2042
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2043
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2044
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2045
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2046
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2047
+ground.velocity = (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2048
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2049
+air.velocity = (-2), (-2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2050
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2051
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2052
+forcestand = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2053
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2055
+type = HitDef
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2057
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2058
+animtype = Up;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2059
+damage = 55, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2060
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2061
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2062
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2063
+sparkxy = 0, (-110);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2064
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2065
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2066
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2067
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2068
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2069
+ground.velocity = (-1), (-9.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2070
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2071
+air.velocity = (-1), (-7.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2072
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2073
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2074
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2075
+fall.recovertime = 40;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2076
+yaccel = .4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2077
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2079
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2081
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2082
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2083
+
+
+[Statedef 1110];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2087
+type = S
+movetype = A
+physics = S
+anim = 1110
+ctrl = 0
+poweradd = 60
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2098
+type = Width
+trigger1 = (((AnimElemTime(4)) >= 0) && ((AnimElemTime(14)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2100
+value = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2101
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2103
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2105
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2106
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2108
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2110
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2111
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2112
+damage = 57, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2113
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2114
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2115
+pausetime = 4, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2116
+sparkxy = 0, (-48);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2117
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2118
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2119
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2120
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2121
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2122
+ground.velocity = (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2123
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2124
+air.velocity = (-2), (-2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2125
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2126
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2127
+forcestand = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2128
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2130
+type = HitDef
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2132
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2133
+animtype = Up;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2134
+damage = 60, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2135
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2136
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2137
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2138
+sparkxy = 0, (-110);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2139
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2140
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2141
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2142
+ground.slidetime = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2143
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2144
+ground.velocity = (-1), (-10.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2145
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2146
+air.velocity = (-1), (-8.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2147
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2148
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2149
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2150
+fall.recovertime = 50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2151
+yaccel = .4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2152
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2154
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2156
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2157
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2158
+
+
+[Statedef 1120];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2162
+type = S
+movetype = A
+physics = S
+anim = 1120
+ctrl = 0
+poweradd = -330
+juggle = 6
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2173
+type = Width
+trigger1 = (((AnimElemTime(4)) >= 0) && ((AnimElemTime(14)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2175
+value = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2176
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2178
+type = AfterImage
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2180
+length = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2181
+PalBright = 30, 30, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2182
+PalContrast = 70, 70, 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2183
+PalAdd = (-10), (-10), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2184
+PalMul = .85, .85, .50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2185
+TimeGap = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2186
+FrameGap = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2187
+Trans = Add;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2188
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2189
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2191
+type = AfterImageTime
+trigger1 = (AnimTime < (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2193
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2194
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2196
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2198
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2199
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2200
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2201
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2203
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2205
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2206
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2208
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2210
+trigger2 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2211
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2212
+animtype = Medium;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2213
+damage = 30, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2214
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2215
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2216
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2217
+pausetime = 6, 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2218
+sparkxy = 0, cond((Time = 0), (-48), (-55));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2219
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2220
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2221
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2222
+ground.slidetime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2223
+ground.hittime = 23;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2224
+ground.velocity = (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2225
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2226
+air.velocity = (-2), (-2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2227
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2228
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2229
+forcestand = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2230
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2232
+type = HitDef
+trigger1 = (AnimElem = 7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2234
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2235
+animtype = Up;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2236
+damage = 68, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2237
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2238
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2239
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2240
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2241
+sparkxy = 0, (-110);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2242
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2243
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2244
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2245
+ground.slidetime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2246
+ground.hittime = 23;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2247
+ground.velocity = (-1.2), (-11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2248
+guard.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2249
+air.velocity = (-1.2), (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2250
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2251
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2252
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2253
+fall.recovertime = 60;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2254
+yaccel = .4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2255
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2257
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2259
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2260
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2261
+
+
+[Statedef 1200];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2268
+type = S
+movetype = A
+physics = S
+anim = 1200
+ctrl = 0
+poweradd = 50
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2279
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2281
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2282
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2284
+type = Width
+trigger1 = (((AnimElemTime(5)) >= 0) && ((AnimElemTime(6)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2286
+value = 10, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2287
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2289
+type = Width
+trigger1 = (((AnimElemTime(6)) >= 0) && ((AnimElemTime(9)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2291
+value = 20, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2292
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2294
+type = EnvShake
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2296
+time = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2297
+ampl = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2298
+freq = 180;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2299
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2301
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2303
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2304
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2305
+damage = 100, 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2306
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2307
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2308
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2309
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2310
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2311
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2312
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2313
+ground.slidetime = 16;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2314
+ground.hittime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2315
+ground.velocity = (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2316
+ground.cornerpush.veloff = (-12);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2317
+guard.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2318
+air.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2319
+airguard.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2320
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2322
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2324
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2325
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2326
+
+
+[Statedef 1210];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2331
+type = S
+movetype = A
+physics = S
+anim = 1210
+ctrl = 0
+poweradd = 60
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2342
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2344
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2345
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2347
+type = Width
+trigger1 = (((AnimElemTime(5)) >= 0) && ((AnimElemTime(6)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2349
+value = 10, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2350
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2352
+type = Width
+trigger1 = (((AnimElemTime(6)) >= 0) && ((AnimElemTime(9)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2354
+value = 20, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2355
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2357
+type = EnvShake
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2359
+time = 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2360
+ampl = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2361
+freq = 170;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2362
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2364
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2366
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2367
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2368
+damage = 125, 9;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2369
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2370
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2371
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2372
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2373
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2374
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2375
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2376
+ground.slidetime = 18;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2377
+ground.hittime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2378
+ground.velocity = (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2379
+ground.cornerpush.veloff = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2380
+guard.velocity = (-8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2381
+air.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2382
+airguard.velocity = (-4), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2383
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2385
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2387
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2388
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2389
+
+
+[Statedef 1220];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2394
+type = S
+movetype = A
+physics = S
+anim = 1220
+ctrl = 0
+poweradd = -330
+juggle = 6
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2405
+type = AfterImage
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2407
+length = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2408
+PalBright = 30, 30, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2409
+PalContrast = 70, 70, 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2410
+PalAdd = (-10), (-10), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2411
+PalMul = .85, .85, .50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2412
+TimeGap = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2413
+FrameGap = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2414
+Trans = Add;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2415
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2416
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2418
+type = AfterImageTime
+trigger1 = (AnimTime < (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2420
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2421
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2423
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2425
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2426
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2427
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2428
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2430
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2432
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2433
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2435
+type = Width
+trigger1 = (((AnimElemTime(5)) >= 0) && ((AnimElemTime(6)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2437
+value = 10, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2438
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2440
+type = Width
+trigger1 = (((AnimElemTime(6)) >= 0) && ((AnimElemTime(9)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2442
+value = 20, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2443
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2445
+type = EnvShake
+trigger1 = (AnimElem = 6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2447
+time = 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2448
+ampl = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2449
+freq = 170;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2450
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2452
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2454
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2455
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2456
+damage = 125, 9;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2457
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2458
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2459
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2460
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2461
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2462
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2463
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2464
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2465
+ground.slidetime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2466
+ground.hittime = 32;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2467
+ground.velocity = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2468
+ground.cornerpush.veloff = (-20);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2469
+guard.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2470
+air.velocity = (-5), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2471
+airguard.velocity = (-5), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2472
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2473
+fall.animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2474
+yaccel = .4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2475
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2477
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2479
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2480
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2481
+
+
+[Statedef 1300];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2490
+type = S
+movetype = I
+physics = S
+anim = 1300
+ctrl = 0
+sprpriority = 1
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2499
+type = Width
+trigger1 = ((AnimElemTime(3)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2501
+value = 15, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2502
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2504
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2506
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2507
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2509
+type = ReversalDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2511
+reversal.attr = SA, AA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2512
+pausetime = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2513
+sparkno = 40;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2514
+sparkxy = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2515
+hitsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2516
+p1stateno = 1310;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2517
+p1sprpriority = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2518
+p2sprpriority = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2519
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2521
+type = ReversalDef
+trigger1 = (Time = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2523
+trigger1 = (Time = (Command = "holdfwd"));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2524
+trigger2 = (Time = 8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2525
+reversal.attr = ;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2526
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2528
+type = HitOverride
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2530
+attr = SA, AP;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2531
+stateno = 1310;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2532
+time = 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2533
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2535
+type = HitOverride
+trigger1 = (Time = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2537
+trigger1 = (Time = (Command = "holdfwd"));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2538
+attr = ;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2539
+time = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2540
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2542
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2544
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2545
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2546
+
+
+[Statedef 1310];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2551
+type = S
+movetype = I
+physics = S
+anim = 1310
+ctrl = 0
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2560
+type = Pause
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2562
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2563
+endcmdbuftime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2564
+pausebg = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2565
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2567
+type = ChangeState
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2569
+trigger1 = (Command = "holdback");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2570
+value = 130;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2571
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2572
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2574
+type = NotHitBy
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2576
+value = SCA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2577
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2578
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2580
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2582
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2583
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2584
+
+
+[Statedef 1320];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2588
+type = C
+movetype = I
+physics = C
+anim = 1320
+ctrl = 0
+sprpriority = 1
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2597
+type = Width
+trigger1 = ((AnimElemTime(3)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2599
+value = 10, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2600
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2602
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2604
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2605
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2607
+type = ReversalDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2609
+reversal.attr = C, AA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2610
+pausetime = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2611
+sparkno = 40;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2612
+sparkxy = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2613
+hitsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2614
+p1stateno = 1330;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2615
+p1sprpriority = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2616
+p2sprpriority = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2617
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2619
+type = ReversalDef
+trigger1 = (Time = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2621
+reversal.attr = ;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2622
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2624
+type = HitOverride
+trigger1 = (Time < 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2626
+attr = C, AP;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2627
+stateno = 1330;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2628
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2630
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2632
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2633
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2634
+
+
+[Statedef 1330];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2638
+type = C
+movetype = I
+physics = C
+anim = 1330
+ctrl = 0
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2647
+type = Pause
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2649
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2650
+endcmdbuftime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2651
+pausebg = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2652
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2654
+type = ChangeState
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2656
+trigger1 = (Command = "holdback");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2657
+value = 131;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2658
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2659
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2661
+type = NotHitBy
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2663
+value = SCA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2664
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2665
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2667
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2669
+value = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2670
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2671
+
+
+[Statedef 1340];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2675
+type = A
+movetype = I
+physics = N
+anim = 1340
+ctrl = 0
+sprpriority = 1
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2683
+type = Width
+trigger1 = ((AnimElemTime(3)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2685
+value = 10, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2686
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2688
+type = PlaySnd
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2690
+value = 0, 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2691
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2693
+type = ReversalDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2695
+reversal.attr = A, AA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2696
+pausetime = 0, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2697
+sparkno = 40;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2698
+sparkxy = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2699
+hitsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2700
+p1stateno = 1350;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2701
+p1sprpriority = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2702
+p2sprpriority = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2703
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2705
+type = ReversalDef
+trigger1 = (Time = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2707
+reversal.attr = ;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2708
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2710
+type = HitOverride
+trigger1 = (Time < 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2712
+attr = SA, AP;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2713
+stateno = 1350;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2714
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2716
+type = CtrlSet
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2718
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2719
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2721
+type = VelAdd
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2723
+y = (Const(movement.yaccel));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2724
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2726
+type = ChangeState
+trigger1 = ((Pos Y >= 0) && (Vel Y > 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2728
+value = 1351;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2729
+
+
+[Statedef 1350];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2733
+type = A
+movetype = I
+physics = N
+anim = 1350
+ctrl = 0
+sprpriority = 2
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2741
+type = Pause
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2743
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2744
+endcmdbuftime = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2745
+pausebg = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2746
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2748
+type = ChangeState
+trigger1 = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2750
+trigger1 = (Command = "holdback");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2751
+value = 132;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2752
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2753
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2755
+type = NotHitBy
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2757
+value = SCA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2758
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2759
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2761
+type = PosFreeze
+trigger1 = ((AnimElemTime(3)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2763
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2765
+type = CtrlSet
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2767
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2768
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2770
+type = VelAdd
+trigger1 = ((AnimElemTime(3)) > 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2772
+y = (Const(movement.yaccel));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2773
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2775
+type = ChangeState
+trigger1 = ((Pos Y >= 0) && (Vel Y > 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2777
+value = 1351;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2778
+
+
+[Statedef 1351];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2782
+type = S
+physics = S
+anim = 47
+ctrl = 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2788
+type = VelSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2790
+y = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2791
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2793
+type = PosSet
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2795
+y = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2796
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2798
+type = CtrlSet
+trigger1 = (Time = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2800
+value = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2801
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2803
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2805
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2806
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2807
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2809
+type = ChangeState
+trigger1 = (Command = "blocking");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2811
+trigger1 = (Command != "holddown");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2812
+value = 1300;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2813
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2815
+type = ChangeState
+trigger1 = (Command = "blocking");!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2817
+value = 1320;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2818
+
+
+[Statedef 1400];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2823
+type = S
+movetype = A
+physics = N
+anim = 1400
+ctrl = 0
+poweradd = 50
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2834
+type = PlaySnd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2836
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2837
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2839
+type = VelMul
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2841
+x = 0.5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2842
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2844
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2846
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2847
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2848
+damage = 100, 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2849
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2850
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2851
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2852
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2853
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2854
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2855
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2856
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2857
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2858
+ground.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2859
+ground.cornerpush.veloff = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2860
+guard.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2861
+air.velocity = (-2), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2862
+airguard.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2863
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2864
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2866
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2868
+trigger2 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2869
+trigger3 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2870
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2871
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2873
+type = VelSet
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2875
+x = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2876
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2878
+type = PosAdd
+trigger1 = (AnimElem = 8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2880
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2881
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2883
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2885
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2886
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2887
+
+
+[Statedef 1410];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2892
+type = S
+movetype = A
+physics = N
+anim = 1410
+ctrl = 0
+poweradd = 50
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2903
+type = PlaySnd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2905
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2906
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2908
+type = VelMul
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2910
+x = 0.65;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2911
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2913
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2915
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2916
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2917
+damage = 100, 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2918
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2919
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2920
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2921
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2922
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2923
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2924
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2925
+ground.slidetime = 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2926
+ground.hittime = 17;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2927
+ground.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2928
+ground.cornerpush.veloff = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2929
+guard.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2930
+air.velocity = (-2), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2931
+airguard.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2932
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2933
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2935
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2937
+trigger2 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2938
+trigger3 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2939
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2940
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2942
+type = VelSet
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2944
+x = 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2945
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2947
+type = PosAdd
+trigger1 = (AnimElem = 9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2949
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2950
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2952
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2954
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2955
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2956
+
+
+[Statedef 1420];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2961
+type = S
+movetype = A
+physics = N
+anim = 1420
+ctrl = 0
+poweradd = -330
+juggle = 6
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2972
+type = AfterImage
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2974
+length = 13;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2975
+PalBright = 30, 30, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2976
+PalContrast = 70, 70, 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2977
+PalAdd = (-10), (-10), (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2978
+PalMul = .85, .85, .50;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2979
+TimeGap = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2980
+FrameGap = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2981
+Trans = Add;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2982
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2983
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2985
+type = AfterImageTime
+trigger1 = ((AnimElemTime(8)) < 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2987
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2988
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2990
+type = PalFX
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2992
+time = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2993
+add = 32, 16, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2994
+sinadd = 64, 32, 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2995
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2997
+type = PlaySnd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:2999
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3000
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3002
+type = VelMul
+trigger1 = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3004
+x = 0.7;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3005
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3007
+type = HitDef
+trigger1 = ((AnimElemTime(4)) = (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3009
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3010
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3011
+damage = 25, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3012
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3013
+priority = 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3014
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3015
+pausetime = 9, 9;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3016
+sparkxy = (-15), (-45);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3017
+hitsound = 5, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3018
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3019
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3020
+ground.slidetime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3021
+ground.hittime = 24;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3022
+ground.velocity = (-7);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3023
+ground.cornerpush.veloff = (-8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3024
+guard.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3025
+air.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3026
+airguard.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3027
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3029
+type = HitDef
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3031
+attr = S, SA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3032
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3033
+damage = 100, 8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3034
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3035
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3036
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3037
+pausetime = 12, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3038
+sparkxy = 0, (-65);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3039
+hitsound = 5, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3040
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3041
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3042
+ground.slidetime = 22;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3043
+ground.hittime = 24;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3044
+ground.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3045
+ground.cornerpush.veloff = (-15);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3046
+guard.velocity = (-9);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3047
+air.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3048
+airguard.velocity = (-3.5), (-4.5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3049
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3050
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3052
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3054
+trigger2 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3055
+trigger3 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3056
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3057
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3059
+type = VelSet
+trigger1 = ((AnimElemTime(3)) = [1, 2]);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3061
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3062
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3064
+type = PosAdd
+trigger1 = (AnimElem = 10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3066
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3067
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3069
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3071
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3072
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3073
+
+
+[Statedef 3000];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3084
+type = S
+movetype = A
+physics = S
+anim = 3000
+ctrl = 0
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3094
+type = Width
+trigger1 = ((AnimElemTime(2)) >= 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3096
+value = 15, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3097
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3099
+type = SuperPause
+trigger1 = ((AnimElemTime(2)) = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3101
+pos = 25, (-57);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3102
+anim = 100;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3103
+sound = 20, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3104
+poweradd = (-1000);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3105
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3107
+type = AfterImage
+trigger1 = ((AnimElemTime(2)) = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3109
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3110
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3112
+type = AfterImageTime
+trigger1 = (((AnimElemTime(2)) >= 1) && (Time < 60));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3114
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3115
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3117
+type = NotHitBy
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3119
+value = , NA, SA, AT;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3120
+time = 11;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3121
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3123
+type = NotHitBy
+trigger1 = (((AnimElemTime(2)) >= 0) && ((AnimElemTime(14)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3125
+value2 = C, NA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3126
+time = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3127
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3129
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3131
+trigger2 = (AnimElem = 12);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3132
+trigger3 = (AnimElem = 20);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3133
+value = 0, 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3134
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3136
+type = PosAdd
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3138
+x = 20;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3139
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3141
+type = PosAdd
+trigger1 = (AnimElem = 3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3143
+trigger2 = (AnimElem = 11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3144
+trigger3 = (AnimElem = 13);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3145
+trigger4 = (AnimElem = 19);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3146
+trigger4 = (AnimElem = 31);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3148
+trigger5 = (AnimElem = 21);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3147
+x = 10;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3149
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3151
+type = VelSet
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3153
+trigger2 = (AnimElem = 13);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3154
+trigger3 = (AnimElem = 21);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3155
+x = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3156
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3158
+type = PosAdd
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3160
+x = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3161
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3163
+type = HitDef
+trigger1 = (AnimElem = 5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3165
+trigger2 = (AnimElem = 13);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3166
+attr = S, HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3167
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3168
+damage = 72, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3169
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3170
+priority = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3171
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3172
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3173
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3174
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3175
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3176
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3177
+ground.slidetime = 30;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3178
+ground.hittime = 32;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3179
+ground.velocity = (-6);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3180
+air.velocity = (-3), (-2.8);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3181
+air.fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3182
+fall.animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3183
+fall.recover = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3184
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3186
+type = HitDef
+trigger1 = (AnimElem = 21);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3188
+attr = S, HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3189
+animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3190
+damage = 75, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3191
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3192
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3193
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3194
+pausetime = 15, 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3195
+sparkxy = (-10), (-60);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3196
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3197
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3198
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3199
+ground.slidetime = 30;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3200
+ground.hittime = 32;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3201
+ground.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3202
+guard.velocity = (-12);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3203
+air.velocity = (-5), (-4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3204
+airguard.velocity = (-3), (-3);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3205
+fall.animtype = Hard;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3206
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3207
+fall.recover = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3208
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3210
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3212
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3213
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3214
+
+
+[Statedef 3050];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3230
+type = S
+movetype = A
+physics = S
+anim = 3050
+ctrl = 0
+juggle = 4
+sprpriority = 2
+velset = 0, 0
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3240
+type = Width
+trigger1 = (((AnimElemTime(4)) >= 0) && ((AnimElemTime(16)) < 0));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3242
+value = 5, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3243
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3245
+type = SuperPause
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3247
+pos = (-5), (-55);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3248
+anim = 100;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3249
+sound = 20, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3250
+poweradd = (-1000);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3251
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3253
+type = AfterImage
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3255
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3256
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3258
+type = AfterImageTime
+trigger1 = ((AnimElemTime(2)) >= 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3260
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3261
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3263
+type = NotHitBy
+trigger1 = (AnimElem = 2);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3265
+value = , NA, SA, AT;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3266
+time = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3267
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3269
+type = PlaySnd
+trigger1 = (AnimElem = 4);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3271
+value = 0, 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3272
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3274
+type = HitDef
+trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3276
+attr = S, HA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3277
+animtype = Up;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3278
+damage = 155, 12;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3279
+getpower = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3280
+priority = 5;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3281
+guardflag = MA;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3282
+pausetime = 30, 30;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3283
+sparkno = 3;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3284
+sparkxy = 0, (-110);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3285
+hitsound = 5, 4;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3286
+guardsound = 6, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3287
+ground.type = Low;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3288
+ground.slidetime = 26;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3289
+ground.hittime = 28;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3290
+ground.velocity = (-1.3), (-25);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3291
+guard.velocity = (-11);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3292
+air.velocity = (-1.3), (-25);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3293
+airguard.velocity = (-4.5), (-5);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3294
+envshake.time = 25;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3295
+envshake.ampl = 7;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3296
+envshake.freq = 176;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3297
+p2facing = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3298
+fall = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3299
+fall.recover = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3300
+fall.damage = 70;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3301
+fall.envshake.ampl = 6;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3302
+fall.envshake.freq = 178;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3303
+fall.envshake.time = 15;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3304
+mindist = 50, (-100);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3305
+maxdist = 100, (-10);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3306
+yaccel = .8;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3307
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3311
+type = ChangeState
+trigger1 = MoveHit;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3313
+value = 3051;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3314
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3316
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3318
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3319
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3320
+
+
+[Statedef 3051];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3327
+type = S
+movetype = A
+physics = S
+anim = 3051
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3333
+type = AfterImageTime
+trigger1 = (AnimTime < (-2));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3335
+time = 2;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3336
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3338
+type = ChangeState
+trigger1 = (AnimTime = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3340
+value = 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3341
+ctrl = 1;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3342
+
+
+[Statedef -3];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3357
+
+[State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3361
+type = PlaySnd
+triggerall = (Time = 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3363
+trigger1 = (StateNo = 52);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3364
+trigger2 = (StateNo = 106);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3365
+value = 40, 0;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:3366
+
+

@@ -45,7 +45,7 @@ def make_atom(input: str) -> Any:
     if "," in input:
         results: list[Any] = []
         for c in input.split(","):
-            results += make_atom(c.strip())
+            results.append(make_atom(c.strip()))
         return tuple(results)
 
     if (ivar := tryparse(input, int)) != None:
@@ -56,16 +56,40 @@ def make_atom(input: str) -> Any:
         return input.lower() == "true"
     return input
 
-def parse_builtin(input: str) -> Optional[TypeDefinition]:
+def parse_builtin(input: str) -> Optional[Expression]:
     ## parses the input string to see if it matches any built-in type.
     if tryparse(input, int) != None:
-        return BUILTIN_INT
+        return Expression(BUILTIN_INT, input)
     elif tryparse(input, float) != None:
-        return BUILTIN_FLOAT
+        return Expression(BUILTIN_FLOAT, input)
     elif input.lower() in ["true", "false"]:
-        return BUILTIN_BOOL
+        return Expression(BUILTIN_BOOL, "1" if input.lower() == "true" else "0")
     elif input.startswith('"') and input.endswith('"'):
-        return BUILTIN_STRING
+        return Expression(BUILTIN_STRING, input)
     elif len(input) > 1 and input[0] in ["F", "S"] and tryparse(input[1:], int) != None:
-        return BUILTIN_CINT
+        return Expression(BUILTIN_CINT, input)
     return None
+
+def mask_variable(index: int, offset: int, size: int) -> str:
+    ## takes information describing the location of a variable in `var`-space,
+    ## and creates a string which accesses that variable.
+    result = f"var({index})"
+
+    if offset != 0:
+        ## access starts from the bit `offset` and progresses to the bit `offset + size`.
+        start_pow2 = 2 ** offset
+        end_pow2 = 2 ** (offset + size)
+        mask = (end_pow2 - start_pow2)
+        result += f" & {mask}"
+
+    return result
+
+def mask_write(exprn: str, offset: int, size: int) -> str:
+    ## takes information describing the location of a variable in `var`-space,
+    ## and modifies an expression to write to the correct location for that string.
+    if offset == 0 and size == 32:
+        return exprn
+    
+    ## we need to clamp the expression to `size`, then bit-shift the expression up to `offset`.
+    exprn = f"((({exprn}) & {2 ** size}) * {2 ** offset})"
+    return exprn

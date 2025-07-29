@@ -20,7 +20,7 @@ BUILTIN_BOOL = TypeDefinition("bool", TypeCategory.BUILTIN, 1, [], Location("mtl
 BUILTIN_CINT = TypeDefinition("cint", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number()))
 BUILTIN_STRING = TypeDefinition("string", TypeCategory.BUILTIN_DENY, 32, [], Location("mtl/builtins.py", line_number()))
 BUILTIN_TYPE = TypeDefinition("type", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
-BUILTIN_VECTOR = TypeDefinition("vector", TypeCategory.STRUCTURE, 32, ["X:float", "Y:float"], Location("mtl/builtins.py", line_number()))
+BUILTIN_VECTOR = TypeDefinition("vector", TypeCategory.BUILTIN_STRUCTURE, 32, ["X:float", "Y:float"], Location("mtl/builtins.py", line_number()))
 
 BUILTIN_STATETYPE = TypeDefinition("StateType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "L", "U"], Location("mtl/builtins.py", line_number()))
 BUILTIN_MOVETYPE = TypeDefinition("MoveType", TypeCategory.STRING_ENUM, 32, ["A", "I", "H", "U"], Location("mtl/builtins.py", line_number()))

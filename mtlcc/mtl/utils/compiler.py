@@ -343,26 +343,31 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], ctx: Translatio
         for child in tree.children:
             result += find_globals(child, locals, ctx)
         return result
-
-def get_struct_target(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
-    ## first find the target at the top level
-    components = input.split(" ")
-    struct_name = components[0].strip()
+    
+def get_struct_type(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
     ## find the type of this struct, from either triggers or locals
+    struct_name = input.split(" ")[0].strip()
     struct_type: Optional[TypeDefinition] = None
     if (match := find_trigger(struct_name, [], ctx, compiler_internal())) != None:
         struct_type = match.type
     elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name))) != None:
         struct_type = var.type
-    if struct_type == None: return None
-    if struct_type.category != TypeCategory.STRUCTURE: return None
+    return struct_type
+
+def get_struct_target(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
+    ## first find the target at the top level
+    components = input.split(" ")
+
+    if (struct_type := get_struct_type(input, table, ctx)) == None:
+        return None
+    if struct_type.category not in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE]: return None
     ## now determine the type of the field being accessed
     if (target := find(struct_type.members, lambda k: equals_insensitive(k.split(":")[0], components[1]))) == None:
         return None
     if (target_type := find_type(target.split(":")[1], ctx)) == None:
         return None
     ## if the target type is also a struct, and we have a secondary access, create a 'virtual local' for the target and recurse.
-    if target_type.category == TypeCategory.STRUCTURE and len(components) > 2:
+    if target_type.category in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE] and len(components) > 2:
         new_struct_string = "_target " + " ".join(components[2:])
         return get_struct_target(new_struct_string, [TypeParameter("_target", target_type)], ctx)
     ## return the identified target type
@@ -393,7 +398,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## the simplest case is ATOM, which is likely either a variable name, a parameter-less trigger name, or a built-in type.
         if (parsed := parse_builtin(tree.operator)) != None:
             ## handle the case where the token is a built-in type
-            return [TypeSpecifier(parsed)]
+            return [TypeSpecifier(parsed.type)]
         elif (trigger := find_trigger(tree.operator, [], ctx, tree.location)) != None:
             ## if a trigger name matches, and the trigger has an overload which takes no parameters, accept it.
             return [TypeSpecifier(trigger.type)]
@@ -534,7 +539,7 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
     real_type = resolve_alias_typed(var.type, ctx, var.location)
     ## it's possible the real type is a bare builtin, or an enum/flag, or a structure.
     ## other types are forbidden and should throw an error.
-    if real_type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRUCTURE, TypeCategory.BUILTIN]:
+    if real_type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE, TypeCategory.BUILTIN]:
         raise TranslationError(f"Global variable named {var.name} has an invalid type {var.type.name} which was resolved to type category {real_type.category}.", var.location)
     if real_type == BUILTIN_FLOAT:
         ## handle BUILTIN_FLOAT directly since it's the only thing that allocates to float_allocation.
@@ -554,7 +559,7 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
         if next == None:
             raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
-    elif real_type.category == TypeCategory.STRUCTURE:
+    elif real_type.category == TypeCategory.STRUCTURE or real_type.category == TypeCategory.BUILTIN_STRUCTURE:
         ## space needs to be allocated for EACH structure member.
         for member in real_type.members:
             if (member_type := find_type(member.split(":")[1], ctx)) == None:

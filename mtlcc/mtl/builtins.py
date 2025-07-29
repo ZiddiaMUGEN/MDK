@@ -230,9 +230,9 @@ def getBaseTriggers() -> list[TriggerDefinition]:
     ]
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
-    if exprs[1].type != exprs[2].type:
-        raise TranslationError(f"Conditional expression (cond and ifelse) must provide 2 expressions of the same type.", Location("mtl/builtins.py", line_number()))
-    return Expression(exprs[1].type, f"cond({exprs[0].value}, {exprs[1].value}, {exprs[2].value})")
+    if (widest := get_widest_match(exprs[1].type, exprs[2].type, ctx, compiler_internal())) == None:
+        raise TranslationError(f"Conditional expression (cond and ifelse) must provide 2 expressions with compatible types.", Location("mtl/builtins.py", line_number()))
+    return Expression(widest, f"cond({exprs[0].value}, {exprs[1].value}, {exprs[2].value})")
 
 def builtin_cast(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     if exprs[1].type != BUILTIN_TYPE or (target_type := find_type(exprs[1].value, ctx)) == None:
@@ -253,6 +253,11 @@ def builtin_binary(exprs: list[Expression], ctx: TranslationContext, op: str) ->
         return Expression(result, f"({exprs[0].value} {op} {exprs[1].value})")
     raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
 
+def builtin_compare(exprs: list[Expression], ctx: TranslationContext, op: str) -> Expression:
+    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal()) != None:
+        return Expression(BUILTIN_BOOL, f"({exprs[0].value} {op} {exprs[1].value})")
+    raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
+
 def builtin_add(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "+")
 def builtin_sub(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "-")
 def builtin_mult(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "*")
@@ -260,19 +265,16 @@ def builtin_div(exprs: list[Expression], ctx: TranslationContext) -> Expression:
 def builtin_mod(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
 def builtin_exp(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
 def builtin_xor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
-def builtin_eq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "=")
-def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "!=")
+def builtin_eq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "=")
+def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "!=")
 def builtin_bitand(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
 def builtin_bitor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
 def builtin_bitxor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
 def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ":=")
-def builtin_lt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<")
-def builtin_lte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "<=")
-def builtin_gt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">")
-def builtin_gte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ">=")
-
-# special cases. these accept variable inputs to support trigger collapsing.
-## TODO: support variable inputs properly...
+def builtin_lt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<")
+def builtin_lte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<=")
+def builtin_gt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, ">")
+def builtin_gte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, ">=")
 def builtin_and(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
 def builtin_or(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
 
@@ -284,6 +286,7 @@ def getBaseTemplates() -> list[TemplateDefinition]:
         TemplateDefinition("AngleDraw", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("AngleMul", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("AngleSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("AppendToClipboard", [TemplateParameter("text", [TypeSpecifier(BUILTIN_STRING)], True), TemplateParameter("params", [TypeSpecifier(BUILTIN_ANY, repeat = True)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("AssertSpecial", [TemplateParameter("flag", [TypeSpecifier(BUILTIN_ASSERTTYPE)], True), TemplateParameter("flag2", [TypeSpecifier(BUILTIN_ASSERTTYPE)], False), TemplateParameter("flag3", [TypeSpecifier(BUILTIN_ASSERTTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("AttackDist", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("AttackMulSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
@@ -297,7 +300,7 @@ def getBaseTemplates() -> list[TemplateDefinition]:
         TemplateDefinition("CtrlSet", [TemplateParameter("ctrl", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("value", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("DefenceMulSet", [TemplateParameter("value", [TypeSpecifier(BUILTIN_FLOAT)], True)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("DestroySelf", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("DisplayToClipboard", [TemplateParameter("text", [TypeSpecifier(BUILTIN_STRING)], True), TemplateParameter("params", [TypeSpecifier(BUILTIN_VECTOR)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("DisplayToClipboard", [TemplateParameter("text", [TypeSpecifier(BUILTIN_STRING)], True), TemplateParameter("params", [TypeSpecifier(BUILTIN_ANY, repeat = True)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("EnvColor", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("under", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("EnvShake", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("freq", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("phase", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Explod", [TemplateParameter("anim", [TypeSpecifier(BUILTIN_ANIM)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vfacing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("bindtime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("accel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("removetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("supermove", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ontop", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("shadow", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ownpal", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("removeongethit", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ignorehitpause", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),

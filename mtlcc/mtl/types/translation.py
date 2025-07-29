@@ -12,6 +12,7 @@ class TypeCategory(Enum):
     ENUM = 2
     FLAG = 3
     STRUCTURE = 4
+    BUILTIN_STRUCTURE = 96 # special builtin type for things such as Vel/Pos where the struct access is preserved in the output.
     STRING_FLAG = 97 # special builtin type for things such as hitdefattr where the flag identifier is preserved in the output.
     STRING_ENUM = 98 # special builtin type for things such as movetype, statetype, etc where the enum identifier is preserved in the output.
     BUILTIN = 99 # special builtin types (int, float, etc) which need to exist for type-checking.
@@ -51,6 +52,10 @@ class TriggerCategory(Enum):
 class Expression:
     type: TypeDefinition
     value: str
+
+@dataclass
+class VariableExpression(Expression):
+    allocation: tuple[int, int]
 
 @dataclass
 class TriggerDefinition:
@@ -100,15 +105,15 @@ class TemplateDefinition:
 
 @dataclass
 class StateDefinitionParameters:
-    type: str = "S"
-    movetype: str = "I"
-    physics: str = "N"
+    type: Optional[str] = None
+    movetype: Optional[str] = None
+    physics: Optional[str] = None
     anim: Optional[int] = None
     velset: Optional[tuple[float, float]] = None
     ctrl: Optional[bool] = None
     poweradd: Optional[int] = None
     juggle: Optional[int] = None
-    facep2: bool = False
+    facep2: Optional[bool] = None
     hitdefpersist: Optional[bool] = None
     movehitpersist: Optional[bool] = None
     hitcountpersist: Optional[bool] = None
@@ -121,3 +126,8 @@ class StateDefinition:
     locals: list[TypeParameter]
     states: list[StateController]
     location: Location
+
+@dataclass
+class AllocationTable:
+    data: dict[int, int]
+    max_size: int

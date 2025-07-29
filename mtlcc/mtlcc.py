@@ -1,5 +1,6 @@
 import argparse
 import traceback
+import os
 
 from mtl import loader, translator
 from mtl.utils.compiler import TranslationError
@@ -15,6 +16,9 @@ if __name__ == "__main__":
     try:
         loadContext = loader.loadFile(args.input, [])
         translated = translator.translateContext(loadContext)
+
+        with open(os.path.splitext(args.input)[0] + ".generated.cns", mode="w") as f:
+            f.writelines(s + "\n" for s in translator.createOutput(translated))
     except TranslationError as exc:
         py_exc = traceback.format_exc().split("\n")[-4].strip()
         print("Translation terminated with an error.")

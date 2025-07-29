@@ -1,0 +1,10 @@
+import enum
+
+class DebugCategory(enum.Enum):
+    VERSION_HEADER = 0
+    VARIABLE_TABLE = 1
+    VARIABLE_ALLOCATION = 2
+    TYPE_DEFINITION = 3
+    TRIGGER_DEFINITION = 4
+    TEMPLATE_DEFINITION = 5
+    LOCATION = 6

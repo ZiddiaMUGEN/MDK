@@ -6,9 +6,12 @@ class Location:
     filename: str
     line: int
 
+    def __str__(self):
+        return f"{os.path.realpath(self.filename)}:{self.line}"
+
 class TranslationError(Exception):
     message: str
 
     def __init__(self, message: str, location: Location):
-        super().__init__(f"Translation error at {os.path.realpath(location.filename)}:{location.line}: {message}")
-        self.message = f"{os.path.realpath(location.filename)}:{location.line}: {message}"
+        super().__init__(f"Translation error at {location}: {message}")
+        self.message = f"{location}: {message}"

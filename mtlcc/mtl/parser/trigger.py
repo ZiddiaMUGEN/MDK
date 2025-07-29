@@ -67,7 +67,7 @@ trigger_grammar = Lark(
     RBRACKET: ")"
     COMMA: ","
     TOKEN: (CNAME) (CNAME|" "|".")*
-    STRING: QUOTE CNAME QUOTE
+    STRING: QUOTE (CNAME|" "|"."|"%")+ QUOTE
 
     QUOTE: "\\""
     
@@ -90,22 +90,29 @@ def fixMultivaluedTriggers(tree: TriggerTree):
     ### ProjContact -> ProjContactTime
     ### ProjGuarded -> ProjGuardedTime
     ### ProjHit -> ProjHitTime
-    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 2 and tree.children[0].node == TriggerTreeNode.BINARY_OP \
-        and tree.children[0].children[0].operator.lower() in ["animelem", "projcontact", "projguarded", "projhit"]:
+    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 2 and tree.children[0].node == TriggerTreeNode.BINARY_OP:
+        if tree.children[0].children[0].operator.lower() == "animelem":
+            tree.node = TriggerTreeNode.BINARY_OP
+            if tree.children[1].node == TriggerTreeNode.ATOM or tree.children[1].node == TriggerTreeNode.UNARY_OP:
+                ## this format is e.g. `AnimElem = 1, 2`. need to convert this into `AnimElemTime(1) = 2`.
+                tree.operator = tree.children[0].operator
 
-        tree.node = TriggerTreeNode.BINARY_OP
-        tree.operator = "&&"
+                lhs_child = TriggerTree(TriggerTreeNode.FUNCTION_CALL, "AnimElemTime", [tree.children[0].children[1]], tree.location)
+                rhs_child = tree.children[1]
 
-        if tree.children[1].node == TriggerTreeNode.ATOM or tree.children[1].node == TriggerTreeNode.UNARY_OP:
-            ## this format is e.g. `AnimElem = 1, 2`. need to convert this into `AnimElem = 1 && AnimElemTime = 2`.
-            new_child = TriggerTree(TriggerTreeNode.BINARY_OP, tree.children[0].operator, [], tree.children[1].location)
-            new_child.children.append(copy.deepcopy(tree.children[0].children[0]))
-            new_child.children[0].operator += "Time"
-            new_child.children.append(tree.children[1])
-            tree.children[1] = new_child
-        elif tree.children[1].node == TriggerTreeNode.BINARY_OP and tree.children[1].children[0].operator == "":
-            ## this format is e.g. `AnimElem = 1, >= 2`. need to convert this into `AnimElem = 1 && AnimElemTime >= 2`.
-            tree.children[1].children[0].operator = tree.children[0].children[0].operator + "Time"
+                tree.children = [lhs_child, rhs_child]
+            elif tree.children[1].node == TriggerTreeNode.BINARY_OP and tree.children[1].children[0].operator == "":
+                ## this format is e.g. `AnimElem = 1, >= 2`. need to convert this into `AnimElemTime(1) >= 2`.
+                tree.operator = tree.children[1].operator
+
+                lhs_child = TriggerTree(TriggerTreeNode.FUNCTION_CALL, "AnimElemTime", [tree.children[0].children[1]], tree.location)
+                rhs_child = tree.children[1].children[1]
+
+                tree.children = [lhs_child, rhs_child]
+        elif tree.children[0].children[0].operator.lower().startswith("projhit") \
+            or tree.children[0].children[0].operator.lower().startswith("projguarded") \
+            or tree.children[0].children[0].operator.lower().startswith("projcontact"):
+            raise TranslationError("Can't yet handle proj-ID triggers, check back later.", tree.location)
     
     ## recursively descend.
     for child in tree.children:
@@ -222,7 +229,7 @@ class TriggerVisitor(Visitor_Recursive[Token]):
         elif isinstance(tree.children[0], Token):
             ## structure access is separated by a space character.
             ## we want to be able to identify struct accesses.
-            if " " in tree.children[0].value.strip():
+            if " " in tree.children[0].value.strip() and not (tree.children[0].value.startswith("\"") and tree.children[0].value.endswith("\"")):
                 self.stack.append(TriggerTree(TriggerTreeNode.STRUCT_ACCESS, tree.children[0].value.strip(), [], self.location))
             else:
                 self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip(), [], self.location))

@@ -4,7 +4,8 @@ This document describes the progress towards implementation of the MDK spec and 
 
 ## Implementation Status
 
-1. CNS Compatibility - partially implemented; trigger redirection is not implemented.
+1. CNS Compatibility - partially implemented
+    - Trigger redirection is not implemented. MTL also needs a builtin target type.
 2. Type System - partially implemented
     - Built-in types - partially implemented; `char` type is not implemented.
     - Tuples, Optionals, and Repeated Types - partially implemented; user-defined triggers and template parameters cannot use `tuples` or `optionals`.
@@ -12,10 +13,11 @@ This document describes the progress towards implementation of the MDK spec and 
     - Type Conversion Rules - partially implemented; builtins for enum/flag conversion not implemented.
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)
 4. Trigger Definitions - user-defined fully implemented; special types partially implemented
-    - Operator Triggers - partially implemented; builtin operator triggers are supposed but users cannot define operator triggers
+    - Operator Triggers - partially implemented; builtin operator triggers are supported but users cannot define operator triggers
 5. Named State Definitions - not implemented
 6. Named Variables - partially implemented; cannot specify system variables
-    - Variable Scope and Initialization - partially implemented (+ persistence)
+    - Variable Scope and Initialization - partially implemented
+    - Persistence is present in the spec but not actually implemented.
 7. Character Resource References - not implemented
 8. State Controller Repetition (Loops) - not implemented
 9. State Definition Scope - not implemented

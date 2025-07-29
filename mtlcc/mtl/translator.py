@@ -2,10 +2,15 @@ from mtl.types.context import LoadContext, TranslationContext
 from mtl.types.translation import *
 from mtl.types.shared import TranslationError
 from mtl.types.builtins import *
+from mtl.types.debug import DebugCategory
 
 from mtl.utils.func import *
 from mtl.utils.compiler import *
+from mtl.utils.debug import debuginfo
+from mtl.utils.constant import MTL_VERSION
 from mtl import builtins
+
+from mtl.writer import *
 
 import copy
 
@@ -191,7 +196,7 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
         state_params = StateDefinitionParameters()
         for prop in state_definition.props:
             ## allow-list the props which can be set here to avoid evil behaviour
-            if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority"]:
+            if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset"]:
                 setattr(state_params, prop.key.lower(), make_atom(prop.value))
         ## identify all local variable declarations, if any exist
         state_locals: list[TypeParameter] = []
@@ -237,12 +242,17 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
                     statedef.locals.append(TypeParameter(f"{local_prefix}{local.name}", local.type, local.default, local.location))
                     local_map[local.name] = f"{local_prefix}{local.name}"
                 ## 2. copy all controllers from the template, updating uses of the locals to use the new prefix.
+                ##    also apply a copy of `ignorehitpause` and `persistent` from the call site.
                 new_controllers = copy.deepcopy(template.states)
                 for new_controller in new_controllers:
                     for local_name in local_map:
                         old_exprn = TriggerTree(TriggerTreeNode.ATOM, local_name, [], new_controller.location)
                         new_exprn = TriggerTree(TriggerTreeNode.ATOM, local_map[local_name], [], new_controller.location)
                         replace_expression(new_controller, old_exprn, new_exprn)
+                    if "ignorehitpause" in controller.properties:
+                        new_controller.properties["ignorehitpause"] = copy.deepcopy(controller.properties["ignorehitpause"])
+                    if "persistent" in controller.properties:
+                        new_controller.properties["persistent"] = copy.deepcopy(controller.properties["persistent"])
                 ## 3. replace all uses of parameters with the expression to substitute for that parameter.
                 exprn_map: dict[str, TriggerTree] = {}
                 for param in template.params:
@@ -404,3 +414,23 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     assignVariables(ctx)
 
     return ctx
+
+def createOutput(ctx: TranslationContext) -> list[str]:
+    output: list[str] = []
+
+    ## start by writing a whole heap of debuginfo to the start of the output file.
+    ## the debuginfo documents the MTL version in use and the variable table state.
+    ## it also documents a list of types, templates, and triggers used during compilation.
+    ## this info is not for human consumption, it's used for debugging.
+    output += debuginfo(DebugCategory.VERSION_HEADER, MTL_VERSION)
+    output.append("")
+
+    output += write_type_table(ctx)
+    output += write_variable_table(ctx, 0)
+    output += write_variable_table(ctx, 1)
+
+    ## now iterate each statedef and produce output, attaching variable debuginfo as needed.
+    for statedef in ctx.statedefs:
+        output += write_statedef(statedef, ctx)
+
+    return output

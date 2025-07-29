@@ -16,9 +16,13 @@ time = 1
 [State ]
 type = testTemplate
 triggerall = myGlobal := 1
+triggerall = isHoldingForward := true
+triggerall = myThirdGlobal := true
 trigger1 = Alive
 trigger2 = StateNo = 5050
 myTestParam = 1
+ignorehitpause = true
+persistent = 4
 
 [State ]
 type=VarSet

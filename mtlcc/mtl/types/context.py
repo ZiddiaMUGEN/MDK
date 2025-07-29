@@ -31,11 +31,6 @@ class LoadContext:
         self.includes = []
 
 @dataclass
-class AllocationTable:
-    data: dict[int, int]
-    max_size: int
-
-@dataclass
 class TranslationContext:
     filename: str
     types: list[TypeDefinition]
