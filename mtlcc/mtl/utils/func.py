@@ -70,10 +70,11 @@ def parse_builtin(input: str) -> Optional[Expression]:
         return Expression(BUILTIN_CINT, input)
     return None
 
-def mask_variable(index: int, offset: int, size: int) -> str:
+def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
     ## takes information describing the location of a variable in `var`-space,
     ## and creates a string which accesses that variable.
     result = f"var({index})"
+    if is_float: result = f"f{result}"
 
     if offset != 0:
         ## access starts from the bit `offset` and progresses to the bit `offset + size`.

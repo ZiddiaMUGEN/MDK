@@ -20,6 +20,7 @@ triggerall = isHoldingForward := true
 triggerall = myThirdGlobal := true
 trigger1 = Alive
 trigger2 = StateNo = 5050
+trigger3 = enemy(0),time = 0
 myTestParam = 1
 ignorehitpause = true
 persistent = 4

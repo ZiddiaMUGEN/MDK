@@ -106,6 +106,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         ## if the operator is assignment, and the LHS is a VariableExpression (it always should be...), then the expression needs to use its assignment mask.
         if tree.operator == ":=" and isinstance(children[0], VariableExpression):
             children[0].value = f"var({children[0].allocation[0]})"
+            if children[0].is_float: children[0].value = f"f{children[0].value}"
             children[1].value = mask_write(children[1].value, children[0].allocation[1], children[0].type.size)
         ## if the trigger has a const evaluator, use it. otherwise, trust the output type.
         if match.const != None:
@@ -164,7 +165,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             ## the value of the VariableExpression is the access-masked expression.
             ## if the value is being used in a VarSet (walrus operator) it will get caught in BINARY_OPERATOR
             ## and the write-masked expression will be used instead.
-            return VariableExpression(var.type, f"({mask_variable(var.allocations[0][0], var.allocations[0][1], var.type.size)})", var.allocations[0])
+            return VariableExpression(var.type, f"({mask_variable(var.allocations[0][0], var.allocations[0][1], var.type.size, var.type == BUILTIN_FLOAT)})", var.allocations[0], var.type == BUILTIN_FLOAT)
         elif find_type(tree.operator, ctx) != None:
             ## if a type name matches, the resulting type is just `type`
             return Expression(BUILTIN_TYPE, tree.operator)
@@ -235,6 +236,7 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
                 raise TranslationError(f"Failed to find any variable definition for name {property} on {controller.name} controller.", controller.location)
             text_split = property_text.split(";")
             property = f"var({allocation.allocations[0][0]})"
+            if allocation.type == BUILTIN_FLOAT: property = f"f{property}"
             property_text = mask_write(text_split[0], allocation.allocations[0][1], allocation.type.size) + ";" + text_split[1]
 
         output.append(f"{property} = {property_text}")

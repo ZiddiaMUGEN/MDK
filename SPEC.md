@@ -247,12 +247,20 @@ ctrl = 1
 
 ## 10. Constant Triggers
 
-TBD.
+Constant triggers are trigger values which are evaluated at compile-time to real values. The main use of constant triggers is in compile-time introspection. For example, there are triggers which allow conversion between types or inspection of the properties of specific types.
 
 ### 10a. Built-in Constant Triggers
 
 The implementation must provide all of the following triggers as constant expressions which are resolved at compile time. The implementation may also provide any number of additional triggers which are specific to their own implementation.
 
-#### cast(v: any, t: type)
+#### cast(e: any, t: type) -> any
 
-Takes an expression `v` of any type and converts it to the type `t`. This is an escape hatch in case of typing issues.
+Takes an expression `e` of any type and converts it to the type `t`. This is an escape hatch in case of typing issues.
+
+#### typeof(e: any) -> type
+
+Takes an expression `e` of any type and
+
+#### sizeof(t: type) -> int
+
+Returns the size of the provided type.

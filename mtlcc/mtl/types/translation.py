@@ -56,6 +56,7 @@ class Expression:
 @dataclass
 class VariableExpression(Expression):
     allocation: tuple[int, int]
+    is_float: bool
 
 @dataclass
 class TriggerDefinition:

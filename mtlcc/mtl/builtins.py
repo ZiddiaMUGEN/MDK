@@ -13,6 +13,7 @@ def getBaseTypes() -> list[TypeDefinition]:
         BUILTIN_BYTE,
         BUILTIN_CHAR,
         BUILTIN_BOOL,
+        BUILTIN_TARGET,
         ## this is a special type which is used to represent a type in the compiler state.
         ## if it's used at runtime, it is replaced with the integer ID of the type it represents.
         BUILTIN_TYPE,
@@ -174,6 +175,20 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("WinKO", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("WinTime", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("WinPerfect", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+
+        ## redirection triggers
+        TriggerDefinition("parent", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("root", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("helper", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("helper", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("target", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("target", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("partner", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("enemy", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("enemy", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("enemynear", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("enemynear", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("playerID", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
 
         ## builtin operator functions
         TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),

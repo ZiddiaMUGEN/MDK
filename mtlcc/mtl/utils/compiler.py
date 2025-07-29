@@ -422,6 +422,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         for child in tree.children:
             # if any child fails type checking, bubble that up
             if (child_type := type_check(child, table, ctx)) == None:
+                print(tree)
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
