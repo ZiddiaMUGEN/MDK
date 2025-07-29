@@ -337,6 +337,30 @@ def fullPassTypeCheck(ctx: TranslationContext):
                         raise TranslationError(f"Target type of template parameter {property} could not be resolved to a type.", controller.properties[property].location)
                     match_tuple(result_type, target_prop, ctx, controller.properties[property].location)
 
+def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
+    if iterations == 0: print("Start applying trigger replacements in statedefs...")
+
+    replaced = False
+
+    if iterations > 20:
+        raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal())
+    
+    ## monstrous, but i do not know if it is avoidable.
+    for statedef in ctx.statedefs:
+        table = statedef.locals + ctx.globals
+        for controller in statedef.states:
+            for group_index in controller.triggers:
+                for trigger in controller.triggers[group_index].triggers:
+                    replaced = replaced or replace_triggers(trigger, table, ctx)
+            for property in controller.properties:
+                replaced = replaced or replace_triggers(controller.properties[property], table, ctx)
+
+    ## recurse if any replacements were made.
+    if replaced:
+        replaceTriggers(ctx, iterations + 1)
+
+    if iterations == 0: print("Successfully completed trigger replacement.")
+
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
 

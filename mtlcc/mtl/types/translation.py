@@ -43,6 +43,7 @@ class TriggerCategory(Enum):
     SIMPLE = 0
     CONST = 1
     OPERATOR = 2
+    BUILTIN = 99
 
 @dataclass
 class Expression:

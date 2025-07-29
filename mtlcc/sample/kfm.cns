@@ -16,14 +16,13 @@ time = 1
 [State ]
 type = testTemplate
 triggerall = myGlobal := 1
-triggerall = myGlobal := 1.5
 trigger1 = Alive
 trigger2 = StateNo = 5050
 myTestParam = 1
 
 [State ]
 type=VarSet
-trigger1=1
+trigger1=parseBool(myGlobal)
 mySecondGlobal = 5
 
 ;---------------------------------------------------------------------------

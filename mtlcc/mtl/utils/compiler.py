@@ -33,6 +33,40 @@ def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: Tran
     ## if we reach here, no matching signature was found
     return None
 
+## this checks EACH possible match and identifies which can potentially match the input trigger.
+def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location) -> list[TriggerDefinition]:
+    results: list[TriggerDefinition] = []
+    all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    for match in all_matches:
+        is_match = True
+        ## the input type count should exactly match.
+        ## we do not support optional arguments for triggers yet.
+        if len(params) != len(match.params): continue
+
+        ## type-check each param to see if it can match the current trigger.
+        for index in range(len(params)):
+            ## this is to help handle automatic enum matching.
+            next_expected = [TypeSpecifier(match.params[index].type)]
+            ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
+            try:
+                if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected)) == None:
+                    is_match = False
+                    break
+            except TranslationError:
+                is_match = False
+                break
+            ## the resulting type must not be empty or tuple
+            if len(child_type) != 1:
+                raise TranslationError("Triggers are not permitted to accept tuple types.", loc)
+            ## match the result type to the expected type of the input
+            if get_type_match(child_type[0].type, match.params[index].type, ctx, loc) == None:
+                is_match = False
+                break
+        ## if all params matched, add it to the result
+        if is_match:
+            results.append(match)
+    return results
+
 def resolve_alias(type: str, ctx: TranslationContext, loc: Location) -> str:
     ## recursively reduces an alias to its target type
     target_type = find_type(type, ctx)
@@ -218,6 +252,52 @@ def replace_expression(controller: StateController, old: TriggerTree, new: Trigg
     for property in controller.properties:
         replace_recursive(controller.properties[property], old, new)
 
+def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> bool:
+    replaced = False
+
+    if tree.node == TriggerTreeNode.ATOM:
+        # simple case with no parameters, which means we can substitute directly.
+        if (match := find_trigger(tree.operator, [], ctx, tree.location)) == None:
+            return replaced ## this implies the atom is not a trigger call, might be a bare value. we don't care much here as triggers are checked elsewhere.
+        if match.category != TriggerCategory.BUILTIN and match.exprn != None:
+            ## we only make replacements against user-defined triggers and operators.
+            ## builtin operators have `exprn` as None.
+            tree.node = match.exprn.node
+            tree.children = copy.deepcopy(match.exprn.children)
+            tree.operator = match.exprn.operator
+            replaced = True
+    elif tree.node == TriggerTreeNode.FUNCTION_CALL:
+        ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
+        ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location)
+        if len(matches) == 0:
+            ## if no match exists, the trigger does not exist.
+            raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator}.", tree.location)
+        elif len(matches) > 1:
+            ## too many potential matches, maybe accepts 2 overloads with overlapping enum types?
+            raise TranslationError(f"Could not identify a unique trigger overload for trigger named {tree.operator}.", tree.location)
+        else:
+            match = matches[0]
+            ## only perform replacements on non-builtin triggers.
+            if match.category == TriggerCategory.BUILTIN or match.exprn == None:
+                return False
+            ## we need to do 2 things:
+            ## - copy the trigger expression and update it with parameter replacements
+            new_trigger = copy.deepcopy(match.exprn)
+            for index in range(len(match.params)):
+                old_exprn = TriggerTree(TriggerTreeNode.ATOM, match.params[index].name, [], tree.location)
+                replace_recursive(new_trigger, old_exprn, tree.children[index])
+            ## - insert it in place of this node.
+            tree.node = new_trigger.node
+            tree.children = new_trigger.children
+            tree.operator = new_trigger.operator
+            replaced = True
+
+    for child in tree.children:
+        replaced = replaced or replace_triggers(child, table, ctx)
+
+    return replaced
+
 def merge_by_operand(triggers: list[TriggerTree], op: str, loc: Location) -> TriggerTree:
     ## recursively merges the list of triggers into a binary operator structure.
     if len(triggers) == 1: return triggers[0]
@@ -390,36 +470,17 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## function calls (trigger calls) have the trigger name and the parameters as children.
         ## determine the child types, then identify the trigger overload which matches it.
 
-        ## it's a slight mess, but we need to test EACH target trigger overload in case they take an enum as input.
-        ## triggers can't accept optional/repeated args yet so we can simplify slightly.
-        target_triggers = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, tree.operator) and len(tree.children) == len(k.params))
-
-        inputs: list[TypeDefinition] = []
-        for index in range(len(tree.children)):
-            child = tree.children[index]
-
-            # if any child fails type checking, bubble that up
-            result_type: list[TypeSpecifier] = []
-            for t in target_triggers:
-                ## pass an expected type down the tree.
-                if len(t.params) == 0:
-                    next_expected = None
-                else:
-                    next_expected = [TypeSpecifier(t.params[index].type)]
-
-                if (child_type := type_check(child, table, ctx, expected = next_expected)) != None:
-                    result_type = child_type
-                    break
-            # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
-            # as parameters. so simplify here.
-            if len(result_type) != 1:
-                raise TranslationError(f"Could not determine the type of subexpression in trigger {tree.operator}.", tree.location)
-            inputs.append(result_type[0].type)
-        ## now try to find a trigger which matches the child types.
-        if (match := find_trigger(tree.operator, inputs, ctx, tree.location)) != None:
-            return [TypeSpecifier(match.type)]
-        ## if no match exists, the trigger does not exist.
-        raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator} and child types {', '.join([i.name for i in inputs])}", tree.location)
+        ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
+        ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location)
+        if len(matches) == 0:
+            ## if no match exists, the trigger does not exist.
+            raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator}.", tree.location)
+        elif len(matches) > 1:
+            ## too many potential matches, maybe accepts 2 overloads with overlapping enum types?
+            raise TranslationError(f"Could not identify a unique trigger overload for trigger named {tree.operator}.", tree.location)
+        else:
+            return [TypeSpecifier(matches[0].type)]
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
         if (struct_type := get_struct_target(tree.operator, table, ctx)) == None:

@@ -41,6 +41,7 @@ BUILTIN_ATTACKTYPE = TypeDefinition("AttackType", TypeCategory.STRING_ENUM, 32, 
 BUILTIN_PRIORITYTYPE = TypeDefinition("PriorityType", TypeCategory.STRING_ENUM, 32, ["Hit", "Miss", "Dodge"], Location("mtl/builtins.py", line_number()))
 BUILTIN_HITVARTYPE = TypeDefinition("HitVarType", TypeCategory.STRING_ENUM, 32, ["isbound"], Location("mtl/builtins.py", line_number()))
 BUILTIN_CONSTTYPE = TypeDefinition("ConstType", TypeCategory.STRING_ENUM, 32, ["movement.yaccel"], Location("mtl/builtins.py", line_number()))
+BUILTIN_STAGEVAR = TypeDefinition("StageVarType", TypeCategory.STRING_ENUM, 32, [], Location("mtl/builtins.py", line_number()))
 
 BUILTIN_NUMERIC = TypeDefinition("numeric", TypeCategory.UNION, 32, ["int", "float"], Location("mtl/builtins.py", line_number()))
 BUILTIN_PREFINT = TypeDefinition("prefixed_int", TypeCategory.UNION, 32, ["cint", "int"], Location("mtl/builtins.py", line_number()))
