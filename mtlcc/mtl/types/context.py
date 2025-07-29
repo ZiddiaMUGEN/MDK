@@ -31,6 +31,11 @@ class LoadContext:
         self.includes = []
 
 @dataclass
+class AllocationTable:
+    data: dict[int, int]
+    max_size: int
+
+@dataclass
 class TranslationContext:
     filename: str
     types: list[TypeDefinition]
@@ -38,6 +43,7 @@ class TranslationContext:
     templates: list[TemplateDefinition]
     statedefs: list[StateDefinition]
     globals: list[TypeParameter]
+    allocations: tuple[AllocationTable, AllocationTable]
 
     def __init__(self, filename: str):
         self.filename = filename
@@ -46,3 +52,4 @@ class TranslationContext:
         self.templates = []
         self.statedefs = []
         self.globals = []
+        self.allocations = (AllocationTable({}, 60), AllocationTable({}, 40))

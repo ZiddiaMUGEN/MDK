@@ -508,3 +508,60 @@ def match_tuple(source: list[TypeSpecifier], target: TemplateParameter, ctx: Tra
         for index in range(len(source), len(target.type)):
             if target.type[index].required:
                 raise TranslationError(f"Failed to match tuple type: target member with type {target.type[index].type.name} is required but was not present.", loc)
+
+## allocates space in the provided AllocationTable for a variable with the given size.
+## returns the exact var and offset of the allocation.
+## allocations are always byte-aligned.
+def allocate(size: int, table: AllocationTable) -> Optional[tuple[int, int]]:
+    ## search the table for the first index with available space.
+    for index in range(table.max_size):
+        current_used = table.data[index] if index in table.data else 0
+        ## align to the next byte
+        if (current_used % 8) != 0:
+            current_used += 8 - (current_used % 8)
+        current_available = 32 - current_used
+
+        ## if the variable fits, allocate it
+        if size <= current_available:
+            table.data[index] = current_used + size
+            ## return the allocation
+            return (index, current_used)
+
+    return None
+
+def create_allocation(var: TypeParameter, ctx: TranslationContext):
+    ## the real type of `global_variable` needs to be resolved.
+    real_type = resolve_alias_typed(var.type, ctx, var.location)
+    ## it's possible the real type is a bare builtin, or an enum/flag, or a structure.
+    ## other types are forbidden and should throw an error.
+    if real_type.category not in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRUCTURE, TypeCategory.BUILTIN]:
+        raise TranslationError(f"Global variable named {var.name} has an invalid type {var.type.name} which was resolved to type category {real_type.category}.", var.location)
+    if real_type == BUILTIN_FLOAT:
+        ## handle BUILTIN_FLOAT directly since it's the only thing that allocates to float_allocation.
+        next = allocate(real_type.size, ctx.allocations[1])
+        if next == None:
+            raise TranslationError(f"Ran out of floating-point variable space to store variable {var.name}.", var.location)
+        var.allocations.append(next)
+    elif real_type.category == TypeCategory.BUILTIN:
+        ## bare BUILTIN have size specified, so allocate directly.
+        next = allocate(real_type.size, ctx.allocations[0])
+        if next == None:
+            raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
+        var.allocations.append(next)
+    elif real_type.category in [TypeCategory.ENUM, TypeCategory.FLAG]:
+        ## these are just int in disguise.
+        next = allocate(BUILTIN_INT.size, ctx.allocations[0])
+        if next == None:
+            raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
+        var.allocations.append(next)
+    elif real_type.category == TypeCategory.STRUCTURE:
+        ## space needs to be allocated for EACH structure member.
+        for member in real_type.members:
+            if (member_type := find_type(member.split(":")[1], ctx)) == None:
+                raise TranslationError(f"Could not determine the final type of member {member} on structure {var.type}.", var.location)
+            ## allocate space for this structure member
+            next_target = TypeParameter(member.split(":")[0], member_type)
+            create_allocation(next_target, ctx)
+            ## keep in mind this member could have ALSO been a structure.
+            ## therefore assign ALL allocations on this structure to the parent.
+            var.allocations += next_target.allocations

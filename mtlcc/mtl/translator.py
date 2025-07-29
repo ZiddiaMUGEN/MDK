@@ -361,6 +361,19 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
 
     if iterations == 0: print("Successfully completed trigger replacement.")
 
+def assignVariables(ctx: TranslationContext):
+    ## assign locations for each global variable.
+    for global_variable in ctx.globals:
+        create_allocation(global_variable, ctx)
+    ## for each statedef, assign locations for each local variable.
+    ## because these are local allocations, we store a copy of the allocation tables
+    ## prior to allocation, and restore them after.
+    for statedef in ctx.statedefs:
+        allocation_tables = copy.deepcopy(ctx.allocations)
+        for local_variable in statedef.locals:
+            create_allocation(local_variable, ctx)
+        ctx.allocations = allocation_tables
+
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
 
@@ -388,5 +401,6 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     createGlobalsTable(ctx)
     fullPassTypeCheck(ctx)
     replaceTriggers(ctx)
+    assignVariables(ctx)
 
     return ctx

@@ -38,6 +38,8 @@ class TypeParameter:
     type: TypeDefinition
     default: Optional[TriggerTree] = None
     location: Location = field(default_factory=lambda: Location("", 0))
+    ## this needs to be a list of allocations to support structure types.
+    allocations: list[tuple[int, int]] = field(default_factory=lambda: [])
 
 class TriggerCategory(Enum):
     SIMPLE = 0

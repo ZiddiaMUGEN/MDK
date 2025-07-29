@@ -25,6 +25,11 @@ type=VarSet
 trigger1=parseBool(myGlobal)
 mySecondGlobal = 5
 
+[State ]
+type=VarSet
+trigger1=parseBool(myGlobal)
+myThirdGlobal = true
+
 ;---------------------------------------------------------------------------
 ; Win state decider
 ; CNS difficulty: basic
