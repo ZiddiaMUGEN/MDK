@@ -39,12 +39,31 @@ trigger_grammar = Lark(
     function: atom
         | TOKEN LBRACKET (atom (COMMA atom)*)? RBRACKET
 
-    atom: NUMBER
+    atom: target
+        | NUMBER
         | TOKEN
         | STRING
         |
         | unary
         | LBRACKET unary RBRACKET
+
+    target.1: target_type COMMA function
+    target_type: TARGET_NAME
+        | TARGET_FUNC LBRACKET atom RBRACKET
+
+    TARGET_NAME: "parent"i
+        | "root"i
+        | "helper"i
+        | "target"i
+        | "partner"i
+        | "enemy"i
+        | "enemyNear"i
+
+    TARGET_FUNC: "helper"i
+        | "target"i
+        | "enemy"i
+        | "enemyNear"i
+        | "playerID"i
 
     UNARY_OP: "!" | "~" | "-"
     EXP_OP: "**"
@@ -69,7 +88,7 @@ trigger_grammar = Lark(
     TOKEN: (CNAME) (CNAME|" "|".")*
     STRING: QUOTE (CNAME|" "|"."|"%")+ QUOTE
 
-    QUOTE: "\\""
+    QUOTE: "\\"" | "'"
     
     %import common.NUMBER
     %import common.CNAME
@@ -233,3 +252,15 @@ class TriggerVisitor(Visitor_Recursive[Token]):
                 self.stack.append(TriggerTree(TriggerTreeNode.STRUCT_ACCESS, tree.children[0].value.strip(), [], self.location))
             else:
                 self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip(), [], self.location))
+
+    def target(self, tree: Tree[Token]):
+        if len(tree.children) == 3:
+            self.stack.append(TriggerTree(TriggerTreeNode.REDIRECT, "", [self.stack.pop(), self.stack.pop()], self.location))
+
+    def target_type(self, tree: Tree[Token]):
+        if len(tree.children) == 4:
+            ## function-type
+            self.stack.append(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.children[0].value.strip().lower(), [self.stack.pop()], self.location))
+        elif isinstance(tree.children[0], Token):
+            self.stack.append(TriggerTree(TriggerTreeNode.ATOM, tree.children[0].value.strip().lower(), [], self.location))
+        

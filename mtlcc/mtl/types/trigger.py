@@ -11,6 +11,7 @@ class TriggerTreeNode(Enum):
     FUNCTION_CALL = 3
     ATOM = 4
     STRUCT_ACCESS = 5
+    REDIRECT = 6
 
 @dataclass
 class TriggerTree:
@@ -61,6 +62,11 @@ class TriggerTree:
             result += "\n" + "\t" * indent + ")"
         elif self.node == TriggerTreeNode.ATOM:
             result += " " + self.operator
+        elif self.node == TriggerTreeNode.REDIRECT:
+            result += f" {self.operator} (\n"
+            for child in self.children:
+                result += "\n" + child._string(indent + 1)
+            result += ")"
         return result
 
     def __repr__(self) -> str:

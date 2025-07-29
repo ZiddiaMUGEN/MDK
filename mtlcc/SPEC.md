@@ -4,11 +4,10 @@ This document describes the progress towards implementation of the MDK spec and 
 
 ## Implementation Status
 
-1. CNS Compatibility - partially implemented
-    - Trigger redirection is not implemented. MTL also needs a builtin target type.
-    - ProjHit, ProjGuarded, and ProjContact are not implemented yet.
+1. CNS Compatibility - mostly implemented
+    - ProjHit, ProjGuarded, and ProjContact are not implemented yet. Support for these might not be provided.
 2. Type System - partially implemented
-    - Built-in types - partially implemented; `char` type is not implemented.
+    - Built-in types - fully implemented.
     - Tuples, Optionals, and Repeated Types - partially implemented; user-defined triggers and template parameters cannot use `tuples` or `optionals`.
     - Custom Types - partially implemented; `struct` member access is not implemented.
     - Type Conversion Rules - partially implemented; builtins for enum/flag conversion not implemented.

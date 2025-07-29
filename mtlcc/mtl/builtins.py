@@ -215,16 +215,19 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         TriggerDefinition("operator&", BUILTIN_INT, builtin_bitand, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator|", BUILTIN_INT, builtin_bitor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator^", BUILTIN_INT, builtin_bitxor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         TriggerDefinition("operator:=", BUILTIN_INT, builtin_assign, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator:=", BUILTIN_INT, builtin_assign, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator:=", BUILTIN_FLOAT, builtin_assign, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator:=", BUILTIN_CHAR, builtin_assign, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),

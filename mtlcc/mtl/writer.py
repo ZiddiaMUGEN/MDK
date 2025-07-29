@@ -198,6 +198,17 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         else:
             ## TODO: this needs to determine the VariableExpression represented by the struct access.
             raise TranslationError("I was too lazy to finish struct implementation!", tree.location)
+    elif tree.node == TriggerTreeNode.REDIRECT:
+        ## redirects consist of a LHS redirect target and a RHS redirect expression.
+        ## the overall expression is just <target>,<expression>.
+        target = emit_trigger_recursive(tree.children[0], table, ctx)
+        if target.type != BUILTIN_TARGET:
+            raise TranslationError(f"Target {target.value} of redirected expression could not be resolved to a target type.", tree.location)
+        
+        exprn = emit_trigger_recursive(tree.children[1], table, ctx)
+        if target.value.startswith("(") and target.value.endswith(")"):
+            target.value = target.value[1:-1]
+        return Expression(exprn.type, f"({target.value},{exprn.value})")
 
     raise TranslationError(f"Failed to emit a single trigger value.", tree.location)
 

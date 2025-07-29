@@ -5,6 +5,7 @@ from mtl.types.context import TranslationContext
 from mtl.types.ini import StateControllerSection
 from mtl.types.trigger import TriggerTreeNode
 from mtl.types.translation import *
+from mtl.types.builtins import *
 from mtl.parser.trigger import parseTrigger
 from mtl.utils.func import *
 
@@ -422,7 +423,6 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         for child in tree.children:
             # if any child fails type checking, bubble that up
             if (child_type := type_check(child, table, ctx)) == None:
-                print(tree)
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
@@ -492,6 +492,13 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if (struct_type := get_struct_target(tree.operator, table, ctx)) == None:
             raise TranslationError(f"Could not determine the type of the struct member access given by {tree.operator}.", tree.location)
         return [TypeSpecifier(struct_type)]
+    elif tree.node == TriggerTreeNode.REDIRECT:
+        ## redirects will always have the redirect target as child 1, and the redirect expression as child 2.
+        if (exprn := type_check(tree.children[1], table, ctx)) == None:
+            raise TranslationError(f"Could not determine the type of the redirected expression.", tree.location)
+        if (target := type_check(tree.children[0], table, ctx)) == None or target[0].type != BUILTIN_TARGET:
+            raise TranslationError(f"Target of redirected expression could not be resolved to a target type.", tree.location)
+        return exprn
     
     ## fallback which should never be reachable!
     return None

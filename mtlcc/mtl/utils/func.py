@@ -9,7 +9,7 @@ import string
 from mtl.types.shared import *
 from mtl.types.context import *
 from mtl.types.translation import *
-from mtl.types.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT, BUILTIN_TYPE
+from mtl.types.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT, BUILTIN_CHAR
 
 def generate_random_string(length: int):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
@@ -64,6 +64,8 @@ def parse_builtin(input: str) -> Optional[Expression]:
         return Expression(BUILTIN_FLOAT, input)
     elif input.lower() in ["true", "false"]:
         return Expression(BUILTIN_BOOL, "1" if input.lower() == "true" else "0")
+    elif input.startswith("'") and input.endswith("'") and len(input) == 3:
+        return Expression(BUILTIN_CHAR, str(ord(input[1])))
     elif input.startswith('"') and input.endswith('"'):
         return Expression(BUILTIN_STRING, input)
     elif len(input) > 1 and input[0] in ["F", "S"] and tryparse(input[1:], int) != None:
