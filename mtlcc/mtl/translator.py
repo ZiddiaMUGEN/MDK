@@ -324,6 +324,7 @@ def fullPassTypeCheck(ctx: TranslationContext):
                 for trigger in controller.triggers[group_id].triggers:
                     result_types = type_check(trigger, table, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
                     if result_types == None or len(result_types) != 1:
+                        print(trigger)
                         raise TranslationError(f"Target type of trigger expression was a tuple, but trigger expressions must resolve to bool.", trigger.location)
                     ## for CNS compatibility, we allow any integral type to act as `bool` on a trigger.
                     if get_widest_match(result_types[0].type, BUILTIN_INT, ctx, trigger.location) != BUILTIN_INT:

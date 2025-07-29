@@ -75,7 +75,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("ceil", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Command", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("cond", BUILTIN_ANY, builtin_cond, [TypeParameter("condition", BUILTIN_BOOL), TypeParameter("exprn1", BUILTIN_ANY), TypeParameter("exprn2", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number())),
-        TriggerDefinition("Const", BUILTIN_NUMERIC, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE)], None, Location("mtl/builtins.py", line_number())),
+        TriggerDefinition("Const", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const240p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const480p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("Const720p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number())),

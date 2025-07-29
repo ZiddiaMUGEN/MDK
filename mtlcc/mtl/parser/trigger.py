@@ -5,6 +5,8 @@ from lark.tree import Tree
 from mtl.types.trigger import TriggerTree, TriggerTreeNode
 from mtl.types.shared import Location, TranslationError
 
+import copy
+
 trigger_grammar = Lark(
     """
     start: unary (COMMA unary)*
@@ -80,6 +82,35 @@ def recursiveReverse(tree: TriggerTree):
     for child in tree.children:
         recursiveReverse(child)
 
+def fixMultivaluedTriggers(tree: TriggerTree):
+    ## these triggers accept multi-valued input:
+    ## AnimElem, ProjContact, ProjGuarded, ProjHit
+    ## but the translator doesn't handle these well. convert them to a syntax it can handle.
+    ### AnimElem -> AnimElemTime
+    ### ProjContact -> ProjContactTime
+    ### ProjGuarded -> ProjGuardedTime
+    ### ProjHit -> ProjHitTime
+    if tree.node == TriggerTreeNode.MULTIVALUE and len(tree.children) == 2 and tree.children[0].node == TriggerTreeNode.BINARY_OP \
+        and tree.children[0].children[0].operator.lower() in ["animelem", "projcontact", "projguarded", "projhit"]:
+
+        tree.node = TriggerTreeNode.BINARY_OP
+        tree.operator = "&&"
+
+        if tree.children[1].node == TriggerTreeNode.ATOM or tree.children[1].node == TriggerTreeNode.UNARY_OP:
+            ## this format is e.g. `AnimElem = 1, 2`. need to convert this into `AnimElem = 1 && AnimElemTime = 2`.
+            new_child = TriggerTree(TriggerTreeNode.BINARY_OP, tree.children[0].operator, [], tree.children[1].location)
+            new_child.children.append(copy.deepcopy(tree.children[0].children[0]))
+            new_child.children[0].operator += "Time"
+            new_child.children.append(tree.children[1])
+            tree.children[1] = new_child
+        elif tree.children[1].node == TriggerTreeNode.BINARY_OP and tree.children[1].children[0].operator == "":
+            ## this format is e.g. `AnimElem = 1, >= 2`. need to convert this into `AnimElem = 1 && AnimElemTime >= 2`.
+            tree.children[1].children[0].operator = tree.children[0].children[0].operator + "Time"
+    
+    ## recursively descend.
+    for child in tree.children:
+        fixMultivaluedTriggers(child)
+
 def parseTrigger(line: str, location: Location) -> TriggerTree:
     try:
         tree = trigger_grammar.parse(line)
@@ -89,6 +120,7 @@ def parseTrigger(line: str, location: Location) -> TriggerTree:
             raise TranslationError("Failed to identify a single node from trigger input.", location)
         result = flattened.stack[0]
         recursiveReverse(result)
+        fixMultivaluedTriggers(result)
         return result
     except TranslationError as te:
         raise te

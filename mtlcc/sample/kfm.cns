@@ -2513,7 +2513,7 @@ p2sprpriority = 1
 [State 1300, 3] ;Stop ReversalDef
 type = ReversalDef
 trigger1 = Time = 4
-trigger1 = Time = command = "holdfwd"
+trigger1 = Time = (command = "holdfwd")
 trigger2 = Time = 8
 reversal.attr =
 
@@ -2527,7 +2527,7 @@ time = 8
 [State 1300, 5]
 type = HitOverride
 trigger1 = Time = 4
-trigger1 = Time = command = "holdfwd"
+trigger1 = Time = (command = "holdfwd")
 attr =
 time = 0
 
@@ -2711,7 +2711,7 @@ trigger1 = AnimElem = 4
 value = 1
 
 [State 1340, 6] ;Gravity
-type = null;VelAdd
+type = VelAdd
 trigger1 = 1
 y = Const(movement.yaccel)
 
@@ -2760,7 +2760,7 @@ trigger1 = AnimElem = 3
 value = 1
 
 [State 1350, 6] ;Gravity
-type = null;VelAdd
+type = VelAdd
 trigger1 = AnimElemTime(3) > 0
 y = Const(movement.yaccel)
 
@@ -3085,7 +3085,7 @@ sprpriority = 2
 
 [State 3000, Width]
 type = Width
-trigger1 = 1;AnimElem = 2, >= 0
+trigger1 = AnimElem = 2, >= 0
 value = 15,0
 
 [State 3000, Super A]
