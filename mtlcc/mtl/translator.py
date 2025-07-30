@@ -390,15 +390,29 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
 
 def assignVariables(ctx: TranslationContext):
     ## assign locations for each global variable.
+
+    ## first initialize ALL possible allocation tables.
     for global_variable in ctx.globals:
-        create_allocation(global_variable, ctx)
+        if global_variable.scope not in ctx.allocations:
+            ctx.allocations[global_variable.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
+    for statedef in ctx.statedefs:
+        for local_variable in statedef.locals:
+            if local_variable.scope not in ctx.allocations:
+                ctx.allocations[local_variable.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
+
+    ## allocate for every global first
+    new_globals: list[TypeParameter] = []
+    for global_variable in ctx.globals:
+        new_globals += allocate_all_scopes(global_variable, ctx)
+    ctx.globals += new_globals
+
     ## for each statedef, assign locations for each local variable.
     ## because these are local allocations, we store a copy of the allocation tables
     ## prior to allocation, and restore them after.
     for statedef in ctx.statedefs:
         allocation_tables = copy.deepcopy(ctx.allocations)
         for local_variable in statedef.locals:
-            create_allocation(local_variable, ctx)
+            allocate_all_scopes(local_variable, ctx)
         ctx.allocations = allocation_tables
 
 def applyPersist(ctx: TranslationContext):

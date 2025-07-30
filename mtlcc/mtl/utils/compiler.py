@@ -547,8 +547,6 @@ def allocate(size: int, table: AllocationTable) -> Optional[tuple[int, int]]:
     return None
 
 def create_allocation(var: TypeParameter, ctx: TranslationContext):
-    if var.scope not in ctx.allocations:
-        ctx.allocations[var.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
     ## the real type of `global_variable` needs to be resolved.
     real_type = resolve_alias_typed(var.type, ctx, var.location)
     ## it's possible the real type is a bare builtin, or an enum/flag, or a structure.
@@ -584,3 +582,37 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
             ## keep in mind this member could have ALSO been a structure.
             ## therefore assign ALL allocations on this structure to the parent.
             var.allocations += next_target.allocations
+
+def allocate_all_scopes(var: TypeParameter, ctx: TranslationContext) -> list[TypeParameter]:
+    new_params: list[TypeParameter] = []
+    ## we need to work with multiple tables here for scoped variable access.
+    ### 1. a table for PLAYER scope with access to SHARED and PLAYER vars
+    ### 2. a table for HELPER scope with access to SHARED and HELPER vars
+    ### 3. a table for each HELPER(xx) scope with access to SHARED, HELPER, and HELPER(xx) vars
+    ### 4. a table for TARGET exclusively
+    if var.scope.type == StateScopeType.PLAYER or var.scope.type == StateScopeType.TARGET:
+        ## PLAYER/TARGET are top-level
+        create_allocation(var, ctx)
+    elif var.scope.type == StateScopeType.HELPER and var.scope.target != None:
+        ## HELPER(xx) is top-level
+        create_allocation(var, ctx)
+    elif var.scope.type == StateScopeType.HELPER:
+        ## HELPER is applied to all HELPER(xx) as well as HELPER
+        for scope in ctx.allocations:
+            if scope.type == StateScopeType.HELPER and scope != var.scope:
+                new_var = copy.deepcopy(var)
+                new_var.scope = scope
+                new_params.append(new_var)
+                create_allocation(new_var, ctx)
+        create_allocation(var, ctx)
+    elif var.scope.type == StateScopeType.SHARED:
+        ## SHARED is applied to everything except TARGET.
+        for scope in ctx.allocations:
+            if scope.type != StateScopeType.TARGET and scope != var.scope:
+                new_var = copy.deepcopy(var)
+                new_var.scope = scope
+                new_params.append(new_var)
+                create_allocation(new_var, ctx)
+        create_allocation(var, ctx)
+
+    return new_params
