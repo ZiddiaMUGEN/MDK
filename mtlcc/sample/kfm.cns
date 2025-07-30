@@ -29,6 +29,13 @@ persistent = 4
 [State ]
 type=VarSet
 trigger1=parseBool(myGlobal)
+;; btw this line generates a 90-character expression
+;; `myNextGlobal` is alloc'd to (1,16) which means a lot of masking!
+;; ((((var(1) := ((((99) & 255) * 65536) + (var(1) & -16711681))) & 16711680) / 65536) = 100)
+;; (((99) & 255) * 65536) - 'c' clamped to `short` and shifted left 16
+;; (var(1) & -16711681) - component of var(1) not covered by myNextGlobal (bits 0-15 and 24-31)
+;; & 16711680 - masks off only bits 16-23 from the assignment result
+;; / 65536 - shifts right 16 bits
 trigger2=(myNextGlobal := 'c') = 'd'
 mySecondGlobal = 5
 

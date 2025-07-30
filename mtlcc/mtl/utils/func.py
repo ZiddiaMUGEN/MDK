@@ -102,16 +102,19 @@ def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -
     ## we need to clamp the expression to `size`, then bit-shift the expression up to `offset`.
     exprn = f"((({exprn}) & {(2 ** size) - 1}) * {c_int32(2 ** offset).value})"
 
+    mask = 0
+
     ## left-hand-side of the range: everything from (offset + size) -> 32
     if (offset + size) < 32:
         start_pow2 = 2 ** (offset + size)
         end_pow2 = 2 ** 33
-        mask = c_int32(end_pow2 - start_pow2)
-        exprn = f"({exprn} + ({indexed} & {mask.value}))"
+        mask += end_pow2 - start_pow2
 
     ## right-hand-side of the range: everything from 0 -> offset
     if offset > 0:
-        mask = c_int32((2 ** offset) - 1)
-        exprn = f"({exprn} + ({indexed} & {mask.value}))"
+        mask += (2 ** offset) - 1
+    
+    if mask != 0:
+        exprn = f"({exprn} + ({indexed} & {c_int32(mask).value}))"
 
     return exprn
