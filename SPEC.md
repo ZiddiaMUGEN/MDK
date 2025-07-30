@@ -135,6 +135,7 @@ For user-defined types:
 - `enum` can be converted to `int` via builtin functions, and vice versa.
 - `flag` can be converted to `int` via builtin functions, and vice versa.
 - single `flag` values can also be converted to `bool` via builtin functions.
+- Note that `enum` and `flag` variables are implicitly converted to `int` when emitted, but type-checking will enforce the correct types are used where appropriate.
 
 ## 3. Template Definitions
 
@@ -264,3 +265,19 @@ Takes an expression `e` of any type and
 #### sizeof(t: type) -> int
 
 Returns the size of the provided type.
+
+#### asint(e: enum) -> int
+
+Converts the input enum value to its integer representation.
+
+#### asint(e: flag) -> int
+
+Converts the input flag value to its integer representation.
+
+#### asenum(i: int, t: type) -> any
+
+Converts the input integer to its representation in the enum type `t`; fails if `t` is not an enum or if `i` cannot be represented by the enum.
+
+#### asflag(i: int, t: type) -> any
+
+Converts the input integer to its representation in the flag type `t`; fails if `t` is not a flag or if `i` cannot be represented by the flag.

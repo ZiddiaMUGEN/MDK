@@ -177,8 +177,8 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
                 for trigger in controller.triggers[trigger_group].triggers:
                     type_check(trigger, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
             for property in controller.properties:
-                target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property))
-                type_check(controller.properties[property], [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = target_prop.type if target_prop != None else None)
+                target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property.key))
+                type_check(property.value, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = target_prop.type if target_prop != None else None)
             template_states.append(controller)
         
         ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))
@@ -249,22 +249,21 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
                         old_exprn = TriggerTree(TriggerTreeNode.ATOM, local_name, [], new_controller.location)
                         new_exprn = TriggerTree(TriggerTreeNode.ATOM, local_map[local_name], [], new_controller.location)
                         replace_expression(new_controller, old_exprn, new_exprn)
-                    if "ignorehitpause" in controller.properties:
-                        new_controller.properties["ignorehitpause"] = copy.deepcopy(controller.properties["ignorehitpause"])
-                    if "persistent" in controller.properties:
-                        new_controller.properties["persistent"] = copy.deepcopy(controller.properties["persistent"])
+                    if len(ignorehitpause := find_property("ignorehitpause", controller)) == 1:
+                        new_controller.properties.append(copy.deepcopy(ignorehitpause[0]))
+                    if len(persistent := find_property("persistent", controller)) == 1:
+                        new_controller.properties.append(copy.deepcopy(persistent[0]))
                 ## 3. replace all uses of parameters with the expression to substitute for that parameter.
-                exprn_map: dict[str, TriggerTree] = {}
+                exprn_map: list[StateControllerProperty] = []
                 for param in template.params:
-                    target_exprn = controller.properties[param.name] if param.name in controller.properties else None
-                    if target_exprn == None and param.required:
+                    if len(target_exprn := find_property(param.name, controller)) != 1 and param.required:
                         raise TranslationError(f"No expression was provided for parameter with name {param.name} on template or controller {controller.name}.", controller.location)
                     if target_exprn != None:
-                        exprn_map[param.name] = copy.deepcopy(target_exprn)
+                        exprn_map.append(copy.deepcopy(target_exprn[0]))
                 for new_controller in new_controllers:
-                    for exprn_name in exprn_map:
-                        old_exprn = TriggerTree(TriggerTreeNode.ATOM, exprn_name, [], new_controller.location)
-                        replace_expression(new_controller, old_exprn, exprn_map[exprn_name])
+                    for exprn in exprn_map:
+                        old_exprn = TriggerTree(TriggerTreeNode.ATOM, exprn.key, [], new_controller.location)
+                        replace_expression(new_controller, old_exprn, exprn.value)
 
                 ## 4. combine the triggers on the template call into one or more triggerall statements and insert into each new controller.
                 combined_triggers = merge_triggers(controller.triggers, controller.location)
@@ -296,21 +295,21 @@ def createGlobalsTable(ctx: TranslationContext):
                 for trigger in controller.triggers[group_id].triggers:
                     global_list += find_globals(trigger, statedef.locals, ctx)
             for property in controller.properties:
-                global_list += find_globals(controller.properties[property], statedef.locals, ctx)
+                global_list += find_globals(property.value, statedef.locals, ctx)
             if controller.name.lower() in ["varset", "varadd"]:
                 ## detect any properties which set values.
                 for property in controller.properties:
-                    target_name = property.lower().replace(" ", "")
+                    target_name = property.key.lower().replace(" ", "")
                     if target_name.startswith("var(") or target_name.startswith("fvar(") \
                         or target_name.startswith("sysvar(") or target_name.startswith("sysfvar("):
-                        raise TranslationError(f"State controller sets indexed variable {target_name} which is not currently supported by MTL.", controller.properties[property].location)
+                        raise TranslationError(f"State controller sets indexed variable {target_name} which is not currently supported by MTL.", property.location)
                     if not target_name.startswith("trigger") and not target_name in ["type", "persistent", "ignorehitpause"]:
-                        target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property))
-                        if (prop_type := type_check(controller.properties[property], statedef.locals, ctx, expected = target_prop.type if target_prop != None else None)) == None:
-                            raise TranslationError(f"Could not identify target type of global {property} from its assignment.", controller.properties[property].location)
+                        target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property.key))
+                        if (prop_type := type_check(property.value, statedef.locals, ctx, expected = target_prop.type if target_prop != None else None)) == None:
+                            raise TranslationError(f"Could not identify target type of global {property} from its assignment.", property.location)
                         if len(prop_type) != 1:
-                            raise TranslationError(f"Target type of global {property} was a tuple, but globals cannot contain tuples.", controller.properties[property].location)
-                        global_list.append(TypeParameter(property, prop_type[0].type, location = controller.properties[property].location))
+                            raise TranslationError(f"Target type of global {property} was a tuple, but globals cannot contain tuples.", property.location)
+                        global_list.append(TypeParameter(property.key, prop_type[0].type, location = property.location))
 
     ## ensure all assignments for globals use matching types.
     result: list[TypeParameter] = []
@@ -342,10 +341,10 @@ def fullPassTypeCheck(ctx: TranslationContext):
             for property in controller.properties:
                 ## properties are permitted to be tuples. we need to ensure the specifiers match the expectation for this property.
                 ## only type-check expected props.
-                if (target_prop := find(target_template.params, lambda k: equals_insensitive(k.name, property))) != None:
-                    if (result_type := type_check(controller.properties[property], table, ctx, expected = target_prop.type)) == None:
-                        raise TranslationError(f"Target type of template parameter {property} could not be resolved to a type.", controller.properties[property].location)
-                    match_tuple(result_type, target_prop, ctx, controller.properties[property].location)
+                if (target_prop := find(target_template.params, lambda k: equals_insensitive(k.name, property.key))) != None:
+                    if (result_type := type_check(property.value, table, ctx, expected = target_prop.type)) == None:
+                        raise TranslationError(f"Target type of template parameter {property} could not be resolved to a type.", property.location)
+                    match_tuple(result_type, target_prop, ctx, property.location)
 
 def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
     if iterations == 0: print("Start applying trigger replacements in statedefs...")
@@ -363,7 +362,7 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
                 for trigger in controller.triggers[group_index].triggers:
                     replaced = replaced or replace_triggers(trigger, table, ctx)
             for property in controller.properties:
-                replaced = replaced or replace_triggers(controller.properties[property], table, ctx)
+                replaced = replaced or replace_triggers(property.value, table, ctx)
 
     ## recurse if any replacements were made.
     if replaced:
@@ -383,6 +382,20 @@ def assignVariables(ctx: TranslationContext):
         for local_variable in statedef.locals:
             create_allocation(local_variable, ctx)
         ctx.allocations = allocation_tables
+
+def applyPersist(ctx: TranslationContext):
+    ## for each ChangeState or SelfState, find any `persist` statements
+    ## and add an extra `triggerall` to copy the persisted variable.
+    for statedef in ctx.statedefs:
+        for controller in statedef.states:
+            if includes_insensitive(controller.name, ["ChangeState", "SelfState"]):
+                target = find_property("value", controller)
+                if len(target) != 1:
+                    raise TranslationError("All ChangeState and SelfState statements must include a value parameter.", controller.location)
+                if target[0].value.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, persist statements are not supported. we can emit a warning.
+                    if len(find_property("persist", controller)) != 0:
+                        print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: ChangeState and SelfState persist statements can only be used if the target state is an atom, not an expression.")
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
@@ -412,6 +425,8 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     fullPassTypeCheck(ctx)
     replaceTriggers(ctx)
     assignVariables(ctx)
+
+    applyPersist(ctx)
 
     return ctx
 

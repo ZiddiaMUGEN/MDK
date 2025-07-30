@@ -3,6 +3,7 @@ from mtl.types.translation import *
 from mtl.types.shared import TranslationError
 from mtl.types.builtins import *
 from mtl.utils.compiler import find_type, get_widest_match, compiler_internal
+from mtl.writer import emit_enum
 
 def getBaseTypes() -> list[TypeDefinition]:
     return [
@@ -244,7 +245,12 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("operator^^", BUILTIN_BOOL, builtin_xor, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         ## builtin constant/compiler functions
-        TriggerDefinition("cast", BUILTIN_ANY, builtin_cast, [TypeParameter("expr", BUILTIN_ANY), TypeParameter("t", BUILTIN_TYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("cast", BUILTIN_ANY, builtin_cast, [TypeParameter("expr", BUILTIN_ANY), TypeParameter("t", BUILTIN_TYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        TriggerDefinition("typeof", BUILTIN_TYPE, builtin_typeof, [TypeParameter("expr", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        TriggerDefinition("sizeof", BUILTIN_INT, builtin_sizeof, [TypeParameter("t", BUILTIN_TYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        TriggerDefinition("asint", BUILTIN_INT, builtin_asint, [TypeParameter("expr", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        #TriggerDefinition("asenum", BUILTIN_ANY, builtin_asenum, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        #TriggerDefinition("asflag", BUILTIN_ANY, builtin_asflag, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
     ]
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
@@ -256,6 +262,17 @@ def builtin_cast(exprs: list[Expression], ctx: TranslationContext) -> Expression
     if exprs[1].type != BUILTIN_TYPE or (target_type := find_type(exprs[1].value, ctx)) == None:
         raise TranslationError(f"Second argument to cast must be a type name, not {exprs[1].value}", Location("mtl/builtins.py", line_number()))
     return Expression(target_type, exprs[0].value)
+
+def builtin_typeof(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    return Expression(BUILTIN_TYPE, exprs[0].type.name)
+
+def builtin_sizeof(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if (target_type := find_type(exprs[0].value, ctx)) == None:
+        raise TranslationError(f"Argument to sizeof must be a type name, not {exprs[0].value}", Location("mtl/builtins.py", line_number()))
+    return Expression(BUILTIN_INT, str(target_type.size))
+
+def builtin_asint(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    return Expression(BUILTIN_INT, emit_enum(exprs[0].value, exprs[0].type))
 
 def builtin_not(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(BUILTIN_BOOL, f"(!{exprs[0].value})")

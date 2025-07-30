@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Union, Callable, Any
 from enum import Enum
 
+from mtl.types.ini import StateControllerProperty
 from mtl.types.shared import Location
 from mtl.types.trigger import TriggerTree
 
@@ -80,7 +81,7 @@ class TriggerGroup:
 class StateController:
     name: str
     triggers: dict[int, TriggerGroup]
-    properties: dict[str, TriggerTree]
+    properties: list[StateControllerProperty]
     location: Location
 
 @dataclass

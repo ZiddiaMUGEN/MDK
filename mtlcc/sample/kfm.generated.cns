@@ -38,7 +38,7 @@
 ;!mtl-debug VARIABLE_TABLE 40
 
 [Statedef 170];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:4
-;!mtl-debug VARIABLE_ALLOCATION 2jjpq287_myTestVar int /home/jsmith/MDK/mtlcc:0
+;!mtl-debug VARIABLE_ALLOCATION mxyxwl2r_myTestVar int /home/jsmith/MDK/mtlcc:0
 ;!mtl-debug-next 3 0 var(3)
 type = S
 anim = 170

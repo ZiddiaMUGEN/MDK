@@ -234,23 +234,24 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
             output.append(f"{group_name} = {trigger_text}")
     
     for property in controller.properties:
-        if (prop := find(template.params, lambda k: equals_insensitive(k.name, property))) == None:
+        if (prop := find(template.params, lambda k: equals_insensitive(k.name, property.key))) == None:
             expected = []
         else:
             expected = prop.type
-        property_text = emit_trigger(controller.properties[property], table, ctx, expected = expected)
+        prop_key = property.key
+        property_text = emit_trigger(property.value, table, ctx, expected = expected)
         ## if this is VarSet or VarAdd, any properties (which are not ignorehitpause/persistent)
         ## are actually variable assignments.
         ## convert the LHS into the variable name, and the RHS into an assignment-masked expression.
-        if includes_insensitive(controller.name, ["VarSet", "VarAdd"]) and not includes_insensitive(property, ["ignorehitpause", "persistent"]):
-            if (allocation := find(table, lambda k: equals_insensitive(k.name, property))) == None:
-                raise TranslationError(f"Failed to find any variable definition for name {property} on {controller.name} controller.", controller.location)
+        if includes_insensitive(controller.name, ["VarSet", "VarAdd"]) and not includes_insensitive(property.key, ["ignorehitpause", "persistent"]):
+            if (allocation := find(table, lambda k: equals_insensitive(k.name, property.key))) == None:
+                raise TranslationError(f"Failed to find any variable definition for name {property.key} on {controller.name} controller.", controller.location)
             text_split = property_text.split(";")
-            property = f"var({allocation.allocations[0][0]})"
-            if allocation.type == BUILTIN_FLOAT: property = f"f{property}"
+            prop_key = f"var({allocation.allocations[0][0]})"
+            if allocation.type == BUILTIN_FLOAT: prop_key = f"f{prop_key}"
             property_text = mask_write(text_split[0], allocation.allocations[0][1], allocation.type.size) + ";" + text_split[1]
 
-        output.append(f"{property} = {property_text}")
+        output.append(f"{prop_key} = {property_text}")
     
     output.append("")
 

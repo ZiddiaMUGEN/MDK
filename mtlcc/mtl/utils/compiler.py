@@ -34,6 +34,9 @@ def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: Tran
     ## if we reach here, no matching signature was found
     return None
 
+def find_property(property: str, controller: StateController) -> list[StateControllerProperty]:
+    return list(filter(lambda k: equals_insensitive(property, k.key), controller.properties))
+
 ## this checks EACH possible match and identifies which can potentially match the input trigger.
 def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location) -> list[TriggerDefinition]:
     results: list[TriggerDefinition] = []
@@ -216,7 +219,7 @@ def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> 
     
     ## for each property on the controller, we want to classify them into `triggers` or `properties` and assign to the appropriate group.
     triggers: dict[int, TriggerGroup] = {}
-    properties: dict[str, TriggerTree] = {}
+    properties: list[StateControllerProperty] = []
     for prop in state.properties:
         if prop.key == "type": continue
         if prop.key.startswith("trigger"):
@@ -232,8 +235,9 @@ def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> 
             triggers[group_index].triggers.append(prop.value)
         else:
             ## store the property
-            if prop.key in properties: raise TranslationError(f"Property {prop.key} was redefined in state controller.", prop.location)
-            properties[prop.key] = prop.value
+            if find(properties, lambda k: equals_insensitive(prop.key, k.key) and includes_insensitive(prop.key, ["persist"])) != None:
+                raise TranslationError(f"Property {prop.key} was redefined in state controller.", prop.location)
+            properties.append(prop)
 
     return StateController(name, triggers, properties, state.location)
 
@@ -251,7 +255,7 @@ def replace_expression(controller: StateController, old: TriggerTree, new: Trigg
         for trigger in controller.triggers[group_id].triggers:
             replace_recursive(trigger, old, new)
     for property in controller.properties:
-        replace_recursive(controller.properties[property], old, new)
+        replace_recursive(property.value, old, new)
 
 def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> bool:
     replaced = False
