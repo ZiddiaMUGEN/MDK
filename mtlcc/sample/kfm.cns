@@ -49,11 +49,13 @@ myThirdGlobal = true
 ; CNS difficulty: basic
 [Statedef 180]
 type = S
+local = myLocal = byte(1)
 
 [State 180, 1]
 type = ChangeState
 trigger1 = Time = 0
 value = 181
+persist = myLocal
 
 ;---------------------------------------------------------------------------
 ; Win pose 1 - Bow
@@ -63,6 +65,7 @@ type = S
 ctrl = 0
 anim = 181
 velset = 0,0
+local = myLocal = int
 
 [State 181, 1]
 type = NotHitBy
