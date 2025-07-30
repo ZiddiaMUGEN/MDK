@@ -422,9 +422,6 @@ def applyPersist(ctx: TranslationContext):
                         ## FOR NOW ignore this
                         ## TODO: revisit when project files/common1.cns are implemented
                         continue
-                    ## we can also use this step to check state-scope correctness.
-                    if not scopes_compatible(statedef, target_statedef):
-                        raise TranslationError(f"Target state {target_node.operator} for changestate from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
                     target_locals = target_statedef.locals
                     ## create persist mappings
                     for persisted in find_property("persist", controller):
@@ -466,6 +463,135 @@ def applyPersist(ctx: TranslationContext):
                     ## remove all persist props
                     controller.properties = list(filter(lambda k: not equals_insensitive(k.key, "persist"), controller.properties))
 
+def checkScopes(ctx: TranslationContext):
+    ## find any incompatible scopes between source and target on state transitions.
+    ## on ChangeState: scopes must be compatible.
+    ## on SelfState: scopes must be compatible, UNLESS the source is TARGET, in which case SelfState is always legal.
+    ## on Helper: scope of `stateno` must be Shared, Helper, or Helper(xy) where `xy` is the helper ID
+    ## on TargetState: scope must be TARGET
+    ## on HitDef: p1stateno must be PLAYER or SHARED, p2stateno must be TARGET
+    ## on HitOverride: stateno must be compatible
+    for statedef in ctx.statedefs:
+        for controller in statedef.states:
+            if equals_insensitive(controller.name, "ChangeState"):
+                target = find_property("value", controller)
+                if len(target) != 1:
+                    raise TranslationError("All ChangeState and SelfState statements must include a value parameter.", controller.location)
+                target_node = target[0].value
+                if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                    target_node = target_node.children[0]
+                if target_node.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                    print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of ChangeState is an expression.")
+                else:
+                    ## check the scopes are compatible.
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                        if not scopes_compatible(statedef, target_statedef):
+                            raise TranslationError(f"Target state {target_node.operator} for ChangeState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
+            elif equals_insensitive(controller.name, "SelfState"):
+                if statedef.scope.type == StateScopeType.TARGET: continue
+                target = find_property("value", controller)
+                if len(target) != 1:
+                    raise TranslationError("All ChangeState and SelfState statements must include a value parameter.", controller.location)
+                target_node = target[0].value
+                if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                    target_node = target_node.children[0]
+                if target_node.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                    print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of SelfState is an expression.")
+                else:
+                    ## check the scopes are compatible.
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                        if not scopes_compatible(statedef, target_statedef):
+                            raise TranslationError(f"Target state {target_node.operator} for SelfState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
+            elif equals_insensitive(controller.name, "Helper"):
+                target = find_property("stateno", controller)
+                if len(target) != 1:
+                    raise TranslationError("All Helper statements must include a stateno parameter.", controller.location)
+                target_node = target[0].value
+                if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                    target_node = target_node.children[0]
+                if target_node.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                    print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of Helper stateno is an expression.")
+                else:
+                    ## check the scopes are compatible.
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                        if not target_statedef.scope.type in [StateScopeType.HELPER, StateScopeType.SHARED]:
+                            raise TranslationError(f"Target state {target_node.operator} for Helper controller does not have a compatible statedef scope.", target[0].location)
+                        if target_statedef.scope.type == StateScopeType.HELPER and target_statedef.scope.target != None:
+                            helper_id = find_property("id", controller)
+                            if len(helper_id) != 1:
+                                raise TranslationError("All Helper statements must include an ID parameter.", controller.location)
+                            helper_node = helper_id[0].value
+                            if helper_node.node == TriggerTreeNode.MULTIVALUE and len(helper_node.children) == 1:
+                                helper_node = helper_node.children[0]
+                            if helper_node.node != TriggerTreeNode.ATOM:
+                                ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                                raise TranslationError(f"Target of Helper controller has scope with ID {target_statedef.scope.target}, but Helper's ID parameter cannot be resolved to a single ID.", helper_node.location)
+                            if helper_node.operator != str(target_statedef.scope.target):
+                                raise TranslationError(f"Target of Helper controller has scope with ID {target_statedef.scope.target}, but Helper's ID is {helper_node.operator}.", helper_node.location)
+            elif equals_insensitive(controller.name, "TargetState"):
+                target = find_property("value", controller)
+                if len(target) != 1:
+                    raise TranslationError("All TargetState statements must include a value parameter.", controller.location)
+                target_node = target[0].value
+                if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                    target_node = target_node.children[0]
+                if target_node.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                    print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of TargetState is an expression.")
+                else:
+                    ## check the scopes are compatible.
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                        if target_statedef.scope.type != StateScopeType.TARGET:
+                            raise TranslationError(f"Target state {target_node.operator} for TargetState from state {statedef.name} does not have the TARGET scope type.", target[0].location)
+            elif equals_insensitive(controller.name, "HitDef"):
+                target = find_property("p1stateno", controller)
+                if len(target) == 1:
+                    target_node = target[0].value
+                    if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                        target_node = target_node.children[0]
+                    if target_node.node != TriggerTreeNode.ATOM:
+                        ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                        print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if p1stateno on HitDef is an expression.")
+                    else:
+                        ## check the scopes are compatible.
+                        if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                            if not scopes_compatible(statedef, target_statedef):
+                                raise TranslationError(f"Target state {target_node.operator} for p1stateno on HitDef from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
+                target = find_property("p2stateno", controller)
+                if len(target) == 1:
+                    target_node = target[0].value
+                    if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                        target_node = target_node.children[0]
+                    if target_node.node != TriggerTreeNode.ATOM:
+                        ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                        print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if p2stateno on HitDef is an expression.")
+                    else:
+                        ## check the scopes are compatible.
+                        if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                            if target_statedef.scope.type != StateScopeType.TARGET:
+                                raise TranslationError(f"Target state {target_node.operator} for p2stateno on HitDef from state {statedef.name} does not have the TARGET scope type.", target[0].location)
+            elif equals_insensitive(controller.name, "HitOverride"):
+                target = find_property("stateno", controller)
+                if len(target) != 1:
+                    #raise TranslationError("All HitOverride statements must include a stateno parameter.", controller.location)
+                    ## note to future self: Elecbyte doc lists `stateno` as required, but it is not really. (see KFM)
+                    continue
+                target_node = target[0].value
+                if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
+                    target_node = target_node.children[0]
+                if target_node.node != TriggerTreeNode.ATOM:
+                    ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
+                    print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of HitOverride is an expression.")
+                else:
+                    ## check the scopes are compatible.
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
+                        if not scopes_compatible(statedef, target_statedef):
+                            raise TranslationError(f"Target state {target_node.operator} for HitOverride from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
+                    
+
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)
 
@@ -496,6 +622,7 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     assignVariables(ctx)
 
     applyPersist(ctx)
+    checkScopes(ctx)
 
     return ctx
 

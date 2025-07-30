@@ -958,6 +958,7 @@ type    = A
 movetype= H
 physics = N
 velset = 0,0
+scope = target
 
 [State 820, 1]
 type = ChangeAnim2
@@ -985,6 +986,7 @@ movetype= H
 physics = N
 velset = 2.8,-7
 poweradd = 40
+scope = target
 
 [State 821, 1] ;Gravity
 type = VelAdd
@@ -1311,6 +1313,7 @@ type    = A
 movetype= H
 physics = N
 velset = 0,0
+scope = target
 
 [State 1025, Anim] ;Custom animation
 type = ChangeAnim2
@@ -1329,6 +1332,7 @@ value = 1026
 type    = A
 movetype= H
 physics = N
+scope = target
 
 [State 1026, Velocity]
 type = HitVelSet
@@ -1368,6 +1372,7 @@ value = 5100
 type    = A
 movetype= H
 physics = N
+scope = target
 
 [State 1027, Turn]
 type = Turn
@@ -1420,6 +1425,7 @@ value = 1028
 type    = A
 movetype= H
 physics = N
+scope = target
 
 [State 1028, 1]
 type = NotHitBy
