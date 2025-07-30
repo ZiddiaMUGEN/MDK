@@ -46,11 +46,11 @@ def debuginfo_trigger(data: TriggerDefinition) -> list[str]:
             results.append(f";!mtl-debug-next {param.name} {param.type}")
     return results
 
-def debuginfo_table(data: AllocationTable) -> list[str]:
+def debuginfo_table(data: dict) -> list[str]:
     results: list[str] = []
-    results.append(f";!mtl-debug VARIABLE_TABLE {data.max_size}")
-    for alloc in data.data:
-        results.append(f";!mtl-debug-next {alloc} {data.data[alloc]}")
+    results.append(f";!mtl-debug VARIABLE_TABLE {data['scope'].type} {data['scope'].target} {data['allocations'].max_size}")
+    for alloc in data['allocations'].data:
+        results.append(f";!mtl-debug-next {alloc} {data['allocations'].data[alloc]}")
     return results
 
 def debuginfo_allocation(data: TypeParameter) -> list[str]:

@@ -119,16 +119,13 @@ def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -
 
     return exprn
 
-def scopes_compatible(s1: StateDefinition, s2: StateDefinition) -> bool:
+def scopes_compatible(s1: StateDefinitionScope, s2: StateDefinitionScope) -> bool:
     ## matching
-    if s1.scope.type == s2.scope.type and s1.scope.target == s2.scope.target:
+    if s1 == s2:
         return True
     
-    ## allow player->shared and helper->shared, and reverse
-    if s1.scope.type == StateScopeType.SHARED and s2.scope.type in [StateScopeType.PLAYER, StateScopeType.HELPER]:
-        return True
-    
-    if s2.scope.type == StateScopeType.SHARED and s1.scope.type in [StateScopeType.PLAYER, StateScopeType.HELPER]:
+    ## allow player->shared and helper->shared, but not the reverse
+    if s1.type in [StateScopeType.PLAYER, StateScopeType.HELPER] and s2.type == StateScopeType.SHARED:
         return True
     
     return False

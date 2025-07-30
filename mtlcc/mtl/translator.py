@@ -220,6 +220,7 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
             if prop.key.lower() == "local":
                 if (local := parse_local(prop.value, ctx, prop.location)) == None:
                     raise TranslationError(f"Could not parse local variable for statedef from expression {prop.value}", prop.location)
+                local.scope = state_scope
                 state_locals.append(local)
         ## pull the list of controllers; we do absolutely zero checking or validation at this stage.
         state_controllers: list[StateController] = []
@@ -255,7 +256,7 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
                 local_prefix = f"{generate_random_string(8)}_"
                 local_map: dict[str, str] = {}
                 for local in template.locals:
-                    statedef.locals.append(TypeParameter(f"{local_prefix}{local.name}", local.type, local.default, local.location))
+                    statedef.locals.append(TypeParameter(f"{local_prefix}{local.name}", local.type, local.default, local.location, scope = statedef.scope))
                     local_map[local.name] = f"{local_prefix}{local.name}"
                 ## 2. copy all controllers from the template, updating uses of the locals to use the new prefix.
                 ##    also apply a copy of `ignorehitpause` and `persistent` from the call site.
@@ -309,9 +310,9 @@ def createGlobalsTable(ctx: TranslationContext):
                 raise TranslationError(f"Could not find any template or builtin controller with name {controller.name}.", controller.location)
             for group_id in controller.triggers:
                 for trigger in controller.triggers[group_id].triggers:
-                    global_list += find_globals(trigger, statedef.locals, ctx)
+                    global_list += find_globals(trigger, statedef.locals, statedef.scope, ctx)
             for property in controller.properties:
-                global_list += find_globals(property.value, statedef.locals, ctx)
+                global_list += find_globals(property.value, statedef.locals, statedef.scope, ctx)
             if controller.name.lower() in ["varset", "varadd"]:
                 ## detect any properties which set values.
                 for property in controller.properties:
@@ -325,14 +326,16 @@ def createGlobalsTable(ctx: TranslationContext):
                             raise TranslationError(f"Could not identify target type of global {property} from its assignment.", property.location)
                         if len(prop_type) != 1:
                             raise TranslationError(f"Target type of global {property} was a tuple, but globals cannot contain tuples.", property.location)
-                        global_list.append(TypeParameter(property.key, prop_type[0].type, location = property.location))
+                        global_list.append(TypeParameter(property.key, prop_type[0].type, location = property.location, scope = statedef.scope))
 
-    ## ensure all assignments for globals use matching types.
+    ## ensure all assignments for globals use matching types for matching scopes.
     result: list[TypeParameter] = []
     for param in global_list:
         if (exist := find(result, lambda k: equals_insensitive(k.name, param.name))) == None:
             result.append(param)
             continue
+        elif not scopes_compatible(param.scope, exist.scope):
+            raise TranslationError(f"Global parameter {param.name} previously defined in scope {exist.scope.type} but redefined in incompatible scope {param.scope.type}.", param.location)
         elif (wider := get_widest_match(exist.type, param.type, ctx, param.location)) == None:
             raise TranslationError(f"Global parameter {param.name} previously defined as {exist.type.name} but redefined as incompatible type {param.type.name}.", param.location)
         exist.type = wider
@@ -341,7 +344,7 @@ def createGlobalsTable(ctx: TranslationContext):
 
 def fullPassTypeCheck(ctx: TranslationContext):
     for statedef in ctx.statedefs:
-        table = statedef.locals + ctx.globals
+        table = statedef.locals + list(filter(lambda k: scopes_compatible(statedef.scope, k.scope), ctx.globals))
         for controller in statedef.states:
             if (target_template := find_template(controller.name, ctx)) == None:
                 raise TranslationError(f"Could not find any template or builtin controller with name {controller.name}.", controller.location)
@@ -349,7 +352,6 @@ def fullPassTypeCheck(ctx: TranslationContext):
                 for trigger in controller.triggers[group_id].triggers:
                     result_types = type_check(trigger, table, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
                     if result_types == None or len(result_types) != 1:
-                        print(trigger)
                         raise TranslationError(f"Target type of trigger expression was a tuple, but trigger expressions must resolve to bool.", trigger.location)
                     ## for CNS compatibility, we allow any integral type to act as `bool` on a trigger.
                     if get_widest_match(result_types[0].type, BUILTIN_INT, ctx, trigger.location) != BUILTIN_INT:
@@ -372,7 +374,7 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
     
     ## monstrous, but i do not know if it is avoidable.
     for statedef in ctx.statedefs:
-        table = statedef.locals + ctx.globals
+        table = statedef.locals + list(filter(lambda k: scopes_compatible(statedef.scope, k.scope), ctx.globals))
         for controller in statedef.states:
             for group_index in controller.triggers:
                 for trigger in controller.triggers[group_index].triggers:
@@ -486,7 +488,7 @@ def checkScopes(ctx: TranslationContext):
                 else:
                     ## check the scopes are compatible.
                     if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                        if not scopes_compatible(statedef, target_statedef):
+                        if not scopes_compatible(statedef.scope, target_statedef.scope):
                             raise TranslationError(f"Target state {target_node.operator} for ChangeState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
             elif equals_insensitive(controller.name, "SelfState"):
                 if statedef.scope.type == StateScopeType.TARGET: continue
@@ -502,7 +504,7 @@ def checkScopes(ctx: TranslationContext):
                 else:
                     ## check the scopes are compatible.
                     if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                        if not scopes_compatible(statedef, target_statedef):
+                        if not scopes_compatible(statedef.scope, target_statedef.scope):
                             raise TranslationError(f"Target state {target_node.operator} for SelfState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
             elif equals_insensitive(controller.name, "Helper"):
                 target = find_property("stateno", controller)
@@ -558,7 +560,7 @@ def checkScopes(ctx: TranslationContext):
                     else:
                         ## check the scopes are compatible.
                         if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                            if not scopes_compatible(statedef, target_statedef):
+                            if not scopes_compatible(statedef.scope, target_statedef.scope):
                                 raise TranslationError(f"Target state {target_node.operator} for p1stateno on HitDef from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
                 target = find_property("p2stateno", controller)
                 if len(target) == 1:
@@ -588,7 +590,7 @@ def checkScopes(ctx: TranslationContext):
                 else:
                     ## check the scopes are compatible.
                     if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                        if not scopes_compatible(statedef, target_statedef):
+                        if not scopes_compatible(statedef.scope, target_statedef.scope):
                             raise TranslationError(f"Target state {target_node.operator} for HitOverride from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
                     
 
@@ -619,10 +621,9 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     createGlobalsTable(ctx)
     fullPassTypeCheck(ctx)
     replaceTriggers(ctx)
-    assignVariables(ctx)
-
-    applyPersist(ctx)
     checkScopes(ctx)
+    assignVariables(ctx)
+    applyPersist(ctx)
 
     return ctx
 
@@ -637,8 +638,7 @@ def createOutput(ctx: TranslationContext) -> list[str]:
     output.append("")
 
     output += write_type_table(ctx)
-    output += write_variable_table(ctx, 0)
-    output += write_variable_table(ctx, 1)
+    output += write_variable_table(ctx)
 
     ## now iterate each statedef and produce output, attaching variable debuginfo as needed.
     for statedef in ctx.statedefs:

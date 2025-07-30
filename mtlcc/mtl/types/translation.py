@@ -42,6 +42,8 @@ class TypeParameter:
     location: Location = field(default_factory=lambda: Location("", 0))
     ## this needs to be a list of allocations to support structure types.
     allocations: list[tuple[int, int]] = field(default_factory=lambda: [])
+    ## scopes need to be baked in.
+    scope: 'StateDefinitionScope' = field(default_factory=lambda: StateDefinitionScope(StateScopeType.SHARED, None))
 
 class TriggerCategory(Enum):
     SIMPLE = 0
@@ -131,6 +133,14 @@ class StateScopeType(Enum):
 class StateDefinitionScope:
     type: StateScopeType
     target: Optional[int]
+
+    def __eq__(self, other):
+        if not isinstance(other, StateDefinitionScope):
+            return NotImplemented
+        return self.type == other.type and self.target == other.target
+    
+    def __hash__(self):
+        return hash((self.type, self.target))
 
 @dataclass
 class StateDefinition:

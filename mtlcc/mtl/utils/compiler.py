@@ -323,12 +323,12 @@ def merge_triggers(triggers: dict[int, TriggerGroup], location: Location) -> lis
     result.append(merge_by_operand(all_groups, "||", location))
     return result
 
-def find_globals(tree: TriggerTree, locals: list[TypeParameter], ctx: TranslationContext) -> list[TypeParameter]:
+def find_globals(tree: TriggerTree, locals: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[TypeParameter]:
     ## recursively identifies assignment statements.
     if tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[0].node == TriggerTreeNode.ATOM:
         ## ensure to check globals on RHS expression first!!
         result: list[TypeParameter] = []
-        result += find_globals(tree.children[1], locals, ctx)
+        result += find_globals(tree.children[1], locals, scope, ctx)
 
         ## only include if the LHS does not match a known local
         if find(locals, lambda k: equals_insensitive(k.name, tree.children[0].operator)) == None:
@@ -337,7 +337,7 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], ctx: Translatio
                 raise TranslationError(f"Could not identify target type of global {tree.children[0].operator} from its assignment.", tree.location)
             if len(target_type) != 1:
                 raise TranslationError(f"Target type of global {tree.children[0].operator} was a tuple, but globals cannot contain tuples.", tree.location)
-            result.append(TypeParameter(tree.children[0].operator, target_type[0].type, location = tree.location))
+            result.append(TypeParameter(tree.children[0].operator, target_type[0].type, location = tree.location, scope = scope))
         return result
     elif tree.node == TriggerTreeNode.BINARY_OP and tree.operator == ":=" and tree.children[0].node == TriggerTreeNode.FUNCTION_CALL:
         if tree.children[0].operator.lower() in ["var", "fvar", "sysvar", "sysfvar"]:
@@ -346,7 +346,7 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], ctx: Translatio
     else:
         result: list[TypeParameter] = []
         for child in tree.children:
-            result += find_globals(child, locals, ctx)
+            result += find_globals(child, locals, scope, ctx)
         return result
     
 def get_struct_type(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
@@ -547,6 +547,8 @@ def allocate(size: int, table: AllocationTable) -> Optional[tuple[int, int]]:
     return None
 
 def create_allocation(var: TypeParameter, ctx: TranslationContext):
+    if var.scope not in ctx.allocations:
+        ctx.allocations[var.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
     ## the real type of `global_variable` needs to be resolved.
     real_type = resolve_alias_typed(var.type, ctx, var.location)
     ## it's possible the real type is a bare builtin, or an enum/flag, or a structure.
@@ -555,19 +557,19 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
         raise TranslationError(f"Global variable named {var.name} has an invalid type {var.type.name} which was resolved to type category {real_type.category}.", var.location)
     if real_type == BUILTIN_FLOAT:
         ## handle BUILTIN_FLOAT directly since it's the only thing that allocates to float_allocation.
-        next = allocate(real_type.size, ctx.allocations[1])
+        next = allocate(real_type.size, ctx.allocations[var.scope][1])
         if next == None:
             raise TranslationError(f"Ran out of floating-point variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
     elif real_type.category == TypeCategory.BUILTIN:
         ## bare BUILTIN have size specified, so allocate directly.
-        next = allocate(real_type.size, ctx.allocations[0])
+        next = allocate(real_type.size, ctx.allocations[var.scope][0])
         if next == None:
             raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
     elif real_type.category in [TypeCategory.ENUM, TypeCategory.FLAG]:
         ## these are just int in disguise.
-        next = allocate(BUILTIN_INT.size, ctx.allocations[0])
+        next = allocate(BUILTIN_INT.size, ctx.allocations[var.scope][0])
         if next == None:
             raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)

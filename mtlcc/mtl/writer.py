@@ -14,14 +14,20 @@ def write_type_table(ctx: TranslationContext) -> list[str]:
     output.append("")
     return output
 
-def write_variable_table(ctx: TranslationContext, index: int) -> list[str]:
+def write_variable_table(ctx: TranslationContext) -> list[str]:
+    ## handle each scoped table.
     output: list[str] = []
-    output += debuginfo(DebugCategory.VARIABLE_TABLE, ctx.allocations[index])
-    for global_variable in ctx.globals:
-        if index == 0 and resolve_alias_typed(global_variable.type, ctx, global_variable.location) != BUILTIN_FLOAT:
-            output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
-        elif index == 1 and resolve_alias_typed(global_variable.type, ctx, global_variable.location) == BUILTIN_FLOAT:
-            output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
+    for scope in ctx.allocations:
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][0] })
+        for global_variable in ctx.globals:
+            if global_variable.scope == scope and global_variable.type != BUILTIN_FLOAT:
+                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
+
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][1] })
+        for global_variable in ctx.globals:
+            if global_variable.scope == scope and global_variable.type == BUILTIN_FLOAT:
+                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
+    
     output.append("")
     return output
 
