@@ -5,6 +5,8 @@ from mtl.types.builtins import *
 from mtl.utils.compiler import find_type, get_widest_match, compiler_internal
 from mtl.writer import emit_enum
 
+from ctypes import c_int32
+
 def getBaseTypes() -> list[TypeDefinition]:
     return [
         BUILTIN_ANY,
@@ -293,6 +295,26 @@ def builtin_compare(exprs: list[Expression], ctx: TranslationContext, op: str) -
         return Expression(BUILTIN_BOOL, f"({exprs[0].value} {op} {exprs[1].value})")
     raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
 
+def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    ## the output of the walrus operator needs to be masked.
+    ## for example, in the expression `(myVar := true) * 5`, the expected result is 5.
+    ## however if `myVar` is a 1-bit bool allocated at (0, 8), the resulting expression is
+    ## `(var(0) := ((1 & 1) * 256)) * 5` which is incorrect.
+    ## this step also needs to mask the RESULT of the walrus operator, and then shift right, producing e.g.
+    ## `((var(0) := (((1 & 1) * 256)) & 256) / 256) * 5`
+    ## that means adding the left-shift at the end of this expression.
+    exprn = builtin_binary(exprs, ctx, ":=")
+    if isinstance(exprs[0], VariableExpression):
+        offset = exprs[0].allocation[1]
+        if exprs[0].type.size != 32:
+            start_pow2 = 2 ** exprs[0].allocation[1]
+            end_pow2 = 2 ** (offset + exprs[0].type.size)
+            mask = c_int32(end_pow2 - start_pow2)
+            exprn.value = f"({exprn.value} & {mask.value})"
+        if offset != 0:
+            exprn.value = f"({exprn.value} / {c_int32(2 ** offset).value})"
+    return exprn
+
 def builtin_add(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "+")
 def builtin_sub(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "-")
 def builtin_mult(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "*")
@@ -305,7 +327,6 @@ def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression:
 def builtin_bitand(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
 def builtin_bitor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
 def builtin_bitxor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
-def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, ":=")
 def builtin_lt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<")
 def builtin_lte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<=")
 def builtin_gt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, ">")

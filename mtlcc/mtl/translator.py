@@ -396,6 +396,31 @@ def applyPersist(ctx: TranslationContext):
                     ## it's permitted for targets to be expressions, but in that case, persist statements are not supported. we can emit a warning.
                     if len(find_property("persist", controller)) != 0:
                         print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: ChangeState and SelfState persist statements can only be used if the target state is an atom, not an expression.")
+                else:
+                    ## get the locals on the target state
+                    if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target[0].key))) == None:
+                        raise TranslationError(f"Target state {target[0].key} for changestate from {statedef.name} does not exist.", target[0].location)
+                    target_locals = target_statedef.locals
+                    ## create persist mappings
+                    for persisted in find_property("persist", controller):
+                        ## find the allocation for the persisted variable source
+                        in_source = persisted.value
+                        if in_source.node != TriggerTreeNode.ATOM:
+                            raise TranslationError("ChangeState persist parameter must specify a variable name to be persisted, not an expression.", persisted.location)
+                        if (var_source := find(statedef.locals, lambda k: equals_insensitive(in_source.operator, k.name))) == None:
+                            raise TranslationError(f"ChangeState persist parameter must specify a local variable name to be persisted, not {in_source.operator}.", persisted.location)
+                        if var_source.type.category == TypeCategory.STRUCTURE:
+                            raise TranslationError("Can't currently persist structure types.", persisted.location)
+                        ## get expression representing the source
+                        mask_source = mask_variable(var_source.allocations[0][0], var_source.allocations[0][1], var_source.type.size, var_source.type == BUILTIN_FLOAT)
+                        ## find the allocation for the persisted variable target
+                        if (var_target := find(target_locals, lambda k: equals_insensitive(k.name, in_source.operator))) == None:
+                            raise TranslationError(f"ChangeState persisted parameter {in_source.operator} must also exist as a local in target state {target_statedef.name}.", persisted.location)
+                        mask_target = f"var({var_target.allocations[0][0]})"
+                        if var_target.type == BUILTIN_FLOAT: mask_target = f"f{mask_target}"
+                        ## shift source expression so it writes to the right part of mask_target
+                        mask_source = mask_write(var_target.allocations[0][0], mask_source, var_target.allocations[0][1], var_target.type.size, var_target.type == BUILTIN_FLOAT)
+
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename)

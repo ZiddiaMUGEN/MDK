@@ -107,7 +107,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         if tree.operator == ":=" and isinstance(children[0], VariableExpression):
             children[0].value = f"var({children[0].allocation[0]})"
             if children[0].is_float: children[0].value = f"f{children[0].value}"
-            children[1].value = mask_write(children[1].value, children[0].allocation[1], children[0].type.size)
+            children[1].value = mask_write(children[0].allocation[0], children[1].value, children[0].allocation[1], children[0].type.size, children[0].type == BUILTIN_FLOAT)
         ## if the trigger has a const evaluator, use it. otherwise, trust the output type.
         if match.const != None:
             return match.const(children, ctx)
@@ -249,7 +249,7 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
             text_split = property_text.split(";")
             prop_key = f"var({allocation.allocations[0][0]})"
             if allocation.type == BUILTIN_FLOAT: prop_key = f"f{prop_key}"
-            property_text = mask_write(text_split[0], allocation.allocations[0][1], allocation.type.size) + ";" + text_split[1]
+            property_text = mask_write(allocation.allocations[0][0], text_split[0], allocation.allocations[0][1], allocation.type.size, allocation.type == BUILTIN_FLOAT) + ";" + text_split[1]
 
         output.append(f"{prop_key} = {property_text}")
     

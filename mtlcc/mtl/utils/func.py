@@ -1,6 +1,8 @@
 from typing import Optional
 from typing import Callable, TypeVar
 
+from ctypes import c_int32
+
 from inspect import getframeinfo, stack
 
 import random
@@ -82,17 +84,34 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
         ## access starts from the bit `offset` and progresses to the bit `offset + size`.
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
-        mask = (end_pow2 - start_pow2)
-        result += f" & {mask}"
+        mask = c_int32(end_pow2 - start_pow2)
+        result += f" & {mask.value}"
 
     return result
 
-def mask_write(exprn: str, offset: int, size: int) -> str:
+def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -> str:
     ## takes information describing the location of a variable in `var`-space,
-    ## and modifies an expression to write to the correct location for that string.
+    ## and modifies an expression to write to the correct location for that var.
     if offset == 0 and size == 32:
         return exprn
     
+    ## we need to make sure the values of the var that fall outside the range are preserved.
+    indexed = f"var({index})"
+    if is_float: indexed = f"f{indexed}"
+    
     ## we need to clamp the expression to `size`, then bit-shift the expression up to `offset`.
-    exprn = f"((({exprn}) & {2 ** size}) * {2 ** offset})"
+    exprn = f"((({exprn}) & {(2 ** size) - 1}) * {c_int32(2 ** offset).value})"
+
+    ## left-hand-side of the range: everything from (offset + size) -> 32
+    if (offset + size) < 32:
+        start_pow2 = 2 ** (offset + size)
+        end_pow2 = 2 ** 33
+        mask = c_int32(end_pow2 - start_pow2)
+        exprn = f"({exprn} + ({indexed} & {mask.value}))"
+
+    ## right-hand-side of the range: everything from 0 -> offset
+    if offset > 0:
+        mask = c_int32((2 ** offset) - 1)
+        exprn = f"({exprn} + ({indexed} & {mask.value}))"
+
     return exprn
