@@ -118,3 +118,17 @@ def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -
         exprn = f"({exprn} + ({indexed} & {c_int32(mask).value}))"
 
     return exprn
+
+def scopes_compatible(s1: StateDefinition, s2: StateDefinition) -> bool:
+    ## matching
+    if s1.scope.type == s2.scope.type and s1.scope.target == s2.scope.target:
+        return True
+    
+    ## allow player->shared and helper->shared, and reverse
+    if s1.scope.type == StateScopeType.SHARED and s2.scope.type in [StateScopeType.PLAYER, StateScopeType.HELPER]:
+        return True
+    
+    if s2.scope.type == StateScopeType.SHARED and s1.scope.type in [StateScopeType.PLAYER, StateScopeType.HELPER]:
+        return True
+    
+    return False

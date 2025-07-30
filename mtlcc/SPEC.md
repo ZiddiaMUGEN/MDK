@@ -9,7 +9,7 @@ This document describes the progress towards implementation of the MDK spec and 
 2. Type System - partially implemented
     - Built-in types - fully implemented.
     - Tuples, Optionals, and Repeated Types - partially implemented; user-defined triggers and template parameters cannot use `tuples` or `optionals`.
-    - Custom Types - partially implemented; `struct` member access is not implemented.
+    - Custom Types - fully implemented.
     - Type Conversion Rules - fully implemented.
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)
 4. Trigger Definitions - user-defined fully implemented; special types partially implemented
@@ -17,7 +17,6 @@ This document describes the progress towards implementation of the MDK spec and 
 5. Named State Definitions - not implemented
 6. Named Variables - partially implemented; cannot specify system variables
     - Variable Scope and Initialization - partially implemented
-    - Persistence is present in this document but not actually implemented.
 7. Character Resource References - not implemented
 8. State Controller Repetition (Loops) - not implemented
 9. State Definition Scope - not implemented

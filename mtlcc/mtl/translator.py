@@ -195,10 +195,25 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
         state_name = state_definition.name
         ## identify all parameters which can be set on the statedef
         state_params = StateDefinitionParameters()
+        state_scope = StateDefinitionScope(StateScopeType.SHARED, None)
         for prop in state_definition.props:
             ## allow-list the props which can be set here to avoid evil behaviour
             if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset"]:
                 setattr(state_params, prop.key.lower(), make_atom(prop.value))
+            elif equals_insensitive(prop.key, "scope"):
+                if equals_insensitive(prop.value, "shared"):
+                    state_scope.type = StateScopeType.SHARED
+                elif equals_insensitive(prop.value, "player"):
+                    state_scope.type = StateScopeType.PLAYER
+                elif equals_insensitive(prop.value, "helper"):
+                    state_scope.type = StateScopeType.HELPER
+                elif equals_insensitive(prop.value, "target"):
+                    state_scope.type = StateScopeType.TARGET
+                elif prop.value.lower().startswith("helper(") and prop.value.endswith(")"):
+                    state_scope.type = StateScopeType.HELPER
+                    if (new_target := tryparse(prop.value.split("(")[1].split(")")[0], int)) == None:
+                        raise TranslationError(f"Could not identify ID for helper scope from input {prop.value}.", prop.location)
+                    state_scope.target = new_target
         ## identify all local variable declarations, if any exist
         state_locals: list[TypeParameter] = []
         for prop in state_definition.props:
@@ -212,7 +227,7 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
             controller = parse_controller(state, ctx)
             state_controllers.append(controller)
 
-        ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_definition.location))
+        ctx.statedefs.append(StateDefinition(state_name, state_params, state_locals, state_controllers, state_scope, state_definition.location))
     print(f"Successfully resolved {len(ctx.statedefs)} state definitions")
 
 def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
@@ -407,6 +422,9 @@ def applyPersist(ctx: TranslationContext):
                         ## FOR NOW ignore this
                         ## TODO: revisit when project files/common1.cns are implemented
                         continue
+                    ## we can also use this step to check state-scope correctness.
+                    if not scopes_compatible(statedef, target_statedef):
+                        raise TranslationError(f"Target state {target_node.operator} for changestate from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
                     target_locals = target_statedef.locals
                     ## create persist mappings
                     for persisted in find_property("persist", controller):

@@ -121,12 +121,24 @@ class StateDefinitionParameters:
     hitcountpersist: Optional[bool] = None
     sprpriority: Optional[int] = None
 
+class StateScopeType(Enum):
+    SHARED = 0
+    PLAYER = 1
+    HELPER = 2
+    TARGET = 3
+
+@dataclass
+class StateDefinitionScope:
+    type: StateScopeType
+    target: Optional[int]
+
 @dataclass
 class StateDefinition:
     name: str
     parameters: StateDefinitionParameters
     locals: list[TypeParameter]
     states: list[StateController]
+    scope: StateDefinitionScope
     location: Location
 
 @dataclass

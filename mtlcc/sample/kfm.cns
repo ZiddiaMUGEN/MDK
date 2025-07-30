@@ -6,6 +6,7 @@ type = S
 ctrl = 0
 anim = 170
 velset = 0,0
+scope = helper
 
 [State 170, 1]
 type = NotHitBy
