@@ -10,13 +10,25 @@ def loadDefinition(file: str) -> ProjectContext:
     all_loaded: list[str] = []
 
     with open(file) as f:
-        contents = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
+        ctx.contents = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
 
-    if (section := find(contents, lambda k: equals_insensitive(k.name, "Files"))) == None:
+    if (section := find(ctx.contents, lambda k: equals_insensitive(k.name, "Files"))) == None:
         raise TranslationError("Input definition file must contain a [Files] section.", compiler_internal())
     
     if (common := find(section.properties, lambda k: equals_insensitive(k.key, "stcommon"))) == None:
         raise TranslationError("Input definition file must specify common state file via `stcommon` key.", section.location)
+    
+    if (constants := find(section.properties, lambda k: equals_insensitive(k.key, "cns"))) == None:
+        raise TranslationError("Input definition file must specify constants via `cns` key.", section.location)
+    constants = search_file(constants.value, file)
+    with open(constants) as f:
+        ctx.constants = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
+
+    if (commands := find(section.properties, lambda k: equals_insensitive(k.key, "cmd"))) == None:
+        raise TranslationError("Input definition file must specify commands via `cmd` key.", section.location)
+    commands = search_file(commands.value, file)
+    with open(commands) as f:
+        ctx.commands = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
     
     ctx.common_file = search_file(common.value, file, [f"stdlib/{common.value}"])
     all_loaded.append(ctx.common_file)
@@ -39,5 +51,21 @@ def loadDefinition(file: str) -> ProjectContext:
             if target not in all_loaded:
                 all_loaded.append(target)
                 ctx.source_files.append(target)
+
+    ## non-code files
+    if (anim := find(section.properties, lambda k: equals_insensitive(k.key, "anim"))) != None:
+        ctx.anim_file = search_file(anim.value, file)
+    else:
+        raise TranslationError("Input definition file must specify animation file via `anim` key.", section.location)
+    if (sprite := find(section.properties, lambda k: equals_insensitive(k.key, "sprite"))) != None:
+        ctx.spr_file = search_file(sprite.value, file)
+    else:
+        raise TranslationError("Input definition file must specify SFF file via `sprite` key.", section.location)
+    if (sound := find(section.properties, lambda k: equals_insensitive(k.key, "sound"))) != None:
+        ctx.snd_file = search_file(sound.value, file)
+    else:
+        raise TranslationError("Input definition file must specify SND file via `sound` key.", section.location)
+    if (ai := find(section.properties, lambda k: equals_insensitive(k.key, "ai"))) != None:
+        ctx.ai_file = search_file(ai.value, file)
 
     return ctx

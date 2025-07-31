@@ -54,9 +54,24 @@ class ProjectContext:
     filename: str
     source_files: list[str]
     common_file: str
+    anim_file: str
+    snd_file: str
+    spr_file: str
+    cns_file: str
+    ai_file: Optional[str]
+    constants: list[INISection]
+    commands: list[INISection]
+    contents: list[INISection]
 
     def __init__(self, filename: str):
         self.filename = filename
         self.source_files = []
         self.common_file = ""
+        self.contents = []
+        self.anim_file = ""
+        self.snd_file = ""
+        self.spr_file = ""
+        self.ai_file = None
+        self.constants = []
+        self.commands = []
     

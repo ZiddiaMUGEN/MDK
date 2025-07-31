@@ -1,6 +1,6 @@
 import os
 
-from mtl.utils.func import find, compiler_internal, search_file
+from mtl.utils.func import find, compiler_internal, search_file, includes_insensitive
 from mtl.types.shared import TranslationError
 from mtl.types.context import LoadContext, TranslationMode
 from mtl.types.ini import *
@@ -130,6 +130,12 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
         elif section.name.lower().startswith("define members"):
             # a standalone 'state' section is invalid. raise an exception
             raise TranslationError("A Define Members section in a source file must be grouped with a parent Define Structure section.", section.location)
+        elif includes_insensitive(section.name, ["Command", "Remap", "Defaults"]):
+            ## ignore sections which are legal in CMD files
+            pass
+        elif includes_insensitive(section.name, ["Data", "Size", "Velocity", "Movement", "Quotes"]):
+            ## ignore sections which are legal in CNS constant files
+            pass
         else:
             raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.location)
         index += 1

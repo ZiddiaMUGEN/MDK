@@ -1,0 +1,30 @@
+[Files]
+stcommon = common1.cns
+st = UnitTest.st
+cmd = UnitTest.commands
+cns = UnitTest.constants
+sprite = UnitTest.sff
+sound = UnitTest.snd
+anim = UnitTest.air
+
+[Info]
+name = "UnitTest"
+displayname = "MTL Unit Test"
+versiondate = 09,30,2009
+mugenversion = 1.0
+author = "Ziddia"
+pal.defaults = 1,2,3,4
+localcoord = 320,240
+
+[Palette Keymap]
+x = 1
+y = 2
+z = 3
+a = 4
+b = 5
+c = 6
+
+[Arcade]
+intro.storyboard = intro.def
+ending.storyboard = ending.def
+

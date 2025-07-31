@@ -1,16 +1,18 @@
 import argparse
 import traceback
 import os
+import shutil
 
 from mtl import loader, translator, project
 from mtl.utils.compiler import TranslationError
-from mtl.utils.func import find, equals_insensitive
+from mtl.utils.func import find, equals_insensitive, includes_insensitive
 
 from mtl.types.context import *
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='mtlcc', description='Translation tool from MTL templates into CNS character code')
     parser.add_argument('input', help='Path to the DEF file containing the character to translate')
+    parser.add_argument('output', help='Path to the folder to write the resulting character to')
 
     args = parser.parse_args()
     ## note: the spec states that translation of included files should stop at step 3.
@@ -84,8 +86,82 @@ if __name__ == "__main__":
 
         translated = translator.translateContext(loadContext)
 
-        with open(os.path.splitext(args.input)[0] + ".generated.cns", mode="w") as f:
+        ## create output directory
+        if not os.path.exists(args.output):
+            os.makedirs(args.output)
+        ## identify target file
+        target_file = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".st")
+
+        with open(target_file, mode="w") as f:
             f.writelines(s + "\n" for s in translator.createOutput(translated))
+
+        ## emit CNS constants file
+        target_cns = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".constants")
+        with open(target_cns, mode="w") as f:
+            for section in projectContext.constants:
+                if includes_insensitive(section.name, ["Data", "Size", "Velocity", "Movement", "Quotes"]):
+                    f.write(f"[{section.name}]\n")
+
+                    for property in section.properties:
+                        f.write(f"{property.key} = {property.value}\n")
+                    
+                    f.write("\n")
+
+        ## emit CMD file
+        target_cns = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".commands")
+        with open(target_cns, mode="w") as f:
+            for section in projectContext.commands:
+                if includes_insensitive(section.name, ["Command", "Remap", "Defaults"]):
+                    f.write(f"[{section.name}]\n")
+
+                    for property in section.properties:
+                        f.write(f"{property.key} = {property.value}\n")
+                    
+                    f.write("\n")
+            ## the CMD file needs a statedef to load.
+            ## attach a super-invalid one just to get it to load.
+            f.write("[Statedef -111]\n[State -111]\ntype = Null\ntrigger1 = 1")
+
+        ## emit DEF file
+        target_def = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".def")
+        with open(target_def, mode="w") as f:
+            f.write("[Files]\n")
+            ## since we always import a MTL-ready common1, we can use builtin here
+            f.write("stcommon = common1.cns\n")
+            f.write(f"st = {os.path.basename(os.path.splitext(args.input)[0] + '.st')}\n")
+            f.write(f"cmd = {os.path.basename(os.path.splitext(args.input)[0] + '.commands')}\n")
+            f.write(f"cns = {os.path.basename(os.path.splitext(args.input)[0] + '.constants')}\n")
+
+            target_spr =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.spr_file)
+            shutil.copy(projectContext.spr_file, target_spr)
+            f.write(f"sprite = {os.path.basename(projectContext.spr_file)}\n")
+
+            target_snd =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.snd_file)
+            shutil.copy(projectContext.snd_file, target_snd)
+            f.write(f"sound = {os.path.basename(projectContext.snd_file)}\n")
+
+            target_air =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.anim_file)
+            shutil.copy(projectContext.anim_file, target_air)
+            f.write(f"anim = {os.path.basename(projectContext.anim_file)}\n")
+
+            if projectContext.ai_file != None:
+                target_ai =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.ai_file)
+                shutil.copy(projectContext.ai_file, target_ai)
+                f.write(f"ai = {os.path.basename(projectContext.ai_file)}\n")
+            
+            f.write("\n")
+
+            for section in projectContext.contents:
+                if equals_insensitive(section.name, "Files"):
+                    continue
+                    
+                f.write(f"[{section.name}]\n")
+
+                for property in section.properties:
+                    f.write(f"{property.key} = {property.value}\n")
+                
+                f.write("\n")
+
     except TranslationError as exc:
         py_exc = traceback.format_exc().split("\n")[-4].strip()
         print("Translation terminated with an error.")

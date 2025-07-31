@@ -1,7 +1,32 @@
 ; this character does not need to be runnable, it just needs to be convertible into CNS.
 ; the `stcommon` used here will be loaded from stdlib as we are using `common1.mtl`.
+[Info]
+name = "UnitTest"
+displayname = "MTL Unit Test"
+versiondate = 09,30,2009
+mugenversion = 1.0
+author = "Ziddia" 
+pal.defaults = 1,2,3,4
+localcoord = 320,240
+
 [Files]
 cmd      = UnitTest.commands.mtl
 st       = UnitTest.states0.mtl
 st1      = UnitTest.states1.mtl
 stcommon = common1.mtl
+cns      = system/UnitTest.cns
+sprite   = system/UnitTest.sff
+anim     = system/UnitTest.air
+sound    = system/UnitTest.snd
+
+[Palette Keymap]
+x = 1
+y = 2
+z = 3
+a = 4
+b = 5
+c = 6
+
+[Arcade]
+intro.storyboard = intro.def
+ending.storyboard = ending.def
