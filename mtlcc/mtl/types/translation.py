@@ -62,6 +62,10 @@ class VariableExpression(Expression):
     is_float: bool
 
 @dataclass
+class RescopeExpression(Expression):
+    target: 'StateDefinitionScope'
+
+@dataclass
 class TriggerDefinition:
     name: str
     type: TypeDefinition

@@ -303,8 +303,12 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
 
 def createGlobalsTable(ctx: TranslationContext):
     ## initialize the scopes list in ctx based on the scopes of each statedef.
-    ## the SHARED scope should exist even if not used explicitly.
+    ## the SHARED, PLAYER, HELPER, and TARGET scopes will all exist even if not used.
+    ## the HELPER(xx) scopes are created only if they are used.
     ctx.allocations[StateDefinitionScope(StateScopeType.SHARED, None)] = create_table()
+    ctx.allocations[StateDefinitionScope(StateScopeType.PLAYER, None)] = create_table()
+    ctx.allocations[StateDefinitionScope(StateScopeType.HELPER, None)] = create_table()
+    ctx.allocations[StateDefinitionScope(StateScopeType.TARGET, None)] = create_table()
     ## iterate each statedef and create its scope if missing
     for statedef in ctx.statedefs:
         if statedef.scope not in ctx.allocations:
@@ -330,7 +334,7 @@ def createGlobalsTable(ctx: TranslationContext):
                         raise TranslationError(f"State controller sets indexed variable {target_name} which is not currently supported by MTL.", property.location)
                     if not target_name.startswith("trigger") and not target_name in ["type", "persistent", "ignorehitpause"]:
                         target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property.key))
-                        if (prop_type := type_check(property.value, statedef.locals, ctx, expected = target_prop.type if target_prop != None else None)) == None:
+                        if (prop_type := type_check(property.value, statedef.locals, ctx, expected = target_prop.type if target_prop != None else None, scope = statedef.scope)) == None:
                             raise TranslationError(f"Could not identify target type of global {property} from its assignment.", property.location)
                         if len(prop_type) != 1:
                             raise TranslationError(f"Target type of global {property} was a tuple, but globals cannot contain tuples.", property.location)
@@ -380,7 +384,7 @@ def fullPassTypeCheck(ctx: TranslationContext):
                 raise TranslationError(f"Could not find any template or builtin controller with name {controller.name}.", controller.location)
             for group_id in controller.triggers:
                 for trigger in controller.triggers[group_id].triggers:
-                    result_types = type_check(trigger, table, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
+                    result_types = type_check(trigger, table, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)], scope = statedef.scope)
                     if result_types == None or len(result_types) != 1:
                         raise TranslationError(f"Target type of trigger expression was a tuple, but trigger expressions must resolve to bool.", trigger.location)
                     ## for CNS compatibility, we allow any integral type to act as `bool` on a trigger.
@@ -390,7 +394,7 @@ def fullPassTypeCheck(ctx: TranslationContext):
                 ## properties are permitted to be tuples. we need to ensure the specifiers match the expectation for this property.
                 ## only type-check expected props.
                 if (target_prop := find(target_template.params, lambda k: equals_insensitive(k.name, property.key))) != None:
-                    if (result_type := type_check(property.value, table, ctx, expected = target_prop.type)) == None:
+                    if (result_type := type_check(property.value, table, ctx, expected = target_prop.type, scope = statedef.scope)) == None:
                         raise TranslationError(f"Target type of template parameter {property} could not be resolved to a type.", property.location)
                     match_tuple(result_type, target_prop, ctx, property.location)
 
@@ -408,9 +412,9 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
         for controller in statedef.states:
             for group_index in controller.triggers:
                 for trigger in controller.triggers[group_index].triggers:
-                    replaced = replaced or replace_triggers(trigger, table, ctx)
+                    replaced = replaced or replace_triggers(trigger, table, ctx, scope = statedef.scope)
             for property in controller.properties:
-                replaced = replaced or replace_triggers(property.value, table, ctx)
+                replaced = replaced or replace_triggers(property.value, table, ctx, scope = statedef.scope)
 
     ## recurse if any replacements were made.
     if replaced:

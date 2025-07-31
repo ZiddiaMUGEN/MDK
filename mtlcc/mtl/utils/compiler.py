@@ -38,7 +38,7 @@ def find_property(property: str, controller: StateController) -> list[StateContr
     return list(filter(lambda k: equals_insensitive(property, k.key), controller.properties))
 
 ## this checks EACH possible match and identifies which can potentially match the input trigger.
-def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location) -> list[TriggerDefinition]:
+def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location, scope: Optional[StateDefinitionScope] = None) -> list[TriggerDefinition]:
     results: list[TriggerDefinition] = []
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     for match in all_matches:
@@ -53,7 +53,7 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
             next_expected = [TypeSpecifier(match.params[index].type)]
             ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
             try:
-                if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected)) == None:
+                if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope)) == None:
                     is_match = False
                     break
             except TranslationError:
@@ -157,7 +157,7 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
     if t1.name == "float" and t2.name == "int":
         ## in a lot of builtin cases an alternative to convert `int` to `float` will be taken. so just warn and return None.
         ## if no alternative exists an error will be emitted anyway.
-        #if not no_warn: print(f"Warning at {os.path.realpath(loc.filename)}:{loc.line}: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
+        if not no_warn: print(f"Warning at {os.path.realpath(loc.filename)}:{loc.line}: Conversion from float to int may result in loss of precision. If this is intended, use functions like ceil or floor to convert, or explicitly cast one side of the expression.")
         return None
     
     ## smaller builtin types can implicitly convert to wider ones (`bool`->`byte`->`short`->`int`)
@@ -257,7 +257,7 @@ def replace_expression(controller: StateController, old: TriggerTree, new: Trigg
     for property in controller.properties:
         replace_recursive(property.value, old, new)
 
-def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> bool:
+def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, scope: Optional[StateDefinitionScope] = None) -> bool:
     replaced = False
 
     if tree.node == TriggerTreeNode.ATOM:
@@ -274,7 +274,7 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
-        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope)
         if len(matches) == 0:
             ## if no match exists, the trigger does not exist.
             raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator}.", tree.location)
@@ -299,7 +299,7 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
             replaced = True
 
     for child in tree.children:
-        replaced = replaced or replace_triggers(child, table, ctx)
+        replaced = replaced or replace_triggers(child, table, ctx, scope = scope)
 
     return replaced
 
@@ -332,7 +332,7 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], scope: StateDef
 
         ## only include if the LHS does not match a known local
         if find(locals, lambda k: equals_insensitive(k.name, tree.children[0].operator)) == None:
-            target_type = type_check(tree.children[1], locals, ctx)
+            target_type = type_check(tree.children[1], locals, ctx, scope = scope)
             if target_type == None or len(target_type) == 0:
                 raise TranslationError(f"Could not identify target type of global {tree.children[0].operator} from its assignment.", tree.location)
             if len(target_type) != 1:
@@ -393,7 +393,7 @@ def match_enum(input: str, enum: TypeDefinition) -> Optional[list[TypeSpecifier]
     return None
     
 
-def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None) -> Optional[list[TypeSpecifier]]:
+def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> Optional[list[TypeSpecifier]]:
     ## runs a type check against a single tree. this assesses that the types of the components used in the tree
     ## are correct and any operators used in the tree are valid.
     ## this returns a list of Specifiers because the tree can potentially have multiple results (e.g. for multivalues)
@@ -426,7 +426,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         inputs: list[TypeDefinition] = []
         for child in tree.children:
             # if any child fails type checking, bubble that up
-            if (child_type := type_check(child, table, ctx)) == None:
+            if (child_type := type_check(child, table, ctx, scope = scope)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
@@ -454,7 +454,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
             else:
                 next_expected = None
 
-            if (child_type := type_check(child, table, ctx, next_expected)) == None:
+            if (child_type := type_check(child, table, ctx, next_expected, scope = scope)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from multivalued operator.", tree.location)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
@@ -465,7 +465,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## determine the widened type match and return that as the type of the interval.
         specs: list[TypeSpecifier] = []
         for child in tree.children:
-            if (child_type := type_check(child, table, ctx, expected = [TypeSpecifier(BUILTIN_FLOAT)])) == None:
+            if (child_type := type_check(child, table, ctx, expected = [TypeSpecifier(BUILTIN_FLOAT)], scope = scope)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from interval operator.", tree.location)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
@@ -482,7 +482,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
 
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
-        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope)
         if len(matches) == 0:
             ## if no match exists, the trigger does not exist.
             raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator}.", tree.location)
@@ -498,10 +498,22 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         return [TypeSpecifier(struct_type)]
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects will always have the redirect target as child 1, and the redirect expression as child 2.
-        if (exprn := type_check(tree.children[1], table, ctx)) == None:
-            raise TranslationError(f"Could not determine the type of the redirected expression.", tree.location)
-        if (target := type_check(tree.children[0], table, ctx)) == None or target[0].type != BUILTIN_TARGET:
+        if (target := type_check(tree.children[0], table, ctx, scope = scope)) == None or target[0].type != BUILTIN_TARGET:
             raise TranslationError(f"Target of redirected expression could not be resolved to a target type.", tree.location)
+        if equals_insensitive(tree.children[0].operator, "rescope") and scope != None:
+            ## rescope needs special handling in type-checking.
+            ## the target scope is really `children[0].children[1]`.
+            target_node = tree.children[0].children[1]
+            target_scope = get_redirect_scope(target_node, scope)
+            target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
+        elif scope != None:
+            target_scope = get_redirect_scope(tree.children[0], scope)
+            target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
+        else:
+            target_scope = None
+            target_table = []
+        if (exprn := type_check(tree.children[1], target_table, ctx, scope = target_scope)) == None:
+            raise TranslationError(f"Could not determine the type of the redirected expression.", tree.location)
         return exprn
     
     ## fallback which should never be reachable!

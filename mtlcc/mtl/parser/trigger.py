@@ -5,8 +5,6 @@ from lark.tree import Tree
 from mtl.types.trigger import TriggerTree, TriggerTreeNode
 from mtl.types.shared import Location, TranslationError
 
-import copy
-
 trigger_grammar = Lark(
     """
     start: unary (COMMA unary)*
@@ -64,6 +62,7 @@ trigger_grammar = Lark(
         | "enemy"i
         | "enemyNear"i
         | "playerID"i
+        | "rescope"i
 
     UNARY_OP: "!" | "~" | "-"
     EXP_OP: "**"
@@ -100,6 +99,24 @@ def recursiveReverse(tree: TriggerTree):
     tree.children.reverse()
     for child in tree.children:
         recursiveReverse(child)
+
+def fixRescope(tree: TriggerTree):
+    ## arguments to `rescope` will most likely be messed up.
+    ## `rescope(source, target)` generates a REDIRECT from source to target
+    if tree.node == TriggerTreeNode.FUNCTION_CALL and tree.operator.lower() == "rescope":
+        new_children: list[TriggerTree] = []
+
+        for child in tree.children:
+            if child.node == TriggerTreeNode.REDIRECT:
+                for subchild in child.children:
+                    new_children.append(subchild)
+            else:
+                new_children.append(child)
+
+        tree.children = new_children
+    else:
+        for child in tree.children:
+            fixRescope(child)
 
 def fixMultivaluedTriggers(tree: TriggerTree):
     ## these triggers accept multi-valued input:
@@ -147,6 +164,7 @@ def parseTrigger(line: str, location: Location) -> TriggerTree:
         result = flattened.stack[0]
         recursiveReverse(result)
         fixMultivaluedTriggers(result)
+        fixRescope(result)
         return result
     except TranslationError as te:
         raise te

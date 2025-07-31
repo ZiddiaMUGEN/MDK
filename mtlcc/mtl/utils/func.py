@@ -11,6 +11,7 @@ import string
 from mtl.types.shared import *
 from mtl.types.context import *
 from mtl.types.translation import *
+from mtl.types.trigger import TriggerTree, TriggerTreeNode
 from mtl.types.builtins import BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_STRING, BUILTIN_CINT, BUILTIN_CHAR
 
 def generate_random_string(length: int):
@@ -129,3 +130,77 @@ def scopes_compatible(s1: StateDefinitionScope, s2: StateDefinitionScope) -> boo
         return True
     
     return False
+
+def get_redirect_scope(tree: TriggerTree, current: StateDefinitionScope) -> StateDefinitionScope:
+    ## tree will be either ATOM or FUNCTION_CALL
+    ## we receive current here so we can try and determine the parent/target/etc scope.
+    if tree.node == TriggerTreeNode.ATOM:
+        ## this will be one of the known trigger expressions.
+        if equals_insensitive(tree.operator, "root"):
+            ## root will always target the player, unless current scope is TARGET.
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+            return StateDefinitionScope(StateScopeType.PLAYER, None)
+        elif equals_insensitive(tree.operator, "helper"):
+            ## helper must use the generic helper scope as we don't have any more context, unless current scope is TARGET.
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+            return StateDefinitionScope(StateScopeType.HELPER, None)
+        elif equals_insensitive(tree.operator, "parent"):
+            ## TODO: we need to actually determine the parent if possible.
+            ## for now assume parent is not knowable and use SHARED, unless current scope is TARGET.
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+            return StateDefinitionScope(StateScopeType.SHARED, None)
+        elif equals_insensitive(tree.operator, "target"):
+            ## target will always use target scope
+            ## this would behave weird if you have p2 in a custom state (current scope = target) and use its target redirect.
+            ## i think it's a difficult edge case to handle.
+            return StateDefinitionScope(StateScopeType.TARGET, None)
+        elif equals_insensitive(tree.operator, "partner"):
+            ## we don't really support a partner scope, just return shared here.
+            ## trying to access partner variables is questionable here anyway.
+            ## if current scope is TARGET, then the partner is also TARGET.
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+            return StateDefinitionScope(StateScopeType.SHARED, None)
+        elif equals_insensitive(tree.operator, "enemy") or equals_insensitive(tree.operator, "enemyNear"):
+            ## this will return TARGET, UNLESS the current scope is TARGET, in which case it returns PLAYER.
+            ## (because if current scope is TARGET, it means the execution is coming from a custom state,
+            ##  and `enemy` is really referring to our player...)
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.PLAYER, None)
+            else:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+    elif tree.node == TriggerTreeNode.FUNCTION_CALL:
+        ## this will be one of the trigger functions, need to determine if we care about the expression or not.
+        if equals_insensitive(tree.operator, "target"):
+            ## target will always use target scope.
+            ## this would behave weird if you have p2 in a custom state (current scope = target) and use its target redirect.
+            ## i think it's a difficult edge case to handle.
+            return StateDefinitionScope(StateScopeType.TARGET, None)
+        elif equals_insensitive(tree.operator, "enemy") or equals_insensitive(tree.operator, "enemyNear"):
+            ## this will return TARGET, UNLESS the current scope is TARGET, in which case it returns PLAYER.
+            ## (because if current scope is TARGET, it means the execution is coming from a custom state,
+            ##  and `enemy` is really referring to our player...)
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.PLAYER, None)
+            else:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+        elif equals_insensitive(tree.operator, "playerID"):
+            ## it's impossible to tell from this trigger which character the redirect targets.
+            ## i think it is reasonable to expect developers to use a builtin trigger to 'fix' the scoping.
+            return StateDefinitionScope(StateScopeType.SHARED, None)
+        elif equals_insensitive(tree.operator, "helper"):
+            ## for Helper we need to determine the ID being targeted, if possible.
+            ## if it can't be identified (e.g. if the input is an expression), set it to generic Helper scope instead.
+            if current.type == StateScopeType.TARGET:
+                return StateDefinitionScope(StateScopeType.TARGET, None)
+            exprn = tree.children[0]
+            if exprn.node == TriggerTreeNode.MULTIVALUE and len(exprn.children) == 1:
+                exprn = exprn.children[0]
+            if exprn.node == TriggerTreeNode.ATOM and (ival := tryparse(exprn.operator, int)) != None:
+                return StateDefinitionScope(StateScopeType.HELPER, ival)
+            return StateDefinitionScope(StateScopeType.HELPER, None)
+
+    raise TranslationError(f"Could not determine the target of redirect expression.", tree.location)

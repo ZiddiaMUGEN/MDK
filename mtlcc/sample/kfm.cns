@@ -22,6 +22,7 @@ trigger1 = Alive
 trigger2 = StateNo = 5050
 trigger2 = enemy,time = 0
 trigger3 = enemy(0),time = 0
+trigger4 = rescope(parent, helper(1)),myHelperVar = 1
 myTestParam = 1
 ignorehitpause = true
 persistent = 4
@@ -89,7 +90,7 @@ scope = helper
 [State 191, 1] ;Freeze animation until PreIntro is over
 type = ChangeAnim
 trigger1 = RoundState = 0
-trigger1 = myGenericHelperVar := 2
+trigger1 = myGenericHelperVar := true
 value = 190
 
 [State 191, 2] ;Assert this until you want "round 1, fight" to begin

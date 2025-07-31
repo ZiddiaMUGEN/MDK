@@ -57,7 +57,7 @@ def write_statedef(statedef: StateDefinition, ctx: TranslationContext) -> list[s
 
     table = statedef.locals + ctx.globals
     for controller in statedef.states:
-        output += write_state_controller(controller, table, ctx)
+        output += write_state_controller(controller, table, statedef.scope, ctx)
 
     output.append("")
 
@@ -80,7 +80,7 @@ def emit_enum(input: str, type: TypeDefinition) -> str:
 
 ## this function handles converting trees to Expressions.
 ## it also handles type-checking, the types in the Expressions are concrete.
-def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None) -> Expression:
+def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> Expression:
     if tree.node == TriggerTreeNode.MULTIVALUE:
         ## multivalue, this kind of sucks but it should only come up at top level.
         ## express as a combined expression with type BUILTIN_ANY
@@ -98,14 +98,14 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             else:
                 next_expected = None
 
-            children.append(emit_trigger_recursive(child, table, ctx, expected = next_expected))
+            children.append(emit_trigger_recursive(child, table, ctx, expected = next_expected, scope = scope))
 
         return Expression(BUILTIN_ANY, ", ".join([e.value for e in children]))
     elif tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
         ## resolve child types.
         children: list[Expression] = []
         for child in tree.children:
-            children.append(emit_trigger_recursive(child, table, ctx))
+            children.append(emit_trigger_recursive(child, table, ctx, scope = scope))
         ## find an operator trigger for the types.
         if (match := find_trigger(f"operator{tree.operator}", [e.type for e in children], ctx, tree.location)) == None:
             raise TranslationError(f"Could not find a matching operator {tree.operator} for types {', '.join([e.type.name for e in children])}", tree.location)
@@ -125,14 +125,14 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         ## interval, construct an expression and return the widest match between the children.
         children: list[Expression] = []
         for child in tree.children:
-            children.append(emit_trigger_recursive(child, table, ctx))
+            children.append(emit_trigger_recursive(child, table, ctx, scope = scope))
         if (widest := get_widest_match(children[0].type, children[1].type, ctx, tree.location)) == None:
             raise TranslationError(f"Could not match types between {children[0].type} and {children[1].type} in interval operator.", tree.location)
         return Expression(widest, f"{tree.operator[0]}{children[0].value}, {children[1].value}{tree.operator[1]}")
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
         ## function call, need to fuzzy-match the right trigger overload
         ## and then either call the const evaluator or emit the result.
-        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope)
         if len(matches) != 1:
             raise TranslationError(f"Failed to identify a single trigger overload for trigger {tree.operator}.", tree.location)
         ## emit each child with the expected type from the matched overload
@@ -149,7 +149,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             else:
                 next_expected = None
 
-            children.append(emit_trigger_recursive(child, table, ctx, expected = next_expected))
+            children.append(emit_trigger_recursive(child, table, ctx, expected = next_expected, scope = scope))
         
         ## if the matched trigger has a const evaluator, return it
         if match.const != None:
@@ -165,7 +165,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             return Expression(parsed.type, make_prop(parsed.value))
         elif find_trigger(tree.operator, [], ctx, tree.location) != None:
             ## if a trigger name matches, and the trigger has an overload which takes no parameters, accept it.
-            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.operator, [], tree.location), table, ctx, expected)
+            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.FUNCTION_CALL, tree.operator, [], tree.location), table, ctx, expected, scope = scope)
         elif (var := find(table, lambda k: equals_insensitive(k.name, tree.operator))) != None:
             ## if a variable name from the provided variable table matches, accept it and respond with VariableExpression
             ## the value of the VariableExpression is the access-masked expression.
@@ -207,22 +207,35 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects consist of a LHS redirect target and a RHS redirect expression.
         ## the overall expression is just <target>,<expression>.
-        target = emit_trigger_recursive(tree.children[0], table, ctx)
+        target = emit_trigger_recursive(tree.children[0], table, ctx, scope = scope)
         if target.type != BUILTIN_TARGET:
             raise TranslationError(f"Target {target.value} of redirected expression could not be resolved to a target type.", tree.location)
         
-        exprn = emit_trigger_recursive(tree.children[1], table, ctx)
+        ## determine the scope of the redirect target
+        ## this informs how the redirect expression needs to be translated as it can't use the source scopes.
+        if scope == None:
+            scope = StateDefinitionScope(StateScopeType.SHARED, None)
+        ## if `target` is a RescopeExpression, we can skip this and use the scope output there
+        if isinstance(target, RescopeExpression):
+            target_scope = target.target
+        else:
+            target_scope = get_redirect_scope(tree.children[0], scope)
+        
+        ## we need to pass the global table for the target scope when resolving target expression.
+        target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
+        exprn = emit_trigger_recursive(tree.children[1], target_table, ctx, scope = target_scope)
+        ## somehow need to mask if the result expression is a variable access
         if target.value.startswith("(") and target.value.endswith(")"):
             target.value = target.value[1:-1]
         return Expression(exprn.type, f"({target.value},{exprn.value})")
 
     raise TranslationError(f"Failed to emit a single trigger value.", tree.location)
 
-def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None) -> str:
+def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> str:
     debug = debuginfo(DebugCategory.LOCATION, tree.location)[0]
-    return f"{emit_trigger_recursive(tree, table, ctx, expected).value}{debug}"
+    return f"{emit_trigger_recursive(tree, table, ctx, expected, scope).value}{debug}"
 
-def write_state_controller(controller: StateController, table: list[TypeParameter], ctx: TranslationContext) -> list[str]:
+def write_state_controller(controller: StateController, table: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[str]:
     output: list[str] = []
 
     output.append(f"[State ]{debuginfo(DebugCategory.LOCATION, controller.location)[0]}")
@@ -236,7 +249,7 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
     for group_index in controller.triggers:
         group_name = "triggerall" if group_index == 0 else f"trigger{group_index}"
         for trigger in controller.triggers[group_index].triggers:
-            trigger_text = emit_trigger(trigger, table, ctx)
+            trigger_text = emit_trigger(trigger, table, ctx, scope = scope)
             output.append(f"{group_name} = {trigger_text}")
     
     for property in controller.properties:
@@ -245,7 +258,7 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
         else:
             expected = prop.type
         prop_key = property.key
-        property_text = emit_trigger(property.value, table, ctx, expected = expected)
+        property_text = emit_trigger(property.value, table, ctx, expected = expected, scope = scope)
         ## if this is VarSet or VarAdd, any properties (which are not ignorehitpause/persistent)
         ## are actually variable assignments.
         ## convert the LHS into the variable name, and the RHS into an assignment-masked expression.

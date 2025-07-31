@@ -3,6 +3,7 @@ from mtl.types.translation import *
 from mtl.types.shared import TranslationError
 from mtl.types.builtins import *
 from mtl.utils.compiler import find_type, get_widest_match, compiler_internal
+from mtl.utils.func import tryparse
 from mtl.writer import emit_enum
 
 from ctypes import c_int32
@@ -253,6 +254,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("asint", BUILTIN_INT, builtin_asint, [TypeParameter("expr", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
         #TriggerDefinition("asenum", BUILTIN_ANY, builtin_asenum, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
         #TriggerDefinition("asflag", BUILTIN_ANY, builtin_asflag, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        TriggerDefinition("rescope", BUILTIN_TARGET, builtin_rescope, [TypeParameter("expr", BUILTIN_TARGET), TypeParameter("sc", BUILTIN_TARGET)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN)
     ]
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
@@ -275,6 +277,22 @@ def builtin_sizeof(exprs: list[Expression], ctx: TranslationContext) -> Expressi
 
 def builtin_asint(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(BUILTIN_INT, emit_enum(exprs[0].value, exprs[0].type))
+
+def builtin_rescope(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    target_scope = StateDefinitionScope(StateScopeType.SHARED, None)
+    if exprs[1].value.startswith("(") and exprs[1].value.endswith(")"):
+        exprs[1].value = exprs[1].value[1:-1]
+    if exprs[1].value == "root":
+        target_scope.type = StateScopeType.PLAYER
+    elif exprs[1].value == "helper":
+        target_scope.type = StateScopeType.HELPER
+    elif exprs[1].value == "target":
+        target_scope.type = StateScopeType.TARGET
+    if exprs[1].value.lower().startswith("helper") and "(" in exprs[1].value:
+        if (ival := tryparse(exprs[1].value.split("(")[1].split(")")[0], int)) != None:
+            target_scope.target = ival
+        target_scope.type = StateScopeType.HELPER
+    return RescopeExpression(BUILTIN_TARGET, f"{exprs[0].value}", target_scope)
 
 def builtin_not(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(BUILTIN_BOOL, f"(!{exprs[0].value})")

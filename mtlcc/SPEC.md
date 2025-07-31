@@ -266,3 +266,20 @@ local = attackType = int(0)
 ```
 
 MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the state is recursive or re-entered, the variable WILL be re-initialized.
+
+### 10. Constant Triggers
+
+List of const triggers implemented by MTL but not described in MDK spec.
+
+#### rescope(t: target, n: target) -> target
+
+The compiler will treat a redirect using `rescope` as if it originated from `n` but will emit it as coming from `t` instead.
+
+For example, `rescope(parent, helper(123)),myVariable` will use the global variable table for `helper(123)` to resolve `myVariable`, but emit the expression `parent,var(xx)` instead.
+
+This is mostly useful to disambiguate scopes for parents and targets. Some examples:
+
+- I have Helper(1) which created Helper(2), by default using `parent,` in Helper(2) states will reference shared scope instead of Helper(1) scope. I can `rescope(parent, helper(1))` to access the real parent scope.
+- I have a scenario where my helper holds a `target` on a teammate. If i use `target,` I will get target scope by default, but if I know the target is e.g. my root, I can use `rescope(target, root)` to use the `root` scope.
+
+Currently `rescope` can only support values of `helper`, `target`, `root`, and `helper(xx)` as values of `n`.
