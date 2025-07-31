@@ -22,7 +22,7 @@ trigger1 = Alive
 trigger2 = StateNo = 5050
 trigger2 = enemy,time = 0
 trigger3 = enemy(0),time = 0
-trigger4 = rescope(parent, helper(1)),myHelperVar = 1
+trigger4 = rescope(parent, helper(1)),myGenericHelperVar = 1
 myTestParam = 1
 ignorehitpause = true
 persistent = 4

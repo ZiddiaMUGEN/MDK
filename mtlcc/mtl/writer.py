@@ -224,9 +224,13 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         ## we need to pass the global table for the target scope when resolving target expression.
         target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
         exprn = emit_trigger_recursive(tree.children[1], target_table, ctx, scope = target_scope)
-        ## somehow need to mask if the result expression is a variable access
         if target.value.startswith("(") and target.value.endswith(")"):
             target.value = target.value[1:-1]
+        ## need to wrap with brackets if the result expression is a variable access
+        ## (since the result may be masked)
+        ## but we can just wrap everything, it should be safe...
+        if exprn.value.startswith("(") and exprn.value.endswith(")"):
+            exprn.value = exprn.value[1:-1]
         return Expression(exprn.type, f"({target.value},{exprn.value})")
 
     raise TranslationError(f"Failed to emit a single trigger value.", tree.location)
