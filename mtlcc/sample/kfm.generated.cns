@@ -41,8 +41,6 @@
 ;!mtl-debug-next 2 32
 ;!mtl-debug-next 3 32
 ;!mtl-debug-next 4 32
-;!mtl-debug VARIABLE_ALLOCATION myHelperVar int /home/jsmith/MDK/mtlcc/sample/kfm.cns:58
-;!mtl-debug-next 3 0 var(3)
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:18
 ;!mtl-debug-next 0 0 var(0)
 ;!mtl-debug VARIABLE_ALLOCATION isHoldingForward bool /home/jsmith/MDK/mtlcc/sample/kfm.cns:19
@@ -54,6 +52,8 @@
 ;!mtl-debug VARIABLE_ALLOCATION mySecondGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:40
 ;!mtl-debug-next 2 0 var(2)
 ;!mtl-debug VARIABLE_ALLOCATION myGenericHelperVar int /home/jsmith/MDK/mtlcc/sample/kfm.cns:92
+;!mtl-debug-next 3 0 var(3)
+;!mtl-debug VARIABLE_ALLOCATION myHelperVar int /home/jsmith/MDK/mtlcc/sample/kfm.cns:58
 ;!mtl-debug-next 4 0 var(4)
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER 1 40
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER None 60
@@ -61,8 +61,6 @@
 ;!mtl-debug-next 1 24
 ;!mtl-debug-next 2 32
 ;!mtl-debug-next 3 32
-;!mtl-debug VARIABLE_ALLOCATION myGenericHelperVar int /home/jsmith/MDK/mtlcc/sample/kfm.cns:92
-;!mtl-debug-next 3 0 var(3)
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:18
 ;!mtl-debug-next 0 0 var(0)
 ;!mtl-debug VARIABLE_ALLOCATION isHoldingForward bool /home/jsmith/MDK/mtlcc/sample/kfm.cns:19
@@ -73,12 +71,14 @@
 ;!mtl-debug-next 1 16 var(1) & 16711680
 ;!mtl-debug VARIABLE_ALLOCATION mySecondGlobal int /home/jsmith/MDK/mtlcc/sample/kfm.cns:40
 ;!mtl-debug-next 2 0 var(2)
+;!mtl-debug VARIABLE_ALLOCATION myGenericHelperVar int /home/jsmith/MDK/mtlcc/sample/kfm.cns:92
+;!mtl-debug-next 3 0 var(3)
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER None 40
 ;!mtl-debug VARIABLE_TABLE StateScopeType.TARGET None 60
 ;!mtl-debug VARIABLE_TABLE StateScopeType.TARGET None 40
 
 [Statedef 170];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:4
-;!mtl-debug VARIABLE_ALLOCATION d23c0g8w_myTestVar int /home/jsmith/MDK/mtlcc:0
+;!mtl-debug VARIABLE_ALLOCATION fjsgdzt1_myTestVar int /home/jsmith/MDK/mtlcc:0
 ;!mtl-debug-next 3 0 var(3)
 type = S
 anim = 170
@@ -121,7 +121,7 @@ type = S
 [State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:55
 type = ChangeState
 trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:57
-trigger1 = (var(3) := 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:58
+trigger1 = (var(4) := 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:58
 triggerall = (((var(5)) := (((var(1)) & (-16777216)) / 16777216)) || 1);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:60
 value = 181;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:59
 

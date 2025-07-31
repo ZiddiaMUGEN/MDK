@@ -302,6 +302,14 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
     if iterations == 0: print("Successfully completed template replacement.")
 
 def createGlobalsTable(ctx: TranslationContext):
+    ## initialize the scopes list in ctx based on the scopes of each statedef.
+    ## the SHARED scope should exist even if not used explicitly.
+    ctx.allocations[StateDefinitionScope(StateScopeType.SHARED, None)] = create_table()
+    ## iterate each statedef and create its scope if missing
+    for statedef in ctx.statedefs:
+        if statedef.scope not in ctx.allocations:
+            ctx.allocations[statedef.scope] = create_table()
+
     ## iterate all translated statedefs and identify global assignments
     global_list: list[TypeParameter] = []
     for statedef in ctx.statedefs:
@@ -340,7 +348,29 @@ def createGlobalsTable(ctx: TranslationContext):
             raise TranslationError(f"Global parameter {param.name} previously defined as {exist.type.name} but redefined as incompatible type {param.type.name}.", param.location)
         exist.type = wider
 
-    ctx.globals = result
+    ## now generate additional global entries for each sub-scope.
+    result_scoped: list[TypeParameter] = []
+    ## 1. any globals with SHARED scope need to be copied to HELPER, PLAYER, HELPER(xx) scopes
+    for g in list(filter(lambda k: k.scope.type == StateScopeType.SHARED, result)):
+        result_scoped.append(g)
+        for scope in ctx.allocations:
+            if scope.type in [StateScopeType.PLAYER, StateScopeType.HELPER]:
+                g_ = copy.deepcopy(g)
+                g_.scope = scope
+                result_scoped.append(g_)
+    ## 2. any globals with HELPER scope need to be copied to HELPER(xx) scopes
+    for g in list(filter(lambda k: k.scope.type == StateScopeType.HELPER and k.scope.target == None, result)):
+        result_scoped.append(g)
+        for scope in ctx.allocations:
+            if scope.type == StateScopeType.HELPER and scope.target != None:
+                g_ = copy.deepcopy(g)
+                g_.scope = scope
+                result_scoped.append(g_)
+    ## 3. any globals with TARGET, PLAYER, HELPER(xx) scope are good as-is
+    for g in list(filter(lambda k: k.scope.type in [StateScopeType.TARGET, StateScopeType.PLAYER] or (k.scope.type == StateScopeType.HELPER and k.scope.target != None), result)):
+        result_scoped.append(g)
+
+    ctx.globals = result_scoped
 
 def fullPassTypeCheck(ctx: TranslationContext):
     for statedef in ctx.statedefs:
@@ -391,20 +421,9 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
 def assignVariables(ctx: TranslationContext):
     ## assign locations for each global variable.
 
-    ## first initialize ALL possible allocation tables.
-    for global_variable in ctx.globals:
-        if global_variable.scope not in ctx.allocations:
-            ctx.allocations[global_variable.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
-    for statedef in ctx.statedefs:
-        for local_variable in statedef.locals:
-            if local_variable.scope not in ctx.allocations:
-                ctx.allocations[local_variable.scope] = (AllocationTable({}, 60), AllocationTable({}, 40))
-
     ## allocate for every global first
-    new_globals: list[TypeParameter] = []
     for global_variable in ctx.globals:
-        new_globals += allocate_all_scopes(global_variable, ctx)
-    ctx.globals += new_globals
+        create_allocation(global_variable, ctx)
 
     ## for each statedef, assign locations for each local variable.
     ## because these are local allocations, we store a copy of the allocation tables
@@ -412,7 +431,7 @@ def assignVariables(ctx: TranslationContext):
     for statedef in ctx.statedefs:
         allocation_tables = copy.deepcopy(ctx.allocations)
         for local_variable in statedef.locals:
-            allocate_all_scopes(local_variable, ctx)
+            create_allocation(local_variable, ctx)
         ctx.allocations = allocation_tables
 
 def applyPersist(ctx: TranslationContext):
