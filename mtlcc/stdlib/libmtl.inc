@@ -1,18 +1,7 @@
 ;; Standard include file for MTL. This is used by mtlcc to build CNS files.
 ;; libmtl.inc is included by default by mtlcc.
-;; We try to put as many definitions as we can in this file. However there are many built-ins which are exposed in `mtl/builtins.py` instead.
-
-;;;;; Fundamental Type Definitions
-;; The int, float, short, byte, char, and bool types are built-in. Some aliases and unions are defined here.
-[Define Type]
-name = bool8
-type = alias
-source = byte
-
-[Define Type]
-name = HitString
-type = alias
-source = HitType,HitAttr...?
+;; there are many built-ins which are exposed in `mtl/builtins.py` instead.
+;; This file is mostly for useful functions and operators which we want to make available in MTL.
 
 ;;;;; Fundamental Type Conversion
 ;; Specific conversions between fundamental types receive trigger definitions.
@@ -23,17 +12,3 @@ value = !!input
 
 [Define Parameters]
 input = int
-
-;;;;; Reflection Const Triggers
-;; These provide access into compiler state and type information.
-;[Define Trigger]
-[Define Template]
-name = testTemplate
-local = myTestVar = int
-
-[Define Parameters]
-myTestParam = float
-
-[State ]
-type = Null
-trigger1 = myTestParam * myTestVar + 5

@@ -2,7 +2,7 @@ from mtl.types.context import TranslationContext
 from mtl.types.translation import *
 from mtl.types.shared import TranslationError
 from mtl.types.builtins import *
-from mtl.utils.compiler import find_type, get_widest_match, compiler_internal
+from mtl.utils.compiler import find_type, find_statedef, get_widest_match, compiler_internal
 from mtl.utils.func import tryparse
 from mtl.writer import emit_enum
 
@@ -62,7 +62,8 @@ def getBaseTypes() -> list[TypeDefinition]:
 def getBaseTriggers() -> list[TriggerDefinition]:
     return [
         ## MUGEN trigger functions
-        TriggerDefinition("abs", BUILTIN_NUMERIC, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("abs", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("abs", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("acos", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("AiLevel", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("Alive", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -140,7 +141,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("P2Dist", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("P2Life", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("P2Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("P2StateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("P2StateNo", BUILTIN_STATE, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("P3Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("P4Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("PalNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -150,7 +151,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("Power", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("PowerMax", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("PlayerIDExist", BUILTIN_BOOL, None, [TypeParameter("ID_number", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("PrevStateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("PrevStateNo", BUILTIN_STATE, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("ProjCancelTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("ProjCancelTime", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("ProjContactTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -167,7 +168,8 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("ScreenPos", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("SelfAnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("sin", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("StateNo", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("StateNo", BUILTIN_STATE, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("StateType", BUILTIN_STATETYPE, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("StageVar", BUILTIN_STRING, None, [TypeParameter("param_name", BUILTIN_STAGEVAR)], None, Location("mtl/builtins.py", line_number())),
         TriggerDefinition("sysfvar", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("sysvar", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -222,6 +224,10 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        ## TODO: REMOVE THIS WHEN YOU CAN IMPLEMENT INTO libmtl
+        ## `tostateno(s1) = tostateno(s2)`
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STATE), TypeParameter("expr2", BUILTIN_STATE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
+        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STATETYPE), TypeParameter("expr2", BUILTIN_STATETYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
@@ -256,7 +262,8 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("asint", BUILTIN_INT, builtin_asint, [TypeParameter("expr", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
         #TriggerDefinition("asenum", BUILTIN_ANY, builtin_asenum, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
         #TriggerDefinition("asflag", BUILTIN_ANY, builtin_asflag, [TypeParameter("i", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
-        TriggerDefinition("rescope", BUILTIN_TARGET, builtin_rescope, [TypeParameter("expr", BUILTIN_TARGET), TypeParameter("sc", BUILTIN_TARGET)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN)
+        TriggerDefinition("rescope", BUILTIN_TARGET, builtin_rescope, [TypeParameter("expr", BUILTIN_TARGET), TypeParameter("sc", BUILTIN_TARGET)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
+        TriggerDefinition("tostateno", BUILTIN_INT, builtin_tostateno, [TypeParameter("expr", BUILTIN_STATE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
     ]
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
@@ -279,6 +286,11 @@ def builtin_sizeof(exprs: list[Expression], ctx: TranslationContext) -> Expressi
 
 def builtin_asint(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     return Expression(BUILTIN_INT, emit_enum(exprs[0].value, exprs[0].type))
+
+def builtin_tostateno(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if (state := find_statedef(exprs[0].value, ctx)) == None or state.parameters.id == None:
+        raise TranslationError(f"Could not find any state definition with name {exprs[0].value}.", Location("mtl/builtins.py", line_number()))
+    return Expression(BUILTIN_INT, str(state.parameters.id))
 
 def builtin_rescope(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     target_scope = StateDefinitionScope(StateScopeType.SHARED, None)

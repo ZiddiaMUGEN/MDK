@@ -430,9 +430,19 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## unary and binary operators will have an `operator` trigger which describes the inputs and outputs.
         ## first determine the type of each input.
         inputs: list[TypeDefinition] = []
+        ## test the types of each input to see if either side is an enum or flag.
+        ## then we can pass the type to the other child to allow for specifier-less enums.
+        maybe_expected: Optional[list[TypeSpecifier]] = None
+        for child in tree.children:
+            try:
+                if (child_type := type_check(child, table, ctx, scope = scope)) != None:
+                    if len(child_type) == 1 and child_type[0].type.category in [TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.FLAG, TypeCategory.STRING_FLAG]:
+                        maybe_expected = child_type
+            except TranslationError:
+                continue
         for child in tree.children:
             # if any child fails type checking, bubble that up
-            if (child_type := type_check(child, table, ctx, scope = scope)) == None:
+            if (child_type := type_check(child, table, ctx, scope = scope, expected = maybe_expected)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
@@ -537,7 +547,7 @@ def match_tuple(source: list[TypeSpecifier], target: TemplateParameter, ctx: Tra
             raise TranslationError(f"Failed to match type: input type has more members, but target type {target.name} has no repeated member.", loc)
         target_type = target.type[index] if index < len(target.type) else target.type[-1]
         if get_type_match(source_type.type, target_type.type, ctx, loc) == None:
-            raise TranslationError(f"Failed to match type: could not match input type {source_type.type.name} to target type {target_type.type.name}.", loc)
+            raise TranslationError(f"Failed to match type: could not match input type {source_type.type.name} to target type {target_type.type.name} for parameter {target.name}.", loc)
     ## confirm any remaining are not required
     if len(target.type) > len(source):
         for index in range(len(source), len(target.type)):

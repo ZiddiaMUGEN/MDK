@@ -120,6 +120,7 @@ if __name__ == "__main__":
                     f.write("\n")
             ## the CMD file needs a statedef to load.
             ## attach a super-invalid one just to get it to load.
+            ## (if anyone is exploiting to use -111 they should also know enough to fix this).
             f.write("[Statedef -111]\n[State -111]\ntype = Null\ntrigger1 = 1")
 
         ## emit DEF file
