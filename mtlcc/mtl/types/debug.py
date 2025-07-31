@@ -8,3 +8,4 @@ class DebugCategory(enum.Enum):
     TRIGGER_DEFINITION = 4
     TEMPLATE_DEFINITION = 5
     LOCATION = 6
+    STATEDEF = 7

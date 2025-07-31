@@ -1,7 +1,7 @@
 from typing import Any
 
 from mtl.types.shared import Location
-from mtl.types.translation import AllocationTable, TypeParameter, TypeDefinition, TriggerDefinition, TemplateDefinition
+from mtl.types.translation import AllocationTable, TypeParameter, TypeDefinition, TriggerDefinition, TemplateDefinition, StateDefinition
 from mtl.types.debug import DebugCategory
 from mtl.types.builtins import BUILTIN_FLOAT
 
@@ -20,6 +20,8 @@ def debuginfo(cat: DebugCategory, data: Any) -> list[str]:
         return debuginfo_trigger(data)
     elif cat == DebugCategory.LOCATION:
         return debuginfo_location(data)
+    elif cat == DebugCategory.STATEDEF:
+        return debuginfo_statedef(data)
     else:
         raise Exception(f"Can't handle debuginfo for category {cat}, data {data}")
     
@@ -58,4 +60,9 @@ def debuginfo_allocation(data: TypeParameter) -> list[str]:
     results.append(f";!mtl-debug VARIABLE_ALLOCATION {data.name} {data.type.name} {data.location}")
     for alloc in data.allocations:
         results.append(f";!mtl-debug-next {alloc[0]} {alloc[1]} {mask_variable(alloc[0], alloc[1], data.type.size, data.type == BUILTIN_FLOAT)}")
+    return results
+
+def debuginfo_statedef(data: StateDefinition) -> list[str]:
+    results: list[str] = []
+    results.append(f";!mtl-debug STATEDEF {data.name} {data.parameters.id}")
     return results

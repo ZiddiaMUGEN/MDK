@@ -48,22 +48,23 @@ myThirdGlobal = true
 ;---------------------------------------------------------------------------
 ; Win state decider
 ; CNS difficulty: basic
-[Statedef 180]
+[Statedef WIN_POSE]
 type = S
 local = myLocal = byte(1)
 scope = helper(1)
+id = 180
 
 [State 180, 1]
 type = ChangeState
 trigger1 = Time = 0
 trigger1 = (myHelperVar := 1)
-value = 181
+value = WIN_POSE_1
 persist = myLocal
 
 ;---------------------------------------------------------------------------
 ; Win pose 1 - Bow
 ; CNS difficulty: basic
-[Statedef 181]
+[Statedef WIN_POSE_1]
 type = S
 ctrl = 0
 anim = 181

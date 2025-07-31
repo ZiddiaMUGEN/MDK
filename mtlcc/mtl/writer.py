@@ -46,7 +46,8 @@ def write_statedef_property(statedef: StateDefinition, prop: str, output: list[s
 def write_statedef(statedef: StateDefinition, ctx: TranslationContext) -> list[str]:
     output: list[str] = []
 
-    output.append(f"[Statedef {statedef.name}]{debuginfo(DebugCategory.LOCATION, statedef.location)[0]}")
+    output += debuginfo(DebugCategory.STATEDEF, statedef)
+    output.append(f"[Statedef {statedef.parameters.id}]{debuginfo(DebugCategory.LOCATION, statedef.location)[0]}")
     for local_variable in statedef.locals:
         output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, local_variable)
 
@@ -189,6 +190,9 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             if (result := match_enum(tree.operator, expected[0].type)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)
             return Expression(result[0].type, tree.operator)
+        elif (state := find_statedef(tree.operator, ctx)) != None:
+            ## if a statedef name matches, we emit a BUILTIN_STATE with the statedef number as the expression.
+            return Expression(BUILTIN_STATE, str(state.parameters.id))
         else:
             ## in other cases the token was not recognized, so we return None.
             raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)

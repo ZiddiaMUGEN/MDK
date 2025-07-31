@@ -17,6 +17,9 @@ def find_type(type_name: str, ctx: TranslationContext) -> Optional[TypeDefinitio
 def find_template(template_name: str, ctx: TranslationContext) -> Optional[TemplateDefinition]:
     return find(ctx.templates, lambda k: equals_insensitive(k.name, template_name))
 
+def find_statedef(state_name: str, ctx: TranslationContext) -> Optional[StateDefinition]:
+    return find(ctx.statedefs, lambda k: equals_insensitive(k.name, state_name))
+
 def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext, loc: Location) -> Optional[TriggerDefinition]:
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     ## there may be multiple candidate matches, we need to check if the types provided as input match the types of the candidate.
@@ -417,6 +420,9 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
             ## if an expected type was passed, and the type is ENUM or FLAG,
             ## attempt to match the value to enum constants.
             return match_enum(tree.operator, expected[0].type)
+        elif find_statedef(tree.operator, ctx) != None:
+            ## match against statedef names explicitly
+            return [TypeSpecifier(BUILTIN_STATE)]
         else:
             ## in other cases the token was not recognized, so we return None.
             raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)

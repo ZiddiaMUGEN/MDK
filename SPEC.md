@@ -20,6 +20,7 @@ This document describes a specification of features which extend and enhance the
 7. Character Resource References
 8. State Controller Repetition (Loops)
 9. State Definition Scope
+    9a. Global Variables and State Scopes
 10. Constant Triggers
     10a. Built-in Constant Triggers
 
@@ -222,15 +223,15 @@ If the number of iterations is not a constant expression, the implementation sho
 
 ## 9. State Definition Scope
 
-Implementations should provide a way to specify the scope of a state definition. The scope of a state definition specifies which actors (players, enemies, or helpers) are expected to execute that state. For example, a state definition with a scope of `enemy` is expected to be used only as the target state for a throw or a `TargetState` controller.
+Implementations should provide a way to specify the scope of a state definition. The scope of a state definition specifies which actors (players, enemies, or helpers) are expected to execute that state. For example, a state definition with a scope of `target` is expected to be used only as the target state for a throw or a `TargetState` controller.
 
 The valid scopes defined by this specification are:
 - `player` - for states which the root can enter.
-- `enemy` - for states which the enemy is sent to during a custom state.
+- `target` - for states which the enemy is sent to during a custom state.
 - `helper` - for states which can be entered by helpers, but not the root.
 - `shared` - for states which are usable by both the root and its helpers.
 
-Implementations must attempt to validate that these scopes are effective. For example, implementations must detect if it is possible for a player to move via ChangeState from a `player`-scoped state to an `enemy`-scoped state and provide warnings or errors.
+Implementations must attempt to validate that these scopes are effective. For example, implementations must detect if it is possible for a player to move via ChangeState from a `player`-scoped state to an `target`-scoped state and provide warnings or errors.
 
 Because the hurt states from the CNS common state file can be reached by Helpers if they get hit, these should all be specified as `shared` states which can be entered by either players or helpers.
 
@@ -245,6 +246,14 @@ trigger1 = !IsHelper(xxx)
 value = 0
 ctrl = 1
 ```
+
+### 9a. Global Variables and State Scopes
+
+It is encouraged for implementations to apply scopes to global variables. This would mean for example that a global variable which is used in a state definition with `helper` scope will not be accessible in any state definition with `player` scope.
+
+Care should be taken to make sure that more specific scopes retain access to variables declared in less specific scopes (i.e. `helper(1)` should also have access to globals scoped `helper`, and to globals scoped `shared`).
+
+Each actor (helper, player, partner, and enemy) will have their own copy of each variable which the scope allows access to. So for example, if `myGlobal` is a `shared`-scoped variable, then the expressions `myGlobal = 1` and `root,myGlobal = 1` reference different variables when executed in a Helper context. 
 
 ## 10. Constant Triggers
 

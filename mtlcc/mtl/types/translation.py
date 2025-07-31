@@ -126,6 +126,7 @@ class StateDefinitionParameters:
     movehitpersist: Optional[bool] = None
     hitcountpersist: Optional[bool] = None
     sprpriority: Optional[int] = None
+    id: Optional[int] = None
 
 class StateScopeType(Enum):
     SHARED = 0

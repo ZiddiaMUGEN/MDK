@@ -19,8 +19,8 @@ This document describes the progress towards implementation of the MDK spec and 
     - Variable Scope and Initialization - partially implemented
 7. Character Resource References - not implemented
 8. State Controller Repetition (Loops) - not implemented
-9. State Definition Scope - not implemented
-10. Constant Triggers - builtins in current spec are implemented.
+9. State Definition Scope - fully implemented.
+10. Constant Triggers - fully implemented.
 
 ## Syntax
 
@@ -266,6 +266,19 @@ local = attackType = int(0)
 ```
 
 MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the state is recursive or re-entered, the variable WILL be re-initialized.
+
+### 9. State Definition Scope
+
+To specify the scope of a state definition, use the `scope` state definition parameter:
+
+```
+[Statedef 200]
+type = S
+movetype = A
+scope = player
+```
+
+All statedefs implicitly have the `shared` scope unless specified otherwise.
 
 ### 10. Constant Triggers
 

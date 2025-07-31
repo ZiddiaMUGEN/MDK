@@ -191,14 +191,14 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
     ## essentially it just builds a StateDefinition object from each StateDefinitionSection object.
     ## this makes it easier to do the next tasks (template/trigger replacement).
     for state_definition in load_ctx.state_definitions:
-        ## in current MTL state_name is just the state ID.
+        ## this is a string for the statedef name, but can also be an integer ID.
         state_name = state_definition.name
         ## identify all parameters which can be set on the statedef
         state_params = StateDefinitionParameters()
         state_scope = StateDefinitionScope(StateScopeType.SHARED, None)
         for prop in state_definition.props:
             ## allow-list the props which can be set here to avoid evil behaviour
-            if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset"]:
+            if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset", "id"]:
                 setattr(state_params, prop.key.lower(), make_atom(prop.value))
             elif equals_insensitive(prop.key, "scope"):
                 if equals_insensitive(prop.value, "shared"):
@@ -214,6 +214,12 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
                     if (new_target := tryparse(prop.value.split("(")[1].split(")")[0], int)) == None:
                         raise TranslationError(f"Could not identify ID for helper scope from input {prop.value}.", prop.location)
                     state_scope.target = new_target
+        ## if state name is an ID but an ID was provided, throw an error
+        if state_params.id != None and (ival := tryparse(state_name, int)) != None and ival != state_params.id:
+            raise TranslationError(f"State definition with name {state_name} has a numeric name, but specifies an explicit ID {state_params.id}.", state_definition.location)
+        ## if no ID override provided, and the state name is an ID, set it
+        if state_params.id == None and (ival := tryparse(state_name, int)) != None:
+            state_params.id = ival
         ## identify all local variable declarations, if any exist
         state_locals: list[TypeParameter] = []
         for prop in state_definition.props:
@@ -502,6 +508,19 @@ def applyPersist(ctx: TranslationContext):
                     ## remove all persist props
                     controller.properties = list(filter(lambda k: not equals_insensitive(k.key, "persist"), controller.properties))
 
+def applyStateNumbers(ctx: TranslationContext):
+    ## assigns unused state numbers to each state definition lacking one.
+    ## first identify all state numbers in use.
+    all_stateno: set[int] = set()
+    for statedef in ctx.statedefs:
+        if statedef.parameters.id != None:
+            all_stateno.add(statedef.parameters.id)
+    ## now assign state numbers sequentially to states missing them.
+    for statedef in ctx.statedefs:
+        if statedef.parameters.id == None:
+            statedef.parameters.id = min(set(range(max(all_stateno) + 2)) - all_stateno)
+            all_stateno.add(statedef.parameters.id)
+
 def checkScopes(ctx: TranslationContext):
     ## find any incompatible scopes between source and target on state transitions.
     ## on ChangeState: scopes must be compatible.
@@ -661,6 +680,7 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     checkScopes(ctx)
     assignVariables(ctx)
     applyPersist(ctx)
+    applyStateNumbers(ctx)
 
     return ctx
 

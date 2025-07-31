@@ -22,6 +22,7 @@ BUILTIN_STRING = TypeDefinition("string", TypeCategory.BUILTIN_DENY, 32, [], Loc
 BUILTIN_TYPE = TypeDefinition("type", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
 BUILTIN_VECTOR = TypeDefinition("vector", TypeCategory.BUILTIN_STRUCTURE, 32, ["X:float", "Y:float"], Location("mtl/builtins.py", line_number()))
 BUILTIN_TARGET = TypeDefinition("target", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
+BUILTIN_STATE = TypeDefinition("state", TypeCategory.BUILTIN, 32, [], Location("mtl/builtins.py", line_number()))
 
 BUILTIN_STATETYPE = TypeDefinition("StateType", TypeCategory.STRING_ENUM, 32, ["S", "C", "A", "L", "U"], Location("mtl/builtins.py", line_number()))
 BUILTIN_MOVETYPE = TypeDefinition("MoveType", TypeCategory.STRING_ENUM, 32, ["A", "I", "H", "U"], Location("mtl/builtins.py", line_number()))
@@ -49,3 +50,5 @@ BUILTIN_PREFINT = TypeDefinition("prefixed_int", TypeCategory.UNION, 32, ["cint"
 BUILTIN_SPRITE = TypeDefinition("sprite", TypeCategory.ALIAS, 32, ["prefixed_int"], Location("mtl/builtins.py", line_number()))
 BUILTIN_SOUND = TypeDefinition("sound", TypeCategory.ALIAS, 32, ["prefixed_int"], Location("mtl/builtins.py", line_number()))
 BUILTIN_ANIM = TypeDefinition("anim", TypeCategory.ALIAS, 32, ["prefixed_int"], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_STATENO = TypeDefinition("StateNo", TypeCategory.UNION, 32, ["int", "state"], Location("mtl/builtins.py", line_number()))
