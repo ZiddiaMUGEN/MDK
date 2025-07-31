@@ -41,12 +41,14 @@ class StateDefinitionSection:
     props: list[INIProperty]
     states: list[StateControllerSection]
     location: Location
+    is_common: bool
 
     def __init__(self, name: str, props: list[INIProperty], location: Location):
         self.name = name
         self.states = []
         self.props = props
         self.location = location
+        self.is_common = False
 
 @dataclass
 class TemplateSection:

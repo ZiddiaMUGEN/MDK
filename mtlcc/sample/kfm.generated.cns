@@ -95,7 +95,7 @@
 
 ;!mtl-debug STATEDEF 170 170
 [Statedef 170];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/sample/kfm.cns:4
-;!mtl-debug VARIABLE_ALLOCATION cgcw1r05_myTestVar int /home/jsmith/MDK/mtlcc:0
+;!mtl-debug VARIABLE_ALLOCATION jb02ql98_myTestVar int /home/jsmith/MDK/mtlcc:0
 ;!mtl-debug-next 3 0 var(3)
 type = S
 anim = 170

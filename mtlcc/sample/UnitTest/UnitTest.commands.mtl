@@ -1,0 +1,6 @@
+[Statedef COMMAND]
+id = -1
+
+[State ]
+type = Null
+trigger1 = 1

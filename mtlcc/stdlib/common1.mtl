@@ -1,0 +1,11 @@
+[Statedef 190]
+
+[State ]
+type=null
+trigger1=1
+
+[Statedef 0]
+
+[State ]
+type=null
+trigger1=1

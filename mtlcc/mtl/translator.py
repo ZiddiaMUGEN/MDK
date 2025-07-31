@@ -195,6 +195,7 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
         state_name = state_definition.name
         ## identify all parameters which can be set on the statedef
         state_params = StateDefinitionParameters()
+        state_params.is_common = state_definition.is_common
         state_scope = StateDefinitionScope(StateScopeType.SHARED, None)
         for prop in state_definition.props:
             ## allow-list the props which can be set here to avoid evil behaviour
@@ -699,6 +700,15 @@ def createOutput(ctx: TranslationContext) -> list[str]:
 
     ## now iterate each statedef and produce output, attaching variable debuginfo as needed.
     for statedef in ctx.statedefs:
-        output += write_statedef(statedef, ctx)
+        matches = get_all(ctx.statedefs, lambda k: k.parameters.id == statedef.parameters.id and k.location != statedef.location)
+
+        if len(matches) == 0:
+            output += write_statedef(statedef, ctx)
+        elif len(matches) == 1 and (not statedef.parameters.is_common) and matches[0].parameters.is_common:
+            output += write_statedef(statedef, ctx)
+        elif len(matches) == 1 and statedef.parameters.is_common:
+            continue
+        else:
+            raise TranslationError(f"State for {statedef.name} with ID {statedef.parameters.id} was redefined: original definition at {matches[0].location.filename}:{matches[0].location.line}", statedef.location)
 
     return output

@@ -48,3 +48,15 @@ class TranslationContext:
         self.statedefs = []
         self.globals = []
         self.allocations = {}
+
+@dataclass
+class ProjectContext:
+    filename: str
+    source_files: list[str]
+    common_file: str
+
+    def __init__(self, filename: str):
+        self.filename = filename
+        self.source_files = []
+        self.common_file = ""
+    

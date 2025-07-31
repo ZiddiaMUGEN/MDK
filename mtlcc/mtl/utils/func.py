@@ -204,3 +204,11 @@ def get_redirect_scope(tree: TriggerTree, current: StateDefinitionScope) -> Stat
             return StateDefinitionScope(StateScopeType.HELPER, None)
 
     raise TranslationError(f"Could not determine the target of redirect expression.", tree.location)
+
+def search_file(source: str, includer: str, extra: list[str] = []) -> str:
+    search = [f"{os.getcwd()}/{source}", f"{os.path.dirname(os.path.realpath(includer))}/{source}", f"{os.path.dirname(os.path.realpath(__file__))}/{source}", f"{os.path.realpath(source)}"]
+    search += extra
+    for path in search:
+        if os.path.exists(path):
+            return path
+    raise TranslationError(f"Could not find the source file specified by {source} for inclusion.", compiler_internal())

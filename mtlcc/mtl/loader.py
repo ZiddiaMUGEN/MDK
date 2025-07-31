@@ -1,10 +1,13 @@
 import os
 
-from mtl.utils.func import find, compiler_internal
+from mtl.utils.func import find, compiler_internal, search_file
 from mtl.types.shared import TranslationError
 from mtl.types.context import LoadContext, TranslationMode
 from mtl.types.ini import *
 from mtl.parser import ini, trigger
+
+def get_libmtl() -> INISection:
+    return INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal())
 
 def loadFile(file: str, cycle: list[str]) -> LoadContext:
     cycle_detection = find(cycle, lambda k: os.path.realpath(file) == os.path.realpath(k))
@@ -25,12 +28,6 @@ def loadFile(file: str, cycle: list[str]) -> LoadContext:
     ctx.mode = TranslationMode.MTL_MODE if file.endswith(".mtl") or file.endswith(".inc") else TranslationMode.CNS_MODE
     print(f"Parsing file from {file} using mode = {'MTL' if ctx.mode == TranslationMode.MTL_MODE else 'CNS'}")
     parseTarget(contents, ctx.mode, ctx)
-    # create a virtual include for libmtl.inc.
-    # libmtl.inc has several required types for the builtins to function.
-    # only include this on the primary file.
-    if len(cycle) == 0:
-        ctx.includes.insert(0, INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal()))
-    processIncludes(cycle, ctx)
 
     return ctx
 
@@ -149,14 +146,7 @@ def processIncludes(cycle: list[str], ctx: LoadContext):
         ## - directory of the file performing the inclusion
         ## - directory of this file
         ## - absolute path
-        search = [f"{os.getcwd()}/{source.value}", f"{os.path.dirname(os.path.realpath(include.location.filename))}/{source.value}", f"{os.path.dirname(os.path.realpath(__file__))}/{source.value}", f"{os.path.realpath(source.value)}"]
-        location: Optional[str] = None
-        for path in search:
-            if os.path.exists(path):
-                location = path
-                break
-        if location == None:
-            raise TranslationError(f"Could not find the source file specified by {source.value} for inclusion.", source.location)
+        location = search_file(source.value, include.location.filename)
         
         ## now translate the source file
         print(f"Starting to load included file {location}")

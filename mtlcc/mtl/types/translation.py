@@ -127,6 +127,7 @@ class StateDefinitionParameters:
     hitcountpersist: Optional[bool] = None
     sprpriority: Optional[int] = None
     id: Optional[int] = None
+    is_common: bool = False
 
 class StateScopeType(Enum):
     SHARED = 0

@@ -14,10 +14,11 @@ This document describes the progress towards implementation of the MDK spec and 
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)
 4. Trigger Definitions - user-defined fully implemented; special types partially implemented
     - Operator Triggers - partially implemented; builtin operator triggers are supported but users cannot define operator triggers
-5. Named State Definitions - not implemented
+5. Named State Definitions - fully implemented.
 6. Named Variables - partially implemented; cannot specify system variables
     - Variable Scope and Initialization - partially implemented
 7. Character Resource References - not implemented
+    - State number/name references are supported.
 8. State Controller Repetition (Loops) - not implemented
 9. State Definition Scope - fully implemented.
 10. Constant Triggers - fully implemented.

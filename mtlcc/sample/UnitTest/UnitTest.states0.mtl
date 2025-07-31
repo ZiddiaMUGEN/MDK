@@ -1,0 +1,6 @@
+[Statedef INTRO]
+id = 190
+
+[State ]
+type = Null
+trigger1 = 1
