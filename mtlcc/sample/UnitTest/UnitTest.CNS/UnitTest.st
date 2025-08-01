@@ -3,6 +3,9 @@
 ;!mtl-debug TYPE_DEFINITION vector BUILTIN_STRUCTURE 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:23
 ;!mtl-debug-next X:float
 ;!mtl-debug-next Y:float
+;!mtl-debug TYPE_DEFINITION numeric UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:92
+;!mtl-debug-next int
+;!mtl-debug-next float
 ;!mtl-debug TYPE_DEFINITION prefixed_int UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:93
 ;!mtl-debug-next cint
 ;!mtl-debug-next int
@@ -901,7 +904,7 @@ type = StateTypeSet
 trigger1 = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:952
 trigger1 = (((GetHitVar(yvel)) != 0) || (GetHitVar(fall)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:953
 trigger2 = (Pos Y != 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:954
-statetype = a;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:955
+statetype = A;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:955
 
 [State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:957
 type = ForceFeedback
@@ -1015,7 +1018,7 @@ type = StateTypeSet
 triggerall = (Time = 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1068
 trigger1 = (((GetHitVar(yvel)) != 0) || (GetHitVar(fall)));!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1069
 trigger2 = (Pos Y != 0);!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1070
-statetype = a;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1071
+statetype = A;!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1071
 
 [State ];!mtl-debug LOCATION /home/jsmith/MDK/mtlcc/stdlib/common1.mtl:1073
 type = ChangeState

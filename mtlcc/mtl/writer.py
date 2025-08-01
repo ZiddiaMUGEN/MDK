@@ -194,12 +194,14 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             ## get the int constant for this enum or flag.
             value = emit_enum(tree.operator, result[0].type)
             return Expression(result[0].type, value)
-        elif expected != None and len(expected) == 1 and expected[0].type.category in [TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
+        elif expected != None and len(expected) == 1 and expected[0].type.category in [TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG] \
+             and (result := match_enum(tree.operator, expected[0].type)) != None:
             ## if an expected type was passed, and the type is ENUM or FLAG,
             ## attempt to match the value to enum constants.
-            if (result := match_enum(tree.operator, expected[0].type)) == None:
-                raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)
             return Expression(result[0].type, tree.operator)
+        elif "." in tree.operator and (enum_type := match_enum_parts(tree.operator, ctx)) != None:
+            enum_result = enum_type[0].type
+            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.ATOM, tree.operator[len(enum_result.name)+1:], [], tree.location), table, ctx, expected, scope)
         elif (state := find_statedef(tree.operator, ctx)) != None:
             ## if a statedef name matches, we emit a BUILTIN_STATE with the statedef number as the expression.
             return Expression(BUILTIN_STATE, str(state.parameters.id))

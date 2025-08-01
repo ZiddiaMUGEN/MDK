@@ -29,9 +29,9 @@ intro.storyboard = intro.def
 ending.storyboard = ending.def
 
 [Compiler]
-no_implicit_conversion = true
-no_numeric = true
-no_implicit_bool = true
-no_implicit_enum = true
-no_changestate_expression = true
+no_implicit_conversion = false
+no_numeric = false
+no_implicit_bool = false
+no_implicit_enum = false
+no_changestate_expression = false
 

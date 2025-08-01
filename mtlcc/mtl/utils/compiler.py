@@ -395,6 +395,17 @@ def match_enum(input: str, enum: TypeDefinition) -> Optional[list[TypeSpecifier]
         return [TypeSpecifier(enum)]
     return None
     
+def match_enum_parts(input: str, ctx: TranslationContext) -> Optional[list[TypeSpecifier]]:
+    # enum names are permitted to contain `.` so we need to do extra work to match.
+    # try to identify a matching typename for each segment of the name.
+    split = input.split(".")
+    for index in range(1, len(split)):
+        maybe_typename = ".".join(split[:index])
+        maybe_fieldname = ".".join(split[index:])
+        if (enum := find_type(maybe_typename, ctx)) != None:
+            if (matched := match_enum(maybe_fieldname, enum)) != None:
+                return matched
+    return None
 
 def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> Optional[list[TypeSpecifier]]:
     ## runs a type check against a single tree. this assesses that the types of the components used in the tree
@@ -416,10 +427,15 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         elif (type := find_type(tree.operator, ctx)) != None:
             ## if a type name matches, the resulting type is just `type`
             return [TypeSpecifier(BUILTIN_TYPE)]
-        elif expected != None and len(expected) == 1 and expected[0].type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
+        elif not ctx.compiler_flags.no_implicit_enum and expected != None and len(expected) == 1 \
+             and expected[0].type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG] \
+             and (result_type := match_enum(tree.operator, expected[0].type)) != None:
             ## if an expected type was passed, and the type is ENUM or FLAG,
             ## attempt to match the value to enum constants.
-            return match_enum(tree.operator, expected[0].type)
+            return result_type
+        elif "." in tree.operator:
+            ## might be an explicit enum type, extract enum typename and match on it
+            return match_enum_parts(tree.operator, ctx)
         elif find_statedef(tree.operator, ctx) != None:
             ## match against statedef names explicitly
             return [TypeSpecifier(BUILTIN_STATE)]
