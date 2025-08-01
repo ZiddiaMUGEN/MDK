@@ -30,3 +30,11 @@ c = 6
 [Arcade]
 intro.storyboard = intro.def
 ending.storyboard = ending.def
+
+[Compiler]
+;; UnitTest needs to enable all strict flags.
+no_implicit_conversion = true
+no_numeric = true
+no_implicit_bool = true
+no_implicit_enum = true
+no_changestate_expression = true

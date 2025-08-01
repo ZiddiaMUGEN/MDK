@@ -18,7 +18,7 @@ def find_template(template_name: str, ctx: TranslationContext) -> Optional[Templ
     return find(ctx.templates, lambda k: equals_insensitive(k.name, template_name))
 
 def find_statedef(state_name: str, ctx: TranslationContext) -> Optional[StateDefinition]:
-    return find(ctx.statedefs, lambda k: equals_insensitive(k.name, state_name))
+    return find(ctx.statedefs, lambda k: equals_insensitive(k.name, state_name) or str(k.parameters.id) == state_name)
 
 def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext, loc: Location) -> Optional[TriggerDefinition]:
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
@@ -29,7 +29,7 @@ def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: Tran
         if len(param_types) != len(match.params): continue
         matched = True
         for index in range(len(param_types)):
-            if get_type_match(param_types[index], match.params[index].type, ctx, loc) == None:
+            if get_type_match(param_types[index], match.params[index].type, ctx, loc, no_warn = True) == None:
                 matched = False
         ## if no types failed to match, we can return this type as the signature matches
         if matched: 
@@ -66,7 +66,7 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
             if len(child_type) != 1:
                 raise TranslationError("Triggers are not permitted to accept tuple types.", loc)
             ## match the result type to the expected type of the input
-            if get_type_match(child_type[0].type, match.params[index].type, ctx, loc) == None:
+            if get_type_match(child_type[0].type, match.params[index].type, ctx, loc, no_warn=True) == None:
                 is_match = False
                 break
         ## if all params matched, add it to the result
@@ -164,11 +164,11 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
         return None
     
     ## smaller builtin types can implicitly convert to wider ones (`bool`->`byte`->`short`->`int`)
-    if t1.name in ["bool", "byte", "short"] and t2.name in ["bool", "byte", "short", "int"] and t1.size <= t2.size:
+    if not ctx.compiler_flags.no_implicit_conversion and t1.name in ["bool", "byte", "short"] and t2.name in ["bool", "byte", "short", "int"] and t1.size <= t2.size:
         return t2
     
     ## `char` is implicitly convertible to `byte`, but the reverse is not true.
-    if t1.name == "char" and t2.name == "byte":
+    if not ctx.compiler_flags.no_implicit_conversion and t1.name == "char" and t2.name == "byte":
         return t2
     
     ## it's permitted to 'widen' a concrete type to a union type if the union type has a matching member
@@ -178,7 +178,7 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
                 return widened
             
     ## it's permitted to convert integer types directly to bool for CNS compatibility.
-    if t1.name in ["byte", "short", "int"] and t2.name == "bool":
+    if not ctx.compiler_flags.no_implicit_bool and t1.name in ["byte", "short", "int"] and t2.name == "bool":
         return t2
 
     ## could not convert.

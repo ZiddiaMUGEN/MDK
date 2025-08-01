@@ -3,7 +3,7 @@ from mtl.types.ini import INIParserContext
 from mtl.types.context import ProjectContext
 from mtl.parser import ini
 from mtl.utils.func import find, equals_insensitive, compiler_internal, search_file
-
+from mtl.utils.constant import LEGAL_COMPILER_FLAGS
 
 def loadDefinition(file: str) -> ProjectContext:
     ctx = ProjectContext(file)
@@ -67,5 +67,11 @@ def loadDefinition(file: str) -> ProjectContext:
         raise TranslationError("Input definition file must specify SND file via `sound` key.", section.location)
     if (ai := find(section.properties, lambda k: equals_insensitive(k.key, "ai"))) != None:
         ctx.ai_file = search_file(ai.value, file)
+
+    ## compiler flags
+    if (section := find(ctx.contents, lambda k: equals_insensitive(k.name, "Compiler"))) != None:
+        for property in section.properties:
+            if property.key.lower() in LEGAL_COMPILER_FLAGS:
+                ctx.compiler_flags.__dict__[property.key.lower()] = property.value.lower() == "true"
 
     return ctx

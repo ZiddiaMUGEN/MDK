@@ -2,14 +2,14 @@ import os
 
 from mtl.utils.func import find, compiler_internal, search_file, includes_insensitive
 from mtl.types.shared import TranslationError
-from mtl.types.context import LoadContext, TranslationMode
+from mtl.types.context import LoadContext, TranslationMode, CompilerConfiguration
 from mtl.types.ini import *
 from mtl.parser import ini, trigger
 
 def get_libmtl() -> INISection:
     return INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal())
 
-def loadFile(file: str, cycle: list[str]) -> LoadContext:
+def loadFile(file: str, cc: CompilerConfiguration, cycle: list[str]) -> LoadContext:
     cycle_detection = find(cycle, lambda k: os.path.realpath(file) == os.path.realpath(k))
     if cycle_detection != None:
         print("Import cycle was detected!!")
@@ -20,7 +20,7 @@ def loadFile(file: str, cycle: list[str]) -> LoadContext:
             index -= 1
         raise TranslationError("A cycle was detected during include processing.", compiler_internal())
 
-    ctx = LoadContext(file)
+    ctx = LoadContext(file, cc)
 
     with open(file) as f:
         contents = ini.parse(f.read(), ctx.ini_context)
@@ -156,7 +156,7 @@ def processIncludes(cycle: list[str], ctx: LoadContext):
         
         ## now translate the source file
         print(f"Starting to load included file {location}")
-        include_context = loadFile(location, cycle + [ctx.filename])
+        include_context = loadFile(location, ctx.compiler_flags, cycle + [ctx.filename])
 
         ## if we specified a namespace, the imported names need to be prefixed with that namespace.
         if (namespace := find(include.properties, lambda k: k.key.lower() == "namespace")) != None:

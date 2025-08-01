@@ -336,6 +336,9 @@ def createGlobalsTable(ctx: TranslationContext):
                 ## detect any properties which set values.
                 for property in controller.properties:
                     target_name = property.key.lower().replace(" ", "")
+                    ## don't create a global from a local
+                    if find(statedef.locals, lambda k: equals_insensitive(target_name, k.name)) != None:
+                        continue
                     if target_name.startswith("var(") or target_name.startswith("fvar(") \
                         or target_name.startswith("sysvar(") or target_name.startswith("sysfvar("):
                         raise TranslationError(f"State controller sets indexed variable {target_name} which is not currently supported by MTL.", property.location)
@@ -395,7 +398,7 @@ def fullPassTypeCheck(ctx: TranslationContext):
                     if result_types == None or len(result_types) != 1:
                         raise TranslationError(f"Target type of trigger expression was a tuple, but trigger expressions must resolve to bool.", trigger.location)
                     ## for CNS compatibility, we allow any integral type to act as `bool` on a trigger.
-                    if get_widest_match(result_types[0].type, BUILTIN_INT, ctx, trigger.location) != BUILTIN_INT:
+                    if result_types[0].type != BUILTIN_BOOL and get_widest_match(result_types[0].type, BUILTIN_INT, ctx, trigger.location) != BUILTIN_INT:
                         raise TranslationError(f"Target type of trigger expression was {result_types[0].type.name}, but trigger expressions must resolve to bool or be convertible to bool.", trigger.location)
             for property in controller.properties:
                 ## properties are permitted to be tuples. we need to ensure the specifiers match the expectation for this property.
@@ -494,7 +497,7 @@ def applyPersist(ctx: TranslationContext):
                         ## mask source expression so it writes to the right part of mask_target
                         mask_source = mask_write(var_target.allocations[0][0], mask_source, var_target.allocations[0][1], var_target.type.size, var_target.type == BUILTIN_FLOAT)
                         ## parse the expression to a trigger
-                        new_trigger = parseTrigger(f"{mask_target} := ({mask_source})", persisted.location)    
+                        new_trigger = parseTrigger(f"{mask_target} := ({mask_source})", persisted.location)
                         ## add a triggerall expression for this allocation.
                         if 0 not in controller.triggers: controller.triggers[0] = TriggerGroup([])
                         controller.triggers[0].triggers.append(TriggerTree(
@@ -502,7 +505,7 @@ def applyPersist(ctx: TranslationContext):
                             "||",
                             [
                                 new_trigger,
-                                TriggerTree(TriggerTreeNode.ATOM, "1", [], persisted.location)
+                                TriggerTree(TriggerTreeNode.ATOM, "true", [], persisted.location)
                             ],
                             persisted.location
                         ))
@@ -540,6 +543,8 @@ def checkScopes(ctx: TranslationContext):
                 if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                     target_node = target_node.children[0]
                 if target_node.node != TriggerTreeNode.ATOM:
+                    if ctx.compiler_flags.no_changestate_expression:
+                        raise TranslationError("Cannot validate statedef scope correctness if target of ChangeState is an expression.", target[0].location)
                     ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                     print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of ChangeState is an expression.")
                 else:
@@ -556,6 +561,8 @@ def checkScopes(ctx: TranslationContext):
                 if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                     target_node = target_node.children[0]
                 if target_node.node != TriggerTreeNode.ATOM:
+                    if ctx.compiler_flags.no_changestate_expression:
+                        raise TranslationError("Cannot validate statedef scope correctness if target of SelfState is an expression.", target[0].location)
                     ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                     print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of SelfState is an expression.")
                 else:
@@ -571,6 +578,8 @@ def checkScopes(ctx: TranslationContext):
                 if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                     target_node = target_node.children[0]
                 if target_node.node != TriggerTreeNode.ATOM:
+                    if ctx.compiler_flags.no_changestate_expression:
+                        raise TranslationError("Cannot validate statedef scope correctness if target of Helper stateno is an expression.", target[0].location)
                     ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                     print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of Helper stateno is an expression.")
                 else:
@@ -598,6 +607,8 @@ def checkScopes(ctx: TranslationContext):
                 if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                     target_node = target_node.children[0]
                 if target_node.node != TriggerTreeNode.ATOM:
+                    if ctx.compiler_flags.no_changestate_expression:
+                        raise TranslationError("Cannot validate statedef scope correctness if target of TargetState is an expression.", target[0].location)
                     ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                     print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of TargetState is an expression.")
                 else:
@@ -612,6 +623,8 @@ def checkScopes(ctx: TranslationContext):
                     if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                         target_node = target_node.children[0]
                     if target_node.node != TriggerTreeNode.ATOM:
+                        if ctx.compiler_flags.no_changestate_expression:
+                            raise TranslationError("Cannot validate statedef scope correctness if p1stateno on HitDef is an expression.", target[0].location)
                         ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                         print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if p1stateno on HitDef is an expression.")
                     else:
@@ -625,6 +638,8 @@ def checkScopes(ctx: TranslationContext):
                     if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                         target_node = target_node.children[0]
                     if target_node.node != TriggerTreeNode.ATOM:
+                        if ctx.compiler_flags.no_changestate_expression:
+                            raise TranslationError("Cannot validate statedef scope correctness if p2stateno on HitDef is an expression.", target[0].location)
                         ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                         print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if p2stateno on HitDef is an expression.")
                     else:
@@ -642,6 +657,8 @@ def checkScopes(ctx: TranslationContext):
                 if target_node.node == TriggerTreeNode.MULTIVALUE and len(target_node.children) == 1:
                     target_node = target_node.children[0]
                 if target_node.node != TriggerTreeNode.ATOM:
+                    if ctx.compiler_flags.no_changestate_expression:
+                        raise TranslationError("Cannot validate statedef scope correctness if target of HitOverride is an expression.", target[0].location)
                     ## it's permitted for targets to be expressions, but in that case, we cannot check scopes.
                     print(f"Warning at {os.path.realpath(target[0].location.filename)}:{target[0].location.line}: Cannot validate statedef scope correctness if target of HitOverride is an expression.")
                 else:
@@ -652,11 +669,14 @@ def checkScopes(ctx: TranslationContext):
                     
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
-    ctx = TranslationContext(load_ctx.filename)
+    ctx = TranslationContext(load_ctx.filename, load_ctx.compiler_flags)
 
     ctx.types = builtins.getBaseTypes()
     ctx.triggers = builtins.getBaseTriggers()
     ctx.templates = builtins.getBaseTemplates()
+
+    if ctx.compiler_flags.no_numeric:
+        ctx.types.remove(BUILTIN_NUMERIC)
 
     translateTypes(load_ctx, ctx)
     translateStructs(load_ctx, ctx)

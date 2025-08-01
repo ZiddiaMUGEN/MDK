@@ -41,30 +41,50 @@ BUILTIN_TEAMTYPE = TypeDefinition("TeamType", TypeCategory.STRING_ENUM, 32, ["E"
 BUILTIN_HITANIMTYPE = TypeDefinition("HitAnimType", TypeCategory.STRING_ENUM, 32, ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"], Location("mtl/builtins.py", line_number()))
 BUILTIN_ATTACKTYPE = TypeDefinition("AttackType", TypeCategory.STRING_ENUM, 32, ["High", "Low", "Trip", "None"], Location("mtl/builtins.py", line_number()))
 BUILTIN_PRIORITYTYPE = TypeDefinition("PriorityType", TypeCategory.STRING_ENUM, 32, ["Hit", "Miss", "Dodge"], Location("mtl/builtins.py", line_number()))
-BUILTIN_HITVARTYPE = TypeDefinition("HitVarType", TypeCategory.STRING_ENUM, 32, [
-    "xveladd", "yveladd", "type", "animtype", "airtype", "groundtype", "damage", "hitcount", "fallcount",
-    "hitshaketime", "hittime", "slidetime", "ctrltime", "recovertime", "xoff", "yoff", "xvel", "yvel", "yaccel",
-    "chainid", "guarded", "isbound", "fall", "fall.damage", "fall.xvel", "fall.yvel", "fall.recover",
-    "fall.recovertime", "fall.kill", "fall.envshake.time", "fall.envshake.freq", "fall.envshake.ampl", "fall.envshake.phase"
+
+BUILTIN_HITVARTYPE_INT = TypeDefinition("HitVarIntType", TypeCategory.STRING_ENUM, 32, [
+    "type", "animtype", "airtype", "groundtype", "damage", "hitcount", "fallcount",
+    "hitshaketime", "hittime", "slidetime", "ctrltime", "recovertime", "chainid", "fall.damage",
+    "fall.recovertime", "fall.envshake.time", "fall.envshake.ampl"
 ], Location("mtl/builtins.py", line_number()))
-BUILTIN_CONSTTYPE = TypeDefinition("ConstType", TypeCategory.STRING_ENUM, 32, [
-    "data.life", "data.power", "data.attack", "data.defence", "data.fall.defence_mul", "data.liedown.time", "data.airjuggle",
-    "data.sparkno", "data.guard.sparkno", "data.KO.echo", "data.IntPersistIndex", "data.FloatPersistIndex",
-    "size.xscale", "size.yscale", "size.ground.back", "size.ground.front", "size.air.back", "size.air.front", "size.height",
-    "size.attack.dist", "size.proj.attack.dist", "size.proj.doscale", "size.head.pos.x", "size.head.pos.y", "size.mid.pos.x",
+
+BUILTIN_HITVARTYPE_FLOAT = TypeDefinition("HitVarFloatType", TypeCategory.STRING_ENUM, 32, [
+    "xveladd", "yveladd", "xoff", "yoff", "xvel", "yvel", "yaccel",
+    "fall.xvel", "fall.yvel", "fall.envshake.freq", "fall.envshake.phase"
+], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_HITVARTYPE_BOOL = TypeDefinition("HitVarBoolType", TypeCategory.STRING_ENUM, 32, [
+    "guarded", "isbound", "fall", "fall.recover", "fall.kill"
+], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_CONSTTYPE_INT = TypeDefinition("ConstIntType", TypeCategory.STRING_ENUM, 32, [
+    "data.life", "data.power", "data.attack", "data.defence", "data.liedown.time", "data.airjuggle",
+    "data.sparkno", "data.guard.sparkno", "data.IntPersistIndex", "data.FloatPersistIndex",
+    "size.ground.back", "size.ground.front", "size.air.back", "size.air.front", "size.height", "size.attack.dist",
+    "size.proj.attack.dist", "size.head.pos.x", "size.head.pos.y", "size.mid.pos.x",
     "size.mid.pos.y", "size.shadowoffset", "size.draw.offset.x", "size.draw.offset.y",
+    "movement.airjump.num", "movement.airjump.height"
+], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_CONSTTYPE_FLOAT = TypeDefinition("ConstFloatType", TypeCategory.STRING_ENUM, 32, [
+    "data.fall.defence_mul", "size.xscale", "size.yscale",
     "velocity.walk.fwd.x", "velocity.walk.back.x", "velocity.run.fwd.x", "velocity.run.fwd.y", "velocity.run.back.x", "velocity.run.back.y",
     "velocity.jump.y", "velocity.jump.neu.x", "velocity.jump.back.x", "velocity.jump.fwd.x", "velocity.runjump.back.x", "velocity.runjump.fwd.x",
     "velocity.airjump.y", "velocity.airjump.neu.x", "velocity.airjump.back.x", "velocity.airjump.fwd.x", "velocity.air.gethit.groundrecover.x",
     "velocity.air.gethit.groundrecover.y", "velocity.air.gethit.airrecover.mul.x", "velocity.air.gethit.airrecover.mul.y",
     "velocity.air.gethit.airrecover.add.x", "velocity.air.gethit.airrecover.add.y", "velocity.air.gethit.airrecover.back",
     "velocity.air.gethit.airrecover.fwd", "velocity.air.gethit.airrecover.up", "velocity.air.gethit.airrecover.down",
-    "movement.airjump.num", "movement.airjump.height", "movement.yaccel", "movement.stand.friction", "movement.crouch.friction",
-    "movement.stand.friction.threshold", "movement.crouch.friction.threshold", "movement.jump.changeanim.threshold", "movement.air.gethit.groundlevel",
+    "movement.yaccel", "movement.stand.friction", "movement.crouch.friction", "movement.stand.friction.threshold",
+    "movement.crouch.friction.threshold", "movement.jump.changeanim.threshold", "movement.air.gethit.groundlevel",
     "movement.air.gethit.groundrecover.ground.threshold", "movement.air.gethit.groundrecover.groundlevel", "movement.air.gethit.airrecover.threshold",
     "movement.air.gethit.airrecover.yaccel", "movement.air.gethit.trip.groundlevel", "movement.down.bounce.offset.x", "movement.down.bounce.offset.y",
     "movement.down.bounce.yaccel", "movement.down.bounce.groundlevel", "movement.down.friction.threshold"
 ], Location("mtl/builtins.py", line_number()))
+
+BUILTIN_CONSTTYPE_BOOL = TypeDefinition("ConstBoolType", TypeCategory.STRING_ENUM, 32, [
+    "data.KO.echo", "size.proj.doscale"
+], Location("mtl/builtins.py", line_number()))
+
 BUILTIN_STAGEVAR = TypeDefinition("StageVarType", TypeCategory.STRING_ENUM, 32, [
     "info.author", "info.displayname", "info.name"
 ], Location("mtl/builtins.py", line_number()))

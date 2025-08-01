@@ -9,6 +9,20 @@ class TranslationMode(Enum):
     CNS_MODE = 1
 
 @dataclass
+class CompilerConfiguration:
+    ## if enabled, implicit conversion between fundamental types is disabled.
+    ## this will still allow int -> float as the type-checker marks any number without decimal as `int`.
+    no_implicit_conversion: bool = False
+    ## if enabled, the numeric union type is disabled.
+    no_numeric: bool = False
+    ## if enabled, implicit conversion from `int` to `bool` (for triggers) is disabled.
+    no_implicit_bool: bool = False
+    ## if enabled, the typechecker will not attempt to 'guess' enum types in trigger arguments.
+    no_implicit_enum: bool = False
+    ## if enabled, the typechecker will not allow expressions to be used as the target of ChangeState and ChangeState-like properties.
+    no_changestate_expression: bool = False
+
+@dataclass
 class LoadContext:
     filename: str
     ini_context: INIParserContext
@@ -19,8 +33,9 @@ class LoadContext:
     struct_definitions: list[StructureDefinitionSection]
     includes: list[INISection]
     mode: TranslationMode
+    compiler_flags: CompilerConfiguration
 
-    def __init__(self, fn: str):
+    def __init__(self, fn: str, cc: CompilerConfiguration):
         self.filename = fn
         self.ini_context = INIParserContext(fn, Location(self.filename, 0))
         self.state_definitions = []
@@ -29,6 +44,7 @@ class LoadContext:
         self.type_definitions = []
         self.struct_definitions = []
         self.includes = []
+        self.compiler_flags = cc
 
 @dataclass
 class TranslationContext:
@@ -39,8 +55,9 @@ class TranslationContext:
     statedefs: list[StateDefinition]
     globals: list[TypeParameter]
     allocations: dict[StateDefinitionScope, tuple[AllocationTable, AllocationTable]]
+    compiler_flags: CompilerConfiguration
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, cc: CompilerConfiguration):
         self.filename = filename
         self.types = []
         self.triggers = []
@@ -48,6 +65,7 @@ class TranslationContext:
         self.statedefs = []
         self.globals = []
         self.allocations = {}
+        self.compiler_flags = cc
 
 @dataclass
 class ProjectContext:
@@ -62,6 +80,7 @@ class ProjectContext:
     constants: list[INISection]
     commands: list[INISection]
     contents: list[INISection]
+    compiler_flags: CompilerConfiguration
 
     def __init__(self, filename: str):
         self.filename = filename
@@ -74,4 +93,5 @@ class ProjectContext:
         self.ai_file = None
         self.constants = []
         self.commands = []
+        self.compiler_flags = CompilerConfiguration()
     

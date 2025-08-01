@@ -103,10 +103,20 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
 
         return Expression(BUILTIN_ANY, ", ".join([e.value for e in children]))
     elif tree.node == TriggerTreeNode.UNARY_OP or tree.node == TriggerTreeNode.BINARY_OP:
+        ## test the types of each input to see if either side is an enum or flag.
+        ## then we can pass the type to the other child to allow for specifier-less enums.
+        maybe_expected: Optional[list[TypeSpecifier]] = None
+        for child in tree.children:
+            try:
+                if (child_type := emit_trigger_recursive(child, table, ctx, scope = scope)) != None:
+                    if child_type.type.category in [TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.FLAG, TypeCategory.STRING_FLAG]:
+                        maybe_expected = [TypeSpecifier(child_type.type)]
+            except TranslationError:
+                continue
         ## resolve child types.
         children: list[Expression] = []
         for child in tree.children:
-            children.append(emit_trigger_recursive(child, table, ctx, scope = scope))
+            children.append(emit_trigger_recursive(child, table, ctx, expected = maybe_expected, scope = scope))
         ## find an operator trigger for the types.
         if (match := find_trigger(f"operator{tree.operator}", [e.type for e in children], ctx, tree.location)) == None:
             raise TranslationError(f"Could not find a matching operator {tree.operator} for types {', '.join([e.type.name for e in children])}", tree.location)

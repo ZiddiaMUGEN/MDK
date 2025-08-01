@@ -23,13 +23,13 @@ if __name__ == "__main__":
         ## then pass it all to translation at once.
         ## this means imports should be done ONCE ONLY,
         ## and global variables will be SHARED.
-        loadContext = loader.loadFile(projectContext.common_file, [])
+        loadContext = loader.loadFile(projectContext.common_file, projectContext.compiler_flags, [])
         # mark all common states as such
         for defn in loadContext.state_definitions:
             defn.is_common = True
 
         for source_file in projectContext.source_files:
-            nextLoadContext = loader.loadFile(source_file, [])
+            nextLoadContext = loader.loadFile(source_file, projectContext.compiler_flags, [])
             # only overwrite common state definitions. otherwise emit an error
             for defn in nextLoadContext.state_definitions:
                 if (existing := find(loadContext.state_definitions, lambda k: equals_insensitive(k.name, defn.name))) == None:

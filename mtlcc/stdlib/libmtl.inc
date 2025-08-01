@@ -12,3 +12,11 @@ value = !!input
 
 [Define Parameters]
 input = int
+
+[Define Trigger]
+name = btoi
+type = int
+value = cast(ifelse(input, 1, 0), int)
+
+[Define Parameters]
+input = bool

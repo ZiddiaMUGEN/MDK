@@ -47,8 +47,12 @@ def getBaseTypes() -> list[TypeDefinition]:
         BUILTIN_HITANIMTYPE,
         BUILTIN_ATTACKTYPE,
         BUILTIN_PRIORITYTYPE,
-        BUILTIN_HITVARTYPE,
-        BUILTIN_CONSTTYPE,
+        BUILTIN_HITVARTYPE_INT,
+        BUILTIN_HITVARTYPE_FLOAT,
+        BUILTIN_HITVARTYPE_BOOL,
+        BUILTIN_CONSTTYPE_INT,
+        BUILTIN_CONSTTYPE_FLOAT,
+        BUILTIN_CONSTTYPE_BOOL,
         BUILTIN_STAGEVAR,
         ## built-in union types
         BUILTIN_NUMERIC,
@@ -60,7 +64,7 @@ def getBaseTypes() -> list[TypeDefinition]:
     ]
 
 def getBaseTriggers() -> list[TriggerDefinition]:
-    return [
+    baseTriggers: list[TriggerDefinition] =  [
         ## MUGEN trigger functions
         TriggerDefinition("abs", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("abs", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -80,14 +84,17 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("AuthorName", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("BackEdgeBodyDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("BackEdgeDist", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("CameraPos", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("CanRecover", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("ceil", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("ceil", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("Command", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("cond", BUILTIN_ANY, builtin_cond, [TypeParameter("condition", BUILTIN_BOOL), TypeParameter("exprn1", BUILTIN_ANY), TypeParameter("exprn2", BUILTIN_ANY)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("Const", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("Const240p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("Const480p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("Const720p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const", BUILTIN_INT, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const", BUILTIN_BOOL, None, [TypeParameter("param_name", BUILTIN_CONSTTYPE_BOOL)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const240p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const480p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("Const720p", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("cos", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_NUMERIC)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("Ctrl", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("DrawGame", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -101,7 +108,9 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("GameHeight", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("GameTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("GameWidth", BUILTIN_FLOAT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
-        TriggerDefinition("GetHitVar", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("GetHitVar", BUILTIN_INT, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("GetHitVar", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE_FLOAT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("GetHitVar", BUILTIN_BOOL, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE_BOOL)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitCount", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitFall", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -184,6 +193,11 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("WinTime", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("WinPerfect", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
 
+        ## requirements because CNS is inconsistent
+        ## it's legal to do `F(100)` instead of F100 in cint contexts. so it needs to be treated as a trigger...
+        TriggerDefinition("F", BUILTIN_CINT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("S", BUILTIN_CINT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+
         ## redirection triggers
         TriggerDefinition("parent", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("root", BUILTIN_TARGET, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
@@ -199,57 +213,13 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("playerID", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
 
         ## builtin operator functions
-        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator-", BUILTIN_INT, builtin_negate, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", BUILTIN_FLOAT, builtin_negate, [TypeParameter("expr", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator~", BUILTIN_INT, builtin_bitnot, [TypeParameter("expr", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator+", BUILTIN_INT, builtin_add, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator+", BUILTIN_FLOAT, builtin_add, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", BUILTIN_INT, builtin_sub, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator-", BUILTIN_FLOAT, builtin_sub, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator*", BUILTIN_INT, builtin_mult, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator*", BUILTIN_FLOAT, builtin_mult, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator/", BUILTIN_INT, builtin_div, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator/", BUILTIN_FLOAT, builtin_div, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator%", BUILTIN_INT, builtin_div, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator**", BUILTIN_INT, builtin_exp, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator**", BUILTIN_FLOAT, builtin_exp, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         ## TODO: REMOVE THIS WHEN YOU CAN IMPLEMENT INTO libmtl
         ## `tostateno(s1) = tostateno(s2)`
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STATE), TypeParameter("expr2", BUILTIN_STATE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STATETYPE), TypeParameter("expr2", BUILTIN_STATETYPE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator&", BUILTIN_INT, builtin_bitand, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator|", BUILTIN_INT, builtin_bitor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator^", BUILTIN_INT, builtin_bitxor, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator:=", BUILTIN_INT, builtin_assign, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator:=", BUILTIN_FLOAT, builtin_assign, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator:=", BUILTIN_CHAR, builtin_assign, [TypeParameter("expr1", BUILTIN_CHAR), TypeParameter("expr2", BUILTIN_CHAR)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>", BUILTIN_BOOL, builtin_gt, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>=", BUILTIN_BOOL, builtin_gte, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-
-        TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>", BUILTIN_BOOL, builtin_gt, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
-        TriggerDefinition("operator>=", BUILTIN_BOOL, builtin_gte, [TypeParameter("expr1", BUILTIN_FLOAT), TypeParameter("expr2", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
 
         TriggerDefinition("operator&&", BUILTIN_BOOL, builtin_and, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
         TriggerDefinition("operator||", BUILTIN_BOOL, builtin_or, [TypeParameter("expr1", BUILTIN_BOOL), TypeParameter("expr2", BUILTIN_BOOL)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR),
@@ -265,6 +235,33 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("rescope", BUILTIN_TARGET, builtin_rescope, [TypeParameter("expr", BUILTIN_TARGET), TypeParameter("sc", BUILTIN_TARGET)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
         TriggerDefinition("tostateno", BUILTIN_INT, builtin_tostateno, [TypeParameter("expr", BUILTIN_STATE)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.BUILTIN),
     ]
+
+    ## add generic operators for each of these builtin types.
+    for typedef in [BUILTIN_BOOL, BUILTIN_CHAR, BUILTIN_BYTE, BUILTIN_SHORT, BUILTIN_INT, BUILTIN_FLOAT]:
+        baseTriggers.append(TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator:=", typedef, builtin_assign, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+
+        if typedef != BUILTIN_BOOL:
+            baseTriggers.append(TriggerDefinition("operator-", typedef, builtin_negate, [TypeParameter("expr", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator+", typedef, builtin_add, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator-", typedef, builtin_sub, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator*", typedef, builtin_mult, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator**", typedef, builtin_exp, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator/", BUILTIN_FLOAT, builtin_div, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator<", BUILTIN_BOOL, builtin_lt, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator<=", BUILTIN_BOOL, builtin_lte, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator>", BUILTIN_BOOL, builtin_gt, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator>=", BUILTIN_BOOL, builtin_gte, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+
+        if typedef != BUILTIN_FLOAT:
+            baseTriggers.append(TriggerDefinition("operator~", typedef, builtin_bitnot, [TypeParameter("expr", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator&", typedef, builtin_bitand, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator|", typedef, builtin_bitor, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+            baseTriggers.append(TriggerDefinition("operator^", typedef, builtin_bitxor, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+
+    return baseTriggers
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
     if (widest := get_widest_match(exprs[1].type, exprs[2].type, ctx, compiler_internal())) == None:
@@ -393,7 +390,7 @@ def getBaseTemplates() -> list[TemplateDefinition]:
         TemplateDefinition("EnvShake", [TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], True), TemplateParameter("freq", [TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("phase", [TypeSpecifier(BUILTIN_FLOAT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Explod", [TemplateParameter("anim", [TypeSpecifier(BUILTIN_ANIM)], True), TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("postype", [TypeSpecifier(BUILTIN_POSTYPE)], False), TemplateParameter("facing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vfacing", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("bindtime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("vel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("accel", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("removetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("supermove", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("supermovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("pausemovetime", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("scale", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("sprpriority", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("ontop", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("shadow", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ownpal", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("removeongethit", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("ignorehitpause", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("trans", [TypeSpecifier(BUILTIN_TRANSTYPE)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("ExplodBindTime", [TemplateParameter("id", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
-        TemplateDefinition("ForceFeedback", [TemplateParameter("waveform", [TypeSpecifier(BUILTIN_WAVETYPE)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("freq", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("self", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
+        TemplateDefinition("ForceFeedback", [TemplateParameter("waveform", [TypeSpecifier(BUILTIN_WAVETYPE)], False), TemplateParameter("time", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("freq", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT, required = False), TypeSpecifier(BUILTIN_FLOAT, required = False), TypeSpecifier(BUILTIN_FLOAT, required = False)], False), TemplateParameter("ampl", [TypeSpecifier(BUILTIN_INT), TypeSpecifier(BUILTIN_FLOAT, required = False), TypeSpecifier(BUILTIN_FLOAT, required = False), TypeSpecifier(BUILTIN_FLOAT, required = False)], False), TemplateParameter("self", [TypeSpecifier(BUILTIN_BOOL)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("FallEnvShake", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("GameMakeint", [TemplateParameter("value", [TypeSpecifier(BUILTIN_INT)], False), TemplateParameter("under", [TypeSpecifier(BUILTIN_BOOL)], False), TemplateParameter("pos", [TypeSpecifier(BUILTIN_FLOAT), TypeSpecifier(BUILTIN_FLOAT)], False), TemplateParameter("random", [TypeSpecifier(BUILTIN_INT)], False)], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),
         TemplateDefinition("Gravity", [], [], [], Location("mtl/builtins.py", line_number()), TemplateCategory.BUILTIN),

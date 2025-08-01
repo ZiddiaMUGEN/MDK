@@ -81,12 +81,14 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
     result = f"var({index})"
     if is_float: result = f"f{result}"
 
-    if offset != 0:
-        ## access starts from the bit `offset` and progresses to the bit `offset + size`.
-        start_pow2 = 2 ** offset
-        end_pow2 = 2 ** (offset + size)
-        mask = c_int32(end_pow2 - start_pow2)
-        result += f" & {mask.value}"
+    if offset == 0 and size == 32:
+        return result
+
+    ## access starts from the bit `offset` and progresses to the bit `offset + size`.
+    start_pow2 = 2 ** offset
+    end_pow2 = 2 ** (offset + size)
+    mask = c_int32(end_pow2 - start_pow2)
+    result += f" & {mask.value}"
 
     return result
 
