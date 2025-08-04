@@ -9,6 +9,7 @@ This document describes the progress towards implementation of the MDK spec and 
 2. Type System - partially implemented
     - Built-in types - fully implemented.
     - Tuples, Optionals, and Repeated Types - partially implemented; user-defined triggers and template parameters cannot use `tuples` or `optionals`.
+        - There are currently no plans to expose tuples to users.
     - Custom Types - fully implemented.
     - Type Conversion Rules - fully implemented.
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)

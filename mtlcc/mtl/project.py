@@ -30,7 +30,14 @@ def loadDefinition(file: str) -> ProjectContext:
     with open(commands) as f:
         ctx.commands = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
     
-    ctx.common_file = search_file(common.value, file, [f"stdlib/{common.value}"])
+    try:
+        ctx.common_file = search_file(common.value, file, [f"stdlib/{common.value}"])
+    except TranslationError:
+        if common.value == "common1.cns":
+            print(f"Attempting to load common states from built-in common1.mtl as {common.value} does not exist.")
+            ctx.common_file = search_file("common1.mtl", file, [f"stdlib/common1.mtl"])
+        else:
+            raise
     all_loaded.append(ctx.common_file)
 
     if (st := find(section.properties, lambda k: equals_insensitive(k.key, "st"))) != None:

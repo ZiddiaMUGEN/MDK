@@ -3,9 +3,6 @@
 ;!mtl-debug TYPE_DEFINITION vector BUILTIN_STRUCTURE 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:23
 ;!mtl-debug-next X:float
 ;!mtl-debug-next Y:float
-;!mtl-debug TYPE_DEFINITION numeric UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:92
-;!mtl-debug-next int
-;!mtl-debug-next float
 ;!mtl-debug TYPE_DEFINITION prefixed_int UNION 32 /home/jsmith/MDK/mtlcc/mtl/builtins.py:93
 ;!mtl-debug-next cint
 ;!mtl-debug-next int
