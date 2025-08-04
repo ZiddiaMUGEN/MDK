@@ -96,16 +96,3 @@ victory4 = "Your moves are too predictable. You want to learn Kung Fu Palm? It's
 victory5 = "That was a good workout."
 victory6 = "I want to challenge more skilled fighters."
 victory7 = "What do you mean my girlfriend is in another temple?"
-
-;Alternate language victory quotes (optional).
-;0 or more alternate language sections may be added, preceded by the
-;ISO 639-1 code followed by a ".", e.g. "[ja.Quotes]".
-;See language setting in mugen.cfg.
-[ja.Quotes]
-victory1 = "カンフー突き手を破らぬ限り、お前に勝ち目はない！"
-victory2 = "十年早いんだぞ"
-victory3 = "お前は見覚えがあるな。テレビにでも…？"
-victory4 = "お前の動きは見破りやすすぎる。　なに、カンフー突き手が覚えたいんだと？　素人には無理だぞ"
-victory5 = "ふー。　いい汗だった"
-victory6 = "もっと強い相手に挑戦したい"
-victory7 = "なんだと！彼女はここにもいないと？"

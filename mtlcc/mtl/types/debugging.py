@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import subprocess
 
 from mtl.types.shared import Location
 from mtl.types.translation import *
@@ -14,6 +15,11 @@ class DebuggerCommand(Enum):
 class DebuggerRequest:
     command_type: DebuggerCommand
     params: list[str]
+
+@dataclass
+class DebuggerLaunchInfo:
+    subprocess: Optional[subprocess.Popen]
+    character_folder: Optional[str]
 
 @dataclass
 class DebugTypeInfo:

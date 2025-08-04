@@ -253,7 +253,11 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
 
 def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> str:
     debug = debuginfo(DebugCategory.LOCATION, tree.location)[0]
-    return f"{emit_trigger_recursive(tree, table, ctx, expected, scope).value}{debug}"
+    output = emit_trigger_recursive(tree, table, ctx, expected, scope)
+    ## BUILTIN_ANY is used in multivalue, don't strip those.
+    if output.value.startswith("(") and output.value.endswith(")") and (expected == None or len(expected) == 1):
+        output.value = output.value[1:-1]
+    return f"{output.value}{debug}"
 
 def write_state_controller(controller: StateController, table: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[str]:
     output: list[str] = []

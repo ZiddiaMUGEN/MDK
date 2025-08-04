@@ -332,6 +332,8 @@ def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expressi
     ## this step also needs to mask the RESULT of the walrus operator, and then shift right, producing e.g.
     ## `((var(0) := (((1 & 1) * 256)) & 256) / 256) * 5`
     ## that means adding the left-shift at the end of this expression.
+    if exprs[0].value.startswith("(") and exprs[0].value.endswith(")"):
+        exprs[0].value = exprs[0].value[1:-1]
     exprn = builtin_binary(exprs, ctx, ":=")
     if isinstance(exprs[0], VariableExpression):
         offset = exprs[0].allocation[1]

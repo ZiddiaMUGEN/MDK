@@ -1,6 +1,7 @@
 ## Debugging platform for MTL/CNS.
 import argparse
 import readline
+import shutil
 
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
@@ -33,3 +34,6 @@ if __name__ == "__main__":
             target = request.params[0]
             ctx = database.load(target)
             print(f"Successfully loaded MTL debugging database from {target}.")
+    
+    if subprocess != None and subprocess.character_folder != None:
+        shutil.rmtree(subprocess.character_folder)
