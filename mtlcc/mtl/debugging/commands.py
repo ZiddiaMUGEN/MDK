@@ -1,0 +1,16 @@
+from mtl.types.debugging import DebuggerRequest, DebuggerCommand
+from mtl.utils.func import equals_insensitive
+
+def processDebugCommand(input: str) -> DebuggerRequest:
+    if equals_insensitive(input, "exit"):
+        return DebuggerRequest(DebuggerCommand.EXIT, [])
+    elif equals_insensitive(input, "help"):
+        components = input.split(" ")[1:] if " " in input else []
+        return DebuggerRequest(DebuggerCommand.HELP, components)
+    elif equals_insensitive(input, "launch"):
+        return DebuggerRequest(DebuggerCommand.LAUNCH, [])
+    elif input.lower().startswith("load "):
+        return DebuggerRequest(DebuggerCommand.LOAD, input.split(" ")[1:])
+    
+    print(f"Unrecognized debugger command: {input}")
+    return DebuggerRequest(DebuggerCommand.NONE, [])

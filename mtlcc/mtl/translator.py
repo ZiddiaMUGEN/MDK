@@ -1,8 +1,7 @@
 from mtl.types.context import LoadContext, TranslationContext
 from mtl.types.translation import *
-from mtl.types.shared import TranslationError
+from mtl.types.shared import TranslationError, DebugCategory
 from mtl.types.builtins import *
-from mtl.types.debug import DebugCategory
 
 from mtl.utils.func import *
 from mtl.utils.compiler import *
@@ -10,6 +9,8 @@ from mtl.utils.debug import debuginfo
 from mtl.utils.constant import MTL_VERSION
 from mtl import builtins
 from mtl.parser.trigger import parseTrigger
+
+from mtl.debugging import database
 
 from mtl.writer import *
 
@@ -680,13 +681,19 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
 
     translateTypes(load_ctx, ctx)
     translateStructs(load_ctx, ctx)
+    database.addTypesToDatabase(ctx)
+
     translateTriggers(load_ctx, ctx)
+    database.addTriggersToDatabase(ctx)
+    
     translateTemplates(load_ctx, ctx)
 
     ## add the default parameters ignorehitpause and persistent to all template definitions.
     for template in ctx.templates:
         template.params.append(TemplateParameter("ignorehitpause", [TypeSpecifier(BUILTIN_BOOL)], False))
         template.params.append(TemplateParameter("persistent", [TypeSpecifier(BUILTIN_INT)], False))
+
+    database.addTemplatesToDatabase(ctx)
 
     translateStateDefinitions(load_ctx, ctx)
     replaceTemplates(ctx)
@@ -699,9 +706,13 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     fullPassTypeCheck(ctx)
     replaceTriggers(ctx)
     checkScopes(ctx)
+
     assignVariables(ctx)
+    database.addGlobalsToDatabase(ctx)
+
     applyPersist(ctx)
     applyStateNumbers(ctx)
+    database.addStateDefinitionsToDatabase(ctx)
 
     return ctx
 

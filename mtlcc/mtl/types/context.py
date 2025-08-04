@@ -3,6 +3,7 @@ from enum import Enum
 
 from mtl.types.ini import *
 from mtl.types.translation import *
+from mtl.types.debugging import *
 
 class TranslationMode(Enum):
     MTL_MODE = 0
@@ -56,6 +57,7 @@ class TranslationContext:
     globals: list[TypeParameter]
     allocations: dict[StateDefinitionScope, tuple[AllocationTable, AllocationTable]]
     compiler_flags: CompilerConfiguration
+    debugging: DebuggingContext
 
     def __init__(self, filename: str, cc: CompilerConfiguration):
         self.filename = filename
@@ -66,6 +68,7 @@ class TranslationContext:
         self.globals = []
         self.allocations = {}
         self.compiler_flags = cc
+        self.debugging = DebuggingContext()
 
 @dataclass
 class ProjectContext:
@@ -94,4 +97,3 @@ class ProjectContext:
         self.constants = []
         self.commands = []
         self.compiler_flags = CompilerConfiguration()
-    

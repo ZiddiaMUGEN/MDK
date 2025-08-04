@@ -1,8 +1,7 @@
 from typing import Any
 
-from mtl.types.shared import Location
+from mtl.types.shared import Location, DebugCategory
 from mtl.types.translation import AllocationTable, TypeParameter, TypeDefinition, TriggerDefinition, TemplateDefinition, StateDefinition
-from mtl.types.debug import DebugCategory
 from mtl.types.builtins import BUILTIN_FLOAT
 
 from mtl.utils.func import mask_variable

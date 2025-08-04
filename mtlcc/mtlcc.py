@@ -6,6 +6,7 @@ import shutil
 from mtl import loader, translator, project
 from mtl.utils.compiler import TranslationError
 from mtl.utils.func import find, equals_insensitive, includes_insensitive
+from mtl.debugging import database
 
 from mtl.types.context import *
 
@@ -94,6 +95,10 @@ if __name__ == "__main__":
 
         with open(target_file, mode="w") as f:
             f.writelines(s + "\n" for s in translator.createOutput(translated))
+
+        ## generate debugging info
+        debug_file = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".mdbg")
+        database.writeDatabase(debug_file, translated.debugging)
 
         ## emit CNS constants file
         target_cns = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".constants")

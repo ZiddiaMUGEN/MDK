@@ -1,6 +1,6 @@
 from mtl.types.translation import *
 from mtl.types.context import *
-from mtl.types.debug import DebugCategory
+from mtl.types.shared import DebugCategory
 from mtl.types.builtins import BUILTIN_ANY
 
 from mtl.utils.debug import debuginfo

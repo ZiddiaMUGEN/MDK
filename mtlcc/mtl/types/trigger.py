@@ -4,6 +4,7 @@ from enum import Enum
 from mtl.types.shared import Location
 
 class TriggerTreeNode(Enum):
+    EMPTY = -2
     MULTIVALUE = -1
     UNARY_OP = 0
     BINARY_OP = 1
