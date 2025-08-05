@@ -487,9 +487,6 @@ def applyPersist(ctx: TranslationContext):
                             raise TranslationError("Can't currently persist structure types.", persisted.location)
                         ## get expression representing the source
                         mask_source = mask_variable(var_source.allocations[0][0], var_source.allocations[0][1], var_source.type.size, var_source.type == BUILTIN_FLOAT)
-                        ## shift right based on the source offset so it aligns to 0
-                        if var_source.allocations[0][1] != 0:
-                            mask_source = f"({mask_source}) / {c_int32(2 ** var_source.allocations[0][1]).value}"
                         ## find the allocation for the persisted variable target
                         if (var_target := find(target_locals, lambda k: equals_insensitive(k.name, in_source.operator))) == None:
                             raise TranslationError(f"ChangeState persisted parameter {in_source.operator} must also exist as a local in target state {target_statedef.name}.", persisted.location)

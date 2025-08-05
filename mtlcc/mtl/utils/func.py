@@ -103,6 +103,9 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
     mask = c_int32(end_pow2 - start_pow2)
     result += f" & {mask.value}"
 
+    if offset != 0:
+        result = f"({result}) / {c_int32(start_pow2 - 1).value}"
+
     return result
 
 def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -> str:

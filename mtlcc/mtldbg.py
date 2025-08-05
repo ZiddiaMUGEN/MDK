@@ -139,21 +139,28 @@ if __name__ == "__main__":
                     continue
                 scope = state.scope
                 ## collect all vars that apply to this state
-                all_vars: list[DebugParameterInfo] = []
+                all_vars: tuple[list[DebugParameterInfo], list[DebugParameterInfo]] = ([], [])
                 for var in ctx.globals:
                     if var.scope == scope:
-                        all_vars.append(var)
+                        all_vars[0].append(var)
                 for var in state.locals:
-                    all_vars.append(var)
+                    all_vars[1].append(var)
                 ## display
-                print(f"{'Name':<32}\t{'Type':<16}\t{'Allocation':<16}\t{'Value':<16}")
-                for var in all_vars:
+                print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<16}\t{'Allocation':<16}\t{'Value':<16}")
+                for var in all_vars[0]:
                     ## TODO: struct types, multiple allocations
                     alloc = var.allocations[0]
                     target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
                     target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
                     if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
-                    print(f"{var.name:<32}\t{var.type.name:<16}\t{target_name:<16}\t{target_value}")
+                    print(f"{var.name:<32}\t{'Global':<8}\t{var.type.name:<16}\t{target_name:<16}\t{target_value}")
+                for var in all_vars[1]:
+                    ## TODO: struct types, multiple allocations
+                    alloc = var.allocations[0]
+                    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
+                    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
+                    if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
+                    print(f"{var.name:<32}\t{'Local':<8}\t{var.type.name:<16}\t{target_name:<16}\t{target_value}")
 
         elif command == DebuggerCommand.STOP:
             if debugger == None or debugger.subprocess == None:

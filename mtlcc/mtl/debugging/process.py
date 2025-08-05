@@ -34,7 +34,7 @@ def getVariable(index: int, offset: int, size: int, is_float: bool, target: Debu
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)
-        return variable_value & mask.value
+        return (variable_value & mask.value) >> offset
 
 ## helper to get a value from cache if possible.
 def get_cached(addr: int, handle: int, launch_info: DebuggerLaunchInfo) -> int:

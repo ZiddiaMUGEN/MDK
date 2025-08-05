@@ -150,7 +150,7 @@ value = 21;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:135
 ;!mtl-debug STATEDEF JUMP 40
 [Statedef 40];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:139
 ;!mtl-debug VARIABLE_ALLOCATION jumpDirection byte C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 65280
+;!mtl-debug-next 0 8 (var(0) & 65280) / 255
 type = S
 physics = S
 anim = 40
@@ -176,14 +176,14 @@ var(0) = (((((-1)) & 255) * 256) + (var(0) & -65281));!mtl-debug LOCATION C:\Use
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:164
 type = VelSet
 trigger1 = AnimTime = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:166
-x = cond(((var(0) & 65280) = 0), (Const(velocity.jump.neu.x)), cond(((var(0) & 65280) = 1), (Const(velocity.jump.fwd.x)), (Const(velocity.jump.back.x))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:167
+x = cond((((var(0) & 65280) / 255) = 0), (Const(velocity.jump.neu.x)), cond((((var(0) & 65280) / 255) = 1), (Const(velocity.jump.fwd.x)), (Const(velocity.jump.back.x))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:167
 y = Const(velocity.jump.y);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:168
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:170
 type = VelSet
 trigger1 = AnimTime = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:172
 trigger1 = PrevStateNo = 100;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:173
-trigger1 = (var(0) & 65280) = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:174
+trigger1 = ((var(0) & 65280) / 255) = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:174
 x = Const(velocity.runjump.fwd.x);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:175
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:177
@@ -196,7 +196,7 @@ ctrl = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:181
 ;!mtl-debug STATEDEF JUMP_AIR 45
 [Statedef 45];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:185
 ;!mtl-debug VARIABLE_ALLOCATION jumpDirection byte C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 65280
+;!mtl-debug-next 0 8 (var(0) & 65280) / 255
 type = A
 physics = N
 ctrl = 0
@@ -230,7 +230,7 @@ var(0) = (((((-1)) & 255) * 256) + (var(0) & -65281));!mtl-debug LOCATION C:\Use
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:218
 type = VelSet
 trigger1 = Time = 2;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:220
-x = cond(((var(0) & 65280) = 0), (Const(velocity.airjump.neu.x)), cond(((var(0) & 65280) = 1), (Const(velocity.airjump.fwd.x)), (Const(velocity.airjump.back.x))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:221
+x = cond((((var(0) & 65280) / 255) = 0), (Const(velocity.airjump.neu.x)), cond((((var(0) & 65280) / 255) = 1), (Const(velocity.airjump.fwd.x)), (Const(velocity.airjump.back.x))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:221
 y = Const(velocity.airjump.y);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:222
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:224
@@ -505,7 +505,7 @@ value = 140;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:500
 ;!mtl-debug STATEDEF GUARD_AIR 132
 [Statedef 132];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:504
 ;!mtl-debug VARIABLE_ALLOCATION hasHitGround bool C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 256
+;!mtl-debug-next 0 8 (var(0) & 256) / 255
 type = A
 physics = N
 
@@ -526,24 +526,24 @@ var(0) = ((((((pos y >= 0) && (vel y > 0))) & 1) * 256) + (var(0) & -257));!mtl-
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:525
 type = VelSet
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:527
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:527
 y = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:528
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:530
 type = PosSet
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:532
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:532
 y = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:533
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:535
 type = ChangeState
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:537
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:537
 trigger1 = Command = "holdback";!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:538
 trigger1 = InGuardDist;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:539
 value = 130;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:540
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:542
 type = ChangeState
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:544
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:544
 value = 52;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:545
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:547
@@ -787,7 +787,7 @@ time = 4;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:793
 ;!mtl-debug STATEDEF GUARD_AIR_KNOCKBACK 155
 [Statedef 155];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:797
 ;!mtl-debug VARIABLE_ALLOCATION hasHitGround bool C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 256
+;!mtl-debug-next 0 8 (var(0) & 256) / 255
 type = A
 movetype = H
 physics = N
@@ -816,24 +816,24 @@ var(0) = ((((((pos y >= 0) && (vel y > 0))) & 1) * 256) + (var(0) & -257));!mtl-
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:826
 type = VelSet
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:828
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:828
 y = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:829
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:831
 type = PosSet
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:833
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:833
 y = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:834
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:836
 type = ChangeState
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:838
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:838
 trigger1 = Command = "holdback";!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:839
 trigger1 = InGuardDist;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:840
 value = 130;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:841
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:843
 type = ChangeState
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:845
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:845
 value = 52;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:846
 
 
@@ -1444,7 +1444,7 @@ value = 5030;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:149
 ;!mtl-debug STATEDEF DOWN_HIT_KNOCKBACK 5081
 [Statedef 5081];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1497
 ;!mtl-debug VARIABLE_ALLOCATION preventShowGroundFrame bool C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 256
+;!mtl-debug-next 0 8 (var(0) & 256) / 255
 type = L
 movetype = H
 physics = C
@@ -1467,7 +1467,7 @@ var(0) = ((((1) & 1) * 256) + (var(0) & -257));!mtl-debug LOCATION C:\Users\zidd
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1519
 type = ChangeState
 trigger1 = HitOver;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1521
-triggerall = (var(0) := ((((((var(0)) & 256) / 256) & 1) * 256) + ((var(0)) & (-257)))) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1523
+triggerall = ((var(0)) := ((((((var(0)) & 256) / 255) & 1) * 256) + ((var(0)) & (-257)))) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1523
 value = 5110;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1522
 
 
@@ -1614,7 +1614,7 @@ value = 5110;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:166
 ;!mtl-debug STATEDEF DOWN_HIT_LIEDOWN 5110
 [Statedef 5110];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1668
 ;!mtl-debug VARIABLE_ALLOCATION preventShowGroundFrame bool C:\Users\ziddi\MDK\mtlcc:0
-;!mtl-debug-next 0 8 var(0) & 256
+;!mtl-debug-next 0 8 (var(0) & 256) / 255
 ;!mtl-debug VARIABLE_ALLOCATION fallVelocity int C:\Users\ziddi\MDK\mtlcc:0
 ;!mtl-debug-next 1 0 var(1)
 type = L
@@ -1666,13 +1666,13 @@ var(1) = (floor(vel y));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\comm
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1718
 type = PlaySnd
 trigger1 = Time = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1720
-trigger1 = !(var(0) & 256);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1721
+trigger1 = !((var(0) & 256) / 255);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1721
 value = F7, (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const720p(56))), 1, 0));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1722
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1724
 type = Explod
 trigger1 = Time = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1726
-trigger1 = !(var(0) & 256);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1727
+trigger1 = !((var(0) & 256) / 255);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1727
 anim = F(((60 + cond(((var(1)) > (Const720p(20))), 1, 0)) + cond(((var(1)) > (Const720p(56))), 1, 0)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1728
 postype = none;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1729
 pos = (Pos x + CameraPos x), 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1730
@@ -1689,7 +1689,7 @@ type = ChangeAnim
 triggerall = Anim = [5171, 5179];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1742
 triggerall = SelfAnimExist((5110 + (Anim / 10)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1743
 trigger1 = AnimTime = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1744
-trigger2 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1745
+trigger2 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1745
 persistent = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1741
 value = 5110 + (Anim / 10);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1746
 
@@ -1697,7 +1697,7 @@ value = 5110 + (Anim / 10);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\c
 type = ChangeAnim
 triggerall = Anim != [5111, 5119];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1750
 trigger1 = AnimTime = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1751
-trigger2 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1752
+trigger2 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1752
 value = 5110;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1753
 persistent = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1754
 
@@ -1705,13 +1705,13 @@ persistent = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1
 type = ChangeState
 triggerall = !Alive;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1758
 trigger1 = AnimTime = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1759
-trigger2 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1760
+trigger2 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1760
 trigger3 = Anim = [5110, 5119];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1761
 value = 5150;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1762
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1765
 type = VarSet
-trigger1 = var(0) & 256;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1767
+trigger1 = (var(0) & 256) / 255;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1767
 trigger1 = Time = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1768
 var(0) = ((((0) & 1) * 256) + (var(0) & -257));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1769
 
