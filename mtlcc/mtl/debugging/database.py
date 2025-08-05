@@ -11,7 +11,7 @@ def addStringToDatabase(name: str, ctx: TranslationContext):
 def addTypesToDatabase(ctx: TranslationContext):
     ## iterate each type.
     for type in ctx.types:
-        info = DebugTypeInfo(type.name, type.category, [], [], type.location)
+        info = DebugTypeInfo(type.name, type.category, [], [], type.size, type.location)
         addStringToDatabase(type.name, ctx)
         addStringToDatabase(type.location.filename, ctx)
         for member in type.members:
@@ -68,7 +68,7 @@ def addStateDefinitionsToDatabase(ctx: TranslationContext):
     for statedef in ctx.statedefs:
         addStringToDatabase(statedef.name, ctx)
         state_id = statedef.parameters.id if statedef.parameters.id != None else -4
-        info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.location, [], [])
+        info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [])
         for local in statedef.locals:
             local_info = DebugParameterInfo(local.name, local.type, statedef.scope, local.allocations)
             addStringToDatabase(local.name, ctx)
@@ -96,6 +96,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
         for type in ctx.types:
             write_integer(ctx.strings.index(type.name), f)
             write_byte(type.category.value, f)
+            write_integer(type.size, f)
             write_short(len(type.members), f)
             for index in range(len(type.members)):
                 member = type.members[index]
@@ -188,6 +189,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
                 write_integer(state.scope.target, f)
             else:
                 write_integer(-1, f)
+            write_byte(1 if state.is_common else 0, f)
             write_integer(ctx.strings.index(state.location.filename), f)
             write_integer(state.location.line, f)
             write_short(len(state.locals), f)
@@ -225,19 +227,20 @@ def load(filename: str) -> DebuggingContext:
         for _ in range(read_integer(f)):
             name = ctx.strings[read_integer(f)]
             category = TypeCategory(read_byte(f))
+            size = read_integer(f)
             ## for first pass just ignore members, because we need to re-run through for forward
             ## type references anyway.
             for _ in range(read_short(f)):
                 f.seek(f.tell() + 8)
             filename = ctx.strings[read_integer(f)]
             line = read_integer(f)
-            ctx.types.append(DebugTypeInfo(name, category, [], [], Location(filename, line)))
+            ctx.types.append(DebugTypeInfo(name, category, [], [], size, Location(filename, line)))
 
         ## now seek back to the start of the type table and load members.
         f.seek(start_index)
         for index in range(read_integer(f)):
             target = ctx.types[index]
-            f.seek(f.tell() + 5)
+            f.seek(f.tell() + 9)
             for _ in range(read_short(f)):
                 member_index = read_integer(f)
                 member_name = read_integer(f)
@@ -302,6 +305,7 @@ def load(filename: str) -> DebuggingContext:
             id = read_integer(f)
             scope = StateScopeType(read_byte(f))
             target = read_integer(f)
+            is_common = read_byte(f) != 0
             filename = ctx.strings[read_integer(f)]
             line = read_integer(f)
             sds = StateDefinitionScope(scope, target if target != -1 else None)
@@ -316,6 +320,6 @@ def load(filename: str) -> DebuggingContext:
                 locals.append(DebugParameterInfo(local_name, local_type, sds, allocations))
             for _ in range(read_short(f)):
                 controllers.append(Location(ctx.strings[read_integer(f)], read_integer(f)))
-            ctx.states.append(DebugStateInfo(name, id, sds, Location(filename, line), locals, controllers))
+            ctx.states.append(DebugStateInfo(name, id, sds, is_common, Location(filename, line), locals, controllers))
 
     return ctx

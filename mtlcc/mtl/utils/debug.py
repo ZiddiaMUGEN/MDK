@@ -1,10 +1,21 @@
-from typing import Any
+from typing import Any, Optional
 
 from mtl.types.shared import Location, DebugCategory
 from mtl.types.translation import AllocationTable, TypeParameter, TypeDefinition, TriggerDefinition, TemplateDefinition, StateDefinition
 from mtl.types.builtins import BUILTIN_FLOAT
+from mtl.types.context import DebuggingContext, DebugStateInfo
 
-from mtl.utils.func import mask_variable
+from mtl.utils.func import mask_variable, get_all
+
+def get_state_by_id(id: int, ctx: DebuggingContext) -> Optional[DebugStateInfo]:
+    matches = get_all(ctx.states, lambda k: k.id == id)
+    if len(matches) == 0:
+        return None
+    if len(matches) > 2:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    return next(filter(lambda k: not k.is_common, matches), None)
 
 def debuginfo(cat: DebugCategory, data: Any) -> list[str]:
     if cat == DebugCategory.VERSION_HEADER:

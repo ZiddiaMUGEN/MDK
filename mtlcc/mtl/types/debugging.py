@@ -38,6 +38,7 @@ class DebuggerCommand(Enum):
     BREAK = 6
     STEP = 7
     STOP = 8
+    DELETE = 9
 
 class DebugProcessState(Enum):
     EXIT = -1 # indicates the process is exited or wants to exit.
@@ -55,9 +56,10 @@ class DebuggerRequest:
 class DebuggerLaunchInfo:
     process_id: int
     thread_id: int
+    cache: dict[int, int]
     character_folder: Optional[str]
     state: DebugProcessState
-    current_bp: Optional[tuple[int, int]]
+    database: dict
 
 @dataclass
 class DebuggerTarget:
@@ -67,11 +69,11 @@ class DebuggerTarget:
 @dataclass
 class DebugBreakEvent:
     address: int
-    step: Optional[tuple[int, int]]
+    step: bool
 
 @dataclass
 class DebugBreakResult:
-    step: bool = True
+    step: bool = False
 
 @dataclass
 class DebugTypeInfo:
@@ -79,6 +81,7 @@ class DebugTypeInfo:
     category: TypeCategory
     members: list[Union[str, TypeDefinition, 'DebugTypeInfo']]
     member_names: list[str]
+    size: int
     location: Location
 
 @dataclass
@@ -113,6 +116,7 @@ class DebugStateInfo:
     name: str
     id: int
     scope: StateDefinitionScope
+    is_common: bool
     location: Location
     locals: list[DebugParameterInfo]
     states: list[Location]
@@ -125,6 +129,8 @@ class DebuggingContext:
     templates: list[DebugTemplateInfo]
     globals: list[DebugParameterInfo]
     states: list[DebugStateInfo]
+    breakpoints: list[tuple[int, int]]
+    current_breakpoint: Optional[tuple[int, int]]
 
     def __init__(self):
         self.strings = []
@@ -133,6 +139,8 @@ class DebuggingContext:
         self.templates = []
         self.globals = []
         self.states = []
+        self.breakpoints = []
+        self.current_breakpoint = None
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

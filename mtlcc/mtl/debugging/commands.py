@@ -17,6 +17,8 @@ def processDebugCommand(input: str) -> DebuggerRequest:
         return DebuggerRequest(DebuggerCommand.STEP, [])
     elif input.lower().startswith("load "):
         return DebuggerRequest(DebuggerCommand.LOAD, input.split(" ")[1:])
+    elif input.lower().startswith("delete "):
+        return DebuggerRequest(DebuggerCommand.DELETE, input.split(" ")[1:])
     elif input.lower().startswith("info "):
         return DebuggerRequest(DebuggerCommand.INFO, input.split(" ")[1:])
     elif input.lower().startswith("break "):
