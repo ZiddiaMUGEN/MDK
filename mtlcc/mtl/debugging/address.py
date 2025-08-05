@@ -1,0 +1,22 @@
+## TODO: support the other MUGEN versions.
+
+### read memory at this address to determine MUGEN version.
+SELECT_VERSION_ADDRESS = 0x4405C0
+
+ADDRESS_MUGEN_100 = {
+    
+}
+
+ADDRESS_MUGEN_11A4 = {
+
+}
+
+ADDRESS_MUGEN_11B1 = {
+
+}
+
+ADDRESS_DATABASE = {
+    0xC483FFFF: ADDRESS_MUGEN_100,
+    0x89003983: ADDRESS_MUGEN_11A4,
+    0x0094EC81: ADDRESS_MUGEN_11B1
+}

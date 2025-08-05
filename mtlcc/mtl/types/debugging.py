@@ -1,10 +1,20 @@
 from dataclasses import dataclass
 import ctypes
-from ctypes import c_int, c_short
+from ctypes import c_int, c_short, wintypes
 import subprocess
 
 from mtl.types.shared import Location
 from mtl.types.translation import *
+
+CREATE_SUSPENDED = 4
+INFINITE = 0xffffffff
+DBG_CONTINUE = 0x00010002
+PROCESS_ALL_ACCESS = 0x001FFFFF
+
+EXCEPTION_DEBUG_EVENT = 1
+
+STATUS_WX86_BREAKPOINT = 0x4000001F
+STATUS_BREAKPOINT = 0x80000003
 
 class DebuggerCommand(Enum):
     EXIT = -1
@@ -36,6 +46,14 @@ class DebuggerLaunchInfo:
 class DebuggerTarget:
     subprocess: subprocess.Popen
     launch_info: DebuggerLaunchInfo
+
+@dataclass
+class DebugBreakEvent:
+    address: int
+
+@dataclass
+class DebugBreakResult:
+    proceed: bool
 
 @dataclass
 class DebugTypeInfo:
@@ -100,96 +118,29 @@ class DebuggingContext:
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [
-        ("ExceptionCode", c_int),
-        ("ExceptionFlags", c_int),
-        ("ExceptionRecord", c_int),
-        ("ExceptionAddress", c_int),
-        ("NumberParameters", c_int),
-        ("ExceptionInformation", c_int)
+        ("ExceptionCode", wintypes.DWORD),
+        ("ExceptionFlags", wintypes.DWORD),
+        ("ExceptionRecord", ctypes.POINTER(wintypes.DWORD)),
+        ("ExceptionAddress", wintypes.LPVOID),
+        ("NumberParameters", wintypes.DWORD),
+        ("ExceptionInformation", wintypes.LPVOID * 15)
     ]
 
 class EXCEPTION_DEBUG_INFO(ctypes.Structure):
     _fields_ = [
         ("ExceptionRecord", EXCEPTION_RECORD),
-        ("dwFirstChance", c_int)
-    ]
-
-class CREATE_THREAD_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("hThread", c_int),
-        ("lpThreadLocalBase", c_int),
-        ("lpStartAddress", c_int),
-    ]
-
-class CREATE_PROCESS_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("hFile", c_int),
-        ("hProcess", c_int),
-        ("hThread", c_int),
-        ("lpBaseOfImage", c_int),
-        ("dwDebugInfoFileOffset", c_int),
-        ("nDebugInfoSize", c_int),
-        ("lpThreadLocalBase", c_int),
-        ("lpStartAddress", c_int),
-        ("lpImageName", c_int),
-        ("fUnicode", c_short),
-    ]
-
-class EXIT_THREAD_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("dwExitCode", c_int)
-    ]
-
-class EXIT_PROCESS_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("dwExitCode", c_int)
-    ]
-
-class LOAD_DLL_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("hFile", c_int),
-        ("lpBaseOfDll", c_int),
-        ("dwDebugInfoFileOffset", c_int),
-        ("nDebugInfoSize", c_int),
-        ("lpImageName", c_int),
-        ("fUnicode", c_short),
-    ]
-
-class UNLOAD_DLL_DEBUG_INFO(ctypes.Structure):
-    _fields_ = [
-        ("lpBaseOfDll", c_int)
-    ]
-
-class OUTPUT_DEBUG_STRING_INFO(ctypes.Structure):
-    _fields_ = [
-        ("lpDebugStringData", c_int),
-        ("fUnicode", c_short),
-        ("nDebugStringLength", c_short)
-    ]
-
-class RIP_INFO(ctypes.Structure):
-    _fields_ = [
-        ("dwError", c_int),
-        ("dwType", c_int),
+        ("dwFirstChance", wintypes.DWORD)
     ]
 
 class DEBUG_INFO(ctypes.Union):
     _fields_ = [
-        ("Exception", EXCEPTION_DEBUG_INFO),
-        ("CreateThread", CREATE_THREAD_DEBUG_INFO),
-        ("CreateProcessInfo", CREATE_PROCESS_DEBUG_INFO),
-        ("ExitThread", EXIT_THREAD_DEBUG_INFO),
-        ("ExitProcess", EXIT_PROCESS_DEBUG_INFO),
-        ("LoadDll", LOAD_DLL_DEBUG_INFO),
-        ("UnloadDll", UNLOAD_DLL_DEBUG_INFO),
-        ("DebugString", OUTPUT_DEBUG_STRING_INFO),
-        ("RipInfo", RIP_INFO)
+        ("Exception", EXCEPTION_DEBUG_INFO)
     ]
 
 class DEBUG_EVENT(ctypes.Structure):
     _fields_ = [
-        ("dwDebugEventCode", c_int),
-        ("dwProcessId", c_int),
-        ("dwThreadId", c_int),
+        ("dwDebugEventCode", wintypes.DWORD),
+        ("dwProcessId", wintypes.DWORD),
+        ("dwThreadId", wintypes.DWORD),
         ("u", DEBUG_INFO)
     ]
