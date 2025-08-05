@@ -9,6 +9,8 @@ def processDebugCommand(input: str) -> DebuggerRequest:
         return DebuggerRequest(DebuggerCommand.HELP, components)
     elif equals_insensitive(input, "launch"):
         return DebuggerRequest(DebuggerCommand.LAUNCH, [])
+    elif equals_insensitive(input, "continue"):
+        return DebuggerRequest(DebuggerCommand.CONTINUE, [])
     elif input.lower().startswith("load "):
         return DebuggerRequest(DebuggerCommand.LOAD, input.split(" ")[1:])
     
