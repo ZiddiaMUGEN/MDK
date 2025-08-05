@@ -10,11 +10,22 @@ CREATE_SUSPENDED = 4
 INFINITE = 0xffffffff
 DBG_CONTINUE = 0x00010002
 PROCESS_ALL_ACCESS = 0x001FFFFF
+THREAD_GET_SET_CONTEXT = 0x5A
 
 EXCEPTION_DEBUG_EVENT = 1
+CREATE_PROCESS_DEBUG_EVENT = 3
 
+STATUS_WX86_SINGLE_STEP = 0x4000001E
 STATUS_WX86_BREAKPOINT = 0x4000001F
 STATUS_BREAKPOINT = 0x80000003
+STATUS_SINGLE_STEP = 0x80000004
+
+RESUME_FLAG = 0x00010000
+
+CONTEXT_AMD64 = 0x00100000
+CONTEXT_CONTROL = (CONTEXT_AMD64 | 0x00000001)
+CONTEXT_INTEGER = (CONTEXT_AMD64 | 0x00000002)
+CONTEXT_DEBUG_REGISTERS = (CONTEXT_AMD64 | 0x00000010)
 
 class DebuggerCommand(Enum):
     EXIT = -1
@@ -39,6 +50,7 @@ class DebuggerRequest:
 @dataclass
 class DebuggerLaunchInfo:
     process_id: int
+    thread_id: int
     character_folder: Optional[str]
     state: DebugProcessState
 
@@ -143,4 +155,46 @@ class DEBUG_EVENT(ctypes.Structure):
         ("dwProcessId", wintypes.DWORD),
         ("dwThreadId", wintypes.DWORD),
         ("u", DEBUG_INFO)
+    ]
+
+class FLOATING_SAVE_AREA(ctypes.Structure):
+    _fields_ = [
+        ("ControlWord", wintypes.DWORD),
+        ("StatusWord", wintypes.DWORD),
+        ("TagWord", wintypes.DWORD),
+        ("ErrorOffset", wintypes.DWORD),
+        ("ErrorSelector", wintypes.DWORD),
+        ("DataOffset", wintypes.DWORD),
+        ("DataSelector", wintypes.DWORD),
+        ("RegisterArea", wintypes.BYTE * 80),
+        ("Cr0NpxState", wintypes.DWORD),
+    ]
+
+class CONTEXT(ctypes.Structure):
+    _fields_ = [
+        ("ContextFlags", wintypes.DWORD),
+        ("Dr0", wintypes.DWORD),
+        ("Dr1", wintypes.DWORD),
+        ("Dr2", wintypes.DWORD),
+        ("Dr3", wintypes.DWORD),
+        ("Dr6", wintypes.DWORD),
+        ("Dr7", wintypes.DWORD),
+        ("FloatSave", FLOATING_SAVE_AREA),
+        ("SegGs", wintypes.DWORD),
+        ("SegFs", wintypes.DWORD),
+        ("SegEs", wintypes.DWORD),
+        ("SegDs", wintypes.DWORD),
+        ("Edi", wintypes.DWORD),
+        ("Esi", wintypes.DWORD),
+        ("Ebx", wintypes.DWORD),
+        ("Edx", wintypes.DWORD),
+        ("Ecx", wintypes.DWORD),
+        ("Eax", wintypes.DWORD),
+        ("Ebp", wintypes.DWORD),
+        ("Eip", wintypes.DWORD),
+        ("SegCs", wintypes.DWORD),
+        ("EFlags", wintypes.DWORD),
+        ("Esp", wintypes.DWORD),
+        ("SegSs", wintypes.DWORD),
+        ("ExtendedRegisters", wintypes.BYTE * 512)
     ]
