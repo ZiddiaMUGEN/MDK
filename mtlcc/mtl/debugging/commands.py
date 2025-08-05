@@ -11,8 +11,16 @@ def processDebugCommand(input: str) -> DebuggerRequest:
         return DebuggerRequest(DebuggerCommand.LAUNCH, [])
     elif equals_insensitive(input, "continue"):
         return DebuggerRequest(DebuggerCommand.CONTINUE, [])
+    elif equals_insensitive(input, "stop"):
+        return DebuggerRequest(DebuggerCommand.STOP, [])
+    elif equals_insensitive(input, "step"):
+        return DebuggerRequest(DebuggerCommand.STEP, [])
     elif input.lower().startswith("load "):
         return DebuggerRequest(DebuggerCommand.LOAD, input.split(" ")[1:])
+    elif input.lower().startswith("info "):
+        return DebuggerRequest(DebuggerCommand.INFO, input.split(" ")[1:])
+    elif input.lower().startswith("break "):
+        return DebuggerRequest(DebuggerCommand.BREAK, input.split(" ")[1:])
     
     print(f"Unrecognized debugger command: {input}")
     return DebuggerRequest(DebuggerCommand.NONE, [])

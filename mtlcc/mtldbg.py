@@ -17,6 +17,8 @@ if __name__ == "__main__":
     target = args.database
     mugen = args.executable
     debugger = None
+    breakpoints: list[tuple[int, int]] = []
+    breakpoints.append((50, 0))
 
     ctx = database.load(target)
     print(f"Successfully loaded MTL debugging database from {target}.")
@@ -37,9 +39,13 @@ if __name__ == "__main__":
 
         if command == DebuggerCommand.LAUNCH:
             ## launch and attach MUGEN subprocess
-            debugger = process.launch(mugen, target.replace(".mdbg", ".def"))
+            ## TODO: right now `breakpoints` is not cleared between launches.
+            debugger = process.launch(mugen, target.replace(".mdbg", ".def"), breakpoints, ctx)
         elif command == DebuggerCommand.LOAD:
             ## discard current mdbg and load a new one
+            if debugger != None:
+                print("Cannot change debugging database after MUGEN has been launched.")
+                continue
             target = request.params[0]
             ctx = database.load(target)
             print(f"Successfully loaded MTL debugging database from {target}.")
@@ -49,6 +55,23 @@ if __name__ == "__main__":
                 print("Cannot continue when MUGEN has not been launched.")
                 continue
             process.cont(debugger)
+        elif command == DebuggerCommand.BREAK:
+            ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index>
+            pass
+        elif command == DebuggerCommand.STEP:
+            ## step forward by 1 state controller.
+            if debugger == None or debugger.subprocess == None:
+                print("Cannot continue when MUGEN has not been launched.")
+                continue
+            process.cont(debugger, step = True)
         elif command == DebuggerCommand.EXIT:
+            ## set the process state so the other threads can exit
+            if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+        elif command == DebuggerCommand.STOP:
+            if debugger == None or debugger.subprocess == None:
+                print("Cannot stop debugging when MUGEN has not been launched.")
+                continue
+            ## continue the process.
+            process.cont(debugger)
             ## set the process state so the other threads can exit
             if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT

@@ -34,6 +34,10 @@ class DebuggerCommand(Enum):
     LAUNCH = 2
     LOAD = 3
     CONTINUE = 4
+    INFO = 5
+    BREAK = 6
+    STEP = 7
+    STOP = 8
 
 class DebugProcessState(Enum):
     EXIT = -1 # indicates the process is exited or wants to exit.
@@ -53,6 +57,7 @@ class DebuggerLaunchInfo:
     thread_id: int
     character_folder: Optional[str]
     state: DebugProcessState
+    current_bp: Optional[tuple[int, int]]
 
 @dataclass
 class DebuggerTarget:
@@ -62,10 +67,11 @@ class DebuggerTarget:
 @dataclass
 class DebugBreakEvent:
     address: int
+    step: Optional[tuple[int, int]]
 
 @dataclass
 class DebugBreakResult:
-    proceed: bool
+    step: bool = True
 
 @dataclass
 class DebugTypeInfo:

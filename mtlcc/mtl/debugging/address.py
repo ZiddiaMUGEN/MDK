@@ -21,7 +21,8 @@ ADDRESS_MUGEN_11A4 = {
 ADDRESS_MUGEN_11B1 = {
     "SCTRL_BREAKPOINT_ADDR": 0x45C1F5,
     "game": 0x5040E8,
-    "player": 0x12278
+    "player": 0x12278,
+    "stateno": 0xCCC
 }
 
 ADDRESS_DATABASE = {
