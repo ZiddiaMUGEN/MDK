@@ -1,0 +1,5 @@
+[Statedef CUSTOM]
+
+[State ]
+type = Null
+trigger1 = 1

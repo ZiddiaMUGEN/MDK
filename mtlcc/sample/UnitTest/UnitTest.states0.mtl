@@ -1,0 +1,20 @@
+[Statedef INTRO]
+id = 190
+
+[State ]
+type = Null
+trigger1 = myGlobal := true
+
+[State ]
+type = Helper
+trigger1 = !NumHelper(1)
+id = 1
+stateno = HELPER_STATE
+
+[Statedef HELPER_STATE]
+scope = helper(1)
+local = myHelperVar = int
+
+[State ]
+type = Null
+trigger1 = myHelperVar := Time
