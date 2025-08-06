@@ -21,16 +21,18 @@ events_queue = multiprocessing.Queue()
 results_queue = multiprocessing.Queue()
 
 ## utility function to read variables from memory
-def getVariable(index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget) -> float:
+def getVariable(index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
+    if ctx.current_owner == 0:
+        print(f"Cannot get variables when the current owner is not known!")
+        return 0
+
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
-    game_address = get_cached(target.launch_info.database["game"], process_handle, target.launch_info)
-    player_address = get_cached(game_address + target.launch_info.database["player"], process_handle, target.launch_info)
     
     if is_float:
-        variable_value = get_uncached(player_address + target.launch_info.database["fvar"] + index * 4, process_handle)
+        variable_value = get_uncached(ctx.current_owner + target.launch_info.database["fvar"] + index * 4, process_handle)
         return struct.unpack('<f', variable_value.to_bytes(4, byteorder = 'little'))[0]
     else:
-        variable_value = get_uncached(player_address + target.launch_info.database["var"] + index * 4, process_handle)
+        variable_value = get_uncached(ctx.current_owner + target.launch_info.database["var"] + index * 4, process_handle)
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)
@@ -132,6 +134,53 @@ def _debug_mugen(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue,
             ## this may happen if the target process dies.
             launch_info.state = DebugProcessState.EXIT
 
+def check_breakpoints(player: int, event: DebugBreakEvent, thread_handle: int, process_handle: int, context: CONTEXT, breakpoints: list[tuple[int, int]], launch_info: DebuggerLaunchInfo, ctx: DebuggingContext) -> Optional[tuple[int, int]]:
+    ## now need to detect if the current state+controller are a target for a breakpoint
+    get_context(thread_handle, context)
+    # check the player address matches
+    game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
+    player_address = get_cached(game_address + launch_info.database["player"] + player * 4, process_handle, launch_info)
+    ## check if the read player address matches Ebp
+    if player_address != context.Ebp:
+        return None
+    
+    ## now check if the player either is p1, or is owned by p1
+    p1_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
+    if player_address != p1_address:
+        root_address = get_uncached(player_address + 0x1650, process_handle)
+        if root_address != p1_address:
+            return None
+
+    ## player either is p1, or is owned by p1.
+    with_step = copy.deepcopy(breakpoints)
+    if event.step:
+        with_step.insert(0, (get_uncached(player_address + launch_info.database["stateno"], process_handle), ctx.last_index))
+    
+    for bp in with_step:
+        ## controller index was stored by the other breakpoint handler
+        if bp[1] != ctx.last_index:
+            continue
+        ## stateno comes from player structure
+        if bp[0] != get_uncached(player_address + launch_info.database["stateno"], process_handle):
+            continue
+        ## breakpoint was matched, pause and wait for input
+        launch_info.state = DebugProcessState.PAUSED
+        ctx.current_breakpoint = bp
+        ctx.current_owner = player_address
+        ## find the file and line corresponding to this breakpoint
+        if (state := get_state_by_id(bp[0], ctx)) == None:
+            print(f"Warning: Debugger could not find any state with ID {bp[0]} in database.")
+            return bp
+        if bp[1] >= len(state.states):
+            print(f"Warning: Debugger could not match controller index {bp[1]} for state {bp[0]} in database.")
+            return bp
+        player_id = get_uncached(player_address + 0x04, process_handle)
+        helper_id = get_uncached(player_address + 0x1644, process_handle)
+        player_name = "root" if player_address == p1_address else f"helper({helper_id})"
+        print(f"Encountered breakpoint for player {player_id} ( {player_name} ) at: {state.states[bp[1]]} (state {bp[0]}, controller {bp[1]})")
+        return bp
+    return None
+
 def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue, results: multiprocessing.Queue, ctx: DebuggingContext):
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, launch_info.process_id)
 
@@ -173,39 +222,13 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                     results.put(DebugBreakResult())
                     continue
 
-                ## now need to detect if the current state+controller are a target for a breakpoint
-                get_context(thread_handle, context)
-                # check the player address matches
-                game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
-                player_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
-                ## debugger only cares about p1 for now, skip other players (TODO: might differ in some versions?)
-                if player_address != context.Ebp:
-                    results.put(DebugBreakResult())
-                    continue
-
-                ## TODO: step for passpoints? does this work?
-                with_step = copy.deepcopy(ctx.passpoints)
-                if next_event.step:
-                    with_step.insert(0, (get_uncached(player_address + launch_info.database["stateno"], process_handle), ctx.last_index))
-                for bp in with_step:
-                    ## controller index was stored by the other breakpoint handler
-                    if bp[1] != ctx.last_index:
-                        continue
-                    ## stateno comes from player structure
-                    if bp[0] != get_uncached(player_address + launch_info.database["stateno"], process_handle):
-                        continue
-                    ## breakpoint was matched, pause and wait for input
-                    launch_info.state = DebugProcessState.PAUSED
-                    ctx.current_breakpoint = bp
-                    ## find the file and line corresponding to this breakpoint
-                    if (state := get_state_by_id(bp[0], ctx)) == None:
-                        print(f"Warning: Debugger could not find any state with ID {bp[0]} in database.")
-                        break
-                    if bp[1] >= len(state.states):
-                        print(f"Warning: Debugger could not match controller index {bp[1]} for state {bp[0]} in database.")
-                        break
-                    print(f"Encountered passpoint at: {state.states[bp[1]]} (state {bp[0]}, controller {bp[1]})")
-                    break
+                # check p1 first, then check each Helper
+                next_bp = check_breakpoints(0, next_event, thread_handle, process_handle, context, ctx.passpoints, launch_info, ctx)
+                if next_bp == None:
+                    for index in range(4, 60):
+                        next_bp = check_breakpoints(index, next_event, thread_handle, process_handle, context, ctx.passpoints, launch_info, ctx)
+                        if next_bp != None: break
+                
                 if launch_info.state != DebugProcessState.PAUSED:
                     results.put(DebugBreakResult())
             elif next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
@@ -214,45 +237,22 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                     results.put(DebugBreakResult())
                     continue
 
-                ## now need to detect if the current state+controller are a target for a breakpoint
-                get_context(thread_handle, context)
                 ## always store ECX for passpoints
+                get_context(thread_handle, context)
                 ctx.last_index = context.Ecx
+
+                ## early-exit again after storing ECX
                 if len(ctx.breakpoints) == 0:
                     results.put(DebugBreakResult())
                     continue
-                # check the player address matches
-                game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
-                player_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
-                ## debugger only cares about p1 for now, skip other players (TODO: might differ in some versions?)
-                if player_address != context.Ebp:
-                    results.put(DebugBreakResult())
-                    continue
-                ## if the break request has `step` we should add the CURRENT location as a BP
-                ## this enables step-through to other states seamlessly.
-                with_step = copy.deepcopy(ctx.breakpoints)
-                if next_event.step:
-                    with_step.insert(0, (get_uncached(player_address + launch_info.database["stateno"], process_handle), context.Ecx))
-                ## check each breakpoint for any matching (stateno, controller) pair
-                for bp in with_step:
-                    ## controller index is in ECX (TODO: might differ in some versions?)
-                    if bp[1] != context.Ecx:
-                        continue
-                    ## stateno comes from player structure
-                    if bp[0] != get_uncached(player_address + launch_info.database["stateno"], process_handle):
-                        continue
-                    ## breakpoint was matched, pause and wait for input
-                    launch_info.state = DebugProcessState.PAUSED
-                    ctx.current_breakpoint = bp
-                    ## find the file and line corresponding to this breakpoint
-                    if (state := get_state_by_id(bp[0], ctx)) == None:
-                        print(f"Warning: Debugger could not find any state with ID {bp[0]} in database.")
-                        break
-                    if bp[1] >= len(state.states):
-                        print(f"Warning: Debugger could not match controller index {bp[1]} for state {bp[0]} in database.")
-                        break
-                    print(f"Encountered breakpoint at: {state.states[bp[1]]} (state {bp[0]}, controller {bp[1]})")
-                    break
+                
+                # check p1 first, then check each Helper
+                next_bp = check_breakpoints(0, next_event, thread_handle, process_handle, context, ctx.breakpoints, launch_info, ctx)
+                if next_bp == None:
+                    for index in range(4, 60):
+                        next_bp = check_breakpoints(index, next_event, thread_handle, process_handle, context, ctx.breakpoints, launch_info, ctx)
+                        if next_bp != None: break
+
                 ## no breakpoint matched, resume
                 if launch_info.state != DebugProcessState.PAUSED:
                     results.put(DebugBreakResult())

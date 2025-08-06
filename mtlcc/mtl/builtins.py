@@ -140,6 +140,8 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("NumEnemy", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumExplod", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumExplod", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("NumHelper", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
+        TriggerDefinition("NumHelper", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumPartner", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumProj", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumProjID", BUILTIN_INT, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), category = TriggerCategory.BUILTIN),

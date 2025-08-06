@@ -55,6 +55,10 @@ def match_filenames(f1: str, f2: str) -> Optional[str]:
         ## it's still necessary to find it on the system.
         if os.path.exists(f1): return os.path.abspath(f1)
         if os.path.exists(f2): return os.path.abspath(f2)
+    if os.path.abspath(f1).lower().endswith(f2.lower()):
+        ## it's still necessary to find it on the system.
+        if os.path.exists(f1): return os.path.abspath(f1)
+        if os.path.exists(f2): return os.path.abspath(f2)
     return None
 
 def make_atom(input: str) -> Any:

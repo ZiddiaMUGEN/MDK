@@ -3,16 +3,16 @@ import argparse
 import time
 import readline
 
-from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget
+from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
 from mtl.utils.func import match_filenames, mask_variable, search_file
 from mtl.utils.debug import get_state_by_id
 
-def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget):
+def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget, ctx: DebuggingContext):
     alloc = var.allocations[0]
     target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
-    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
+    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger, ctx)
     if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
     print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<12}\t{target_name:<24}\t{target_value}")
 
@@ -207,9 +207,9 @@ if __name__ == "__main__":
                 print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<12}\t{'Allocation':<24}\t{'Value':<16}")
                 for var in ctx.globals:
                     if var.scope == scope:
-                        print_variable("Global", var, debugger)
+                        print_variable("Global", var, debugger, ctx)
                 for var in state.locals:
-                    print_variable("Local", var, debugger)
+                    print_variable("Local", var, debugger, ctx)
         elif command == DebuggerCommand.STOP:
             if debugger == None or debugger.subprocess == None:
                 print("Cannot stop debugging when MUGEN has not been launched.")

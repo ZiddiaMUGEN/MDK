@@ -133,6 +133,7 @@ class DebuggingContext:
     states: list[DebugStateInfo]
     breakpoints: list[tuple[int, int]]
     current_breakpoint: Optional[tuple[int, int]]
+    current_owner: int
     passpoints: list[tuple[int, int]]
     last_index: int
     filename: str
@@ -146,6 +147,7 @@ class DebuggingContext:
         self.states = []
         self.breakpoints = []
         self.current_breakpoint = None
+        self.current_owner = 0
         self.passpoints = []
         self.last_index = 0
         self.filename = ""

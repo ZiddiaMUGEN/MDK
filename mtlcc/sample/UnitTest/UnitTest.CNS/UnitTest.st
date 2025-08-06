@@ -33,6 +33,11 @@
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER None 40
 ;!mtl-debug VARIABLE_TABLE StateScopeType.TARGET None 60
 ;!mtl-debug VARIABLE_TABLE StateScopeType.TARGET None 40
+;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER 1 60
+;!mtl-debug-next 0 1
+;!mtl-debug VARIABLE_ALLOCATION myGlobal bool C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
+;!mtl-debug-next 0 0 var(0) & 1
+;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER 1 40
 
 ;!mtl-debug STATEDEF STAND 0
 [Statedef 0];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:21
@@ -1533,7 +1538,7 @@ value = 5110;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:158
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1585
 type = Explod
 trigger1 = Time = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1587
-anim = F(((60 + cond(((var(1)) > (Const720p(20))), 1, 0)) + cond(((var(1)) > (Const720p(56))), 1, 0)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1588
+anim = F((60 + (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const720p(56))), 1, 0))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1588
 postype = none;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1589
 pos = (Pos x + CameraPos x), 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1590
 facing = Facing;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1591
@@ -1673,7 +1678,7 @@ value = F7, (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const7
 type = Explod
 trigger1 = Time = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1726
 trigger1 = !((var(0) & 256) / 255);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1727
-anim = F(((60 + cond(((var(1)) > (Const720p(20))), 1, 0)) + cond(((var(1)) > (Const720p(56))), 1, 0)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1728
+anim = F((60 + (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const720p(56))), 1, 0))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1728
 postype = none;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1729
 pos = (Pos x + CameraPos x), 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1730
 facing = Facing;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1731
@@ -2088,6 +2093,22 @@ value = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:2142
 type = Null
 trigger1 = (var(0) := ((((1) & 1) * 1) + (var(0) & -2))) & 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
 
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:8
+type = Helper
+trigger1 = !(NumHelper(1));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:10
+id = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:11
+stateno = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:12
+
+
+;!mtl-debug STATEDEF HELPER_STATE 1
+[Statedef 1];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:14
+;!mtl-debug VARIABLE_ALLOCATION myHelperVar int C:\Users\ziddi\MDK\mtlcc:0
+;!mtl-debug-next 1 0 var(1)
+
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:18
+type = Null
+trigger1 = var(1) := Time;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:20
+
 
 ;!mtl-debug STATEDEF COMMAND -1
 [Statedef -1];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.commands.mtl:1
@@ -2097,8 +2118,8 @@ type = Null
 trigger1 = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.commands.mtl:6
 
 
-;!mtl-debug STATEDEF CUSTOM 1
-[Statedef 1];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:1
+;!mtl-debug STATEDEF CUSTOM 2
+[Statedef 2];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:1
 
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:3
 type = Null
