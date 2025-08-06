@@ -167,6 +167,10 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             return match.const(children, ctx)
         elif len(children) == 0:
             return Expression(match.type, f"{match.name}")
+        elif len(children) == 1 and match.name.lower() in ["var", "fvar"]:
+            ## this is ONLY possible currently in `persist` statements,
+            ## because MTL does not permit bare `var`/`fvar` assignments.
+            return Expression(match.type, f"{match.name}({children[0].value})")
         else:
             return Expression(match.type, f"({match.name}({', '.join([e.value for e in children])}))")
     elif tree.node == TriggerTreeNode.ATOM:

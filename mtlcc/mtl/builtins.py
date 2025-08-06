@@ -237,7 +237,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
     ]
 
     ## add generic operators for each of these builtin types.
-    for typedef in [BUILTIN_BOOL, BUILTIN_CHAR, BUILTIN_BYTE, BUILTIN_SHORT, BUILTIN_INT, BUILTIN_FLOAT]:
+    for typedef in [BUILTIN_INT, BUILTIN_FLOAT, BUILTIN_BOOL, BUILTIN_CHAR, BUILTIN_BYTE, BUILTIN_SHORT]:
         baseTriggers.append(TriggerDefinition("operator!", BUILTIN_BOOL, builtin_not, [TypeParameter("expr", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
         baseTriggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
         baseTriggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
