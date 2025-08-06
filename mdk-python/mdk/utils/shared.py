@@ -1,5 +1,4 @@
-from mdk.types.context import CompilerContext
-from mdk.types.builtins import Expression, BoolExpression
+from mdk.types.context import CompilerContext, Expression, BoolExpression
 
 def format_tuple(t: tuple) -> Expression:
     return Expression(", ".join(t))

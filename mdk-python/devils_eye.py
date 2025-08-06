@@ -1,6 +1,5 @@
 from mdk.compiler import create_statedef, build
-from mdk.utils.controllers import ChangeState
-from mdk.utils.shared import get_context
+from mdk.stdlib import ChangeState
 
 import copy
 
@@ -13,4 +12,3 @@ for i in range(10):
     create_statedef(fn, stateno=i)
 
 build()
-print(get_context())

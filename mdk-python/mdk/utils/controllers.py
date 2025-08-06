@@ -1,9 +1,7 @@
-from typing import Union, Callable, Optional
-from functools import partial
+from typing import Callable, Optional
 import copy
 
-from mdk.types.builtins import Expression, IntExpression, BoolExpression
-from mdk.types.context import StateController
+from mdk.types.context import StateController, IntExpression
 
 from mdk.utils.shared import format_bool, get_context
 
@@ -24,25 +22,4 @@ def controller(fn: Callable) -> Callable:
         ctx.current_state.controllers.append(ctrl)
         return ctrl
     return wrapper
-
-@controller
-def ChangeState(value: Union[IntExpression, str, Callable], ctrl: Optional[BoolExpression] = None, anim: Optional[IntExpression] = None) -> StateController:
-    result = StateController()
-
-    if isinstance(value, partial):
-        result.params["value"] = Expression(value.keywords["value"])
-    elif isinstance(value, Callable):
-        result.params["value"] = Expression(value.__name__)
-    elif isinstance(value, str):
-        result.params["value"] = Expression(value)
-    else:
-        result.params["value"] = value
-
-    if ctrl != None:
-        result.params["ctrl"] = ctrl
-    
-    if anim != None:
-        result.params["anim"] = anim
-
-    return result
     

@@ -1,7 +1,6 @@
-from mdk.compiler import statedef, build
-from mdk.utils.controllers import ChangeState
-
-from mdk.types.builtins import IntVar
+from mdk.compiler import statedef, build, get_context
+from mdk.stdlib import ChangeState, Alive
+from mdk.types import IntVar
 
 @statedef(stateno = 9)
 def idle():
@@ -11,7 +10,7 @@ def idle():
 def stand():
     myVar = IntVar()
 
-    if not True and True:
+    if Alive:
         ChangeState(value = stand)
     elif True and False:
         idle()
@@ -21,3 +20,4 @@ def stand():
 
 if __name__ == "__main__":
     build()
+    print(get_context())
