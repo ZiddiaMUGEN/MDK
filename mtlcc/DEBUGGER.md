@@ -68,6 +68,7 @@ Deletes a passpoint. Pass the ID of the passpoint to delete as a parameter.
 
 Displays info about the system or the current breakpoint. This command accepts a variety of options:
 
+- `info files` - displays a list of filenames which were used in compilation.
 - `info breakpoints` - displays a list of active breakpoints.
 - `info passpoints` - displays a list of active passpoints.
 - `info controller` - displays the state controller for the currently-active breakpoint.

@@ -171,6 +171,18 @@ if __name__ == "__main__":
                     else:
                         location = "<?>"
                     print(f"{index+1:<3}\t{str(location):<64}\t{bp[0]}, {bp[1]:<8}")
+            elif request.params[0].lower() == "files":
+                print(f"Name")
+                all_files: list[str] = []
+                for state in ctx.states:
+                    if state.location.filename not in all_files:
+                        all_files.append(state.location.filename)
+                    for controller in state.states:
+                        if controller.filename not in all_files:
+                            all_files.append(controller.filename)
+                for file in all_files:
+                    print(file)
+
             elif request.params[0].lower() == "controller":
                 ## open the file specified by the breakpoint
                 if ctx.current_breakpoint == None or debugger == None:
