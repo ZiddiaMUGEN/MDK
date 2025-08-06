@@ -3,11 +3,18 @@ import argparse
 import time
 import readline
 
-from mtl.types.debugging import DebugProcessState, DebugParameterInfo
+from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
-from mtl.utils.func import match_filenames, find, mask_variable
+from mtl.utils.func import match_filenames, mask_variable
 from mtl.utils.debug import get_state_by_id
+
+def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget):
+    alloc = var.allocations[0]
+    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
+    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
+    if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
+    print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<12}\t{target_name:<24}\t{target_value}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='mtldbg', description='Debugger for MTL and CNS characters compiled by MTL')
@@ -129,6 +136,29 @@ if __name__ == "__main__":
                     else:
                         location = "<?>"
                     print(f"{index+1:<3}\t{str(location):<64}\t{bp[0]}, {bp[1]:<8}")
+            elif request.params[0].lower() == "controller":
+                ## open the file specified by the breakpoint
+                if ctx.current_breakpoint == None or debugger == None:
+                    print("Can't show controllers unless a breakpoint has been reached.")
+                    continue
+                count = 1 if len(request.params) == 1 else int(request.params[1])
+                if (state := get_state_by_id(ctx.current_breakpoint[0], ctx)):
+                    location = state.states[ctx.current_breakpoint[1]]
+                    with open(location.filename) as f:
+                        lines = f.readlines()
+                    ## we know the exact line the controller starts at.
+                    lines = lines[location.line-1:]
+                    index = 1
+                    while index < len(lines):
+                        if lines[index].strip().startswith("["):
+                            count -= 1
+                        if count == 0: break
+                        index += 1
+                    lines = lines[:index]
+                    ## formatting
+                    for index in range(len(lines)):
+                        if lines[index].startswith("["): lines[index] = "\n" + lines[index]
+                    print("".join([line for line in lines if len(line.strip()) != 0]))
             elif request.params[0].lower() == "variables":
                 if ctx.current_breakpoint == None or debugger == None:
                     print("Can't show variables unless a breakpoint has been reached.")
@@ -138,30 +168,13 @@ if __name__ == "__main__":
                     print(f"Couldn't determine the current state from breakpoint {ctx.current_breakpoint}.")
                     continue
                 scope = state.scope
-                ## collect all vars that apply to this state
-                all_vars: tuple[list[DebugParameterInfo], list[DebugParameterInfo]] = ([], [])
+                ## display
+                print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<12}\t{'Allocation':<24}\t{'Value':<16}")
                 for var in ctx.globals:
                     if var.scope == scope:
-                        all_vars[0].append(var)
+                        print_variable("Global", var, debugger)
                 for var in state.locals:
-                    all_vars[1].append(var)
-                ## display
-                print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<16}\t{'Allocation':<16}\t{'Value':<16}")
-                for var in all_vars[0]:
-                    ## TODO: struct types, multiple allocations
-                    alloc = var.allocations[0]
-                    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
-                    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
-                    if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
-                    print(f"{var.name:<32}\t{'Global':<8}\t{var.type.name:<16}\t{target_name:<16}\t{target_value}")
-                for var in all_vars[1]:
-                    ## TODO: struct types, multiple allocations
-                    alloc = var.allocations[0]
-                    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
-                    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger)
-                    if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
-                    print(f"{var.name:<32}\t{'Local':<8}\t{var.type.name:<16}\t{target_name:<16}\t{target_value}")
-
+                    print_variable("Local", var, debugger)
         elif command == DebuggerCommand.STOP:
             if debugger == None or debugger.subprocess == None:
                 print("Cannot stop debugging when MUGEN has not been launched.")
