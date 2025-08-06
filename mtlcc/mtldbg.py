@@ -1,6 +1,7 @@
 ## Debugging platform for MTL/CNS.
 import argparse
 import time
+import struct
 import readline
 
 from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext
@@ -182,7 +183,29 @@ if __name__ == "__main__":
                             all_files.append(controller.filename)
                 for file in all_files:
                     print(file)
-
+            elif request.params[0].lower() == "trigger":
+                if len(request.params) != 2:
+                    print("Please provide a trigger name as argument to `info trigger` command.")
+                    continue
+                if ctx.current_breakpoint == None or debugger == None:
+                    print("Can't show trigger values unless a breakpoint has been reached.")
+                    continue
+                trigger = request.params[1].lower()
+                if trigger not in debugger.launch_info.database["triggers"]:
+                    print(f"Offsets for trigger with name {request.params[1]} are not known; cannot display value.")
+                    continue
+                offset = debugger.launch_info.database["triggers"][trigger]
+                raw_value = process.getValue(offset[0], debugger, ctx)
+                if offset[1] == int:
+                    value = raw_value
+                elif offset[1] == float:
+                    value = struct.unpack('<f', raw_value.to_bytes(4, byteorder = 'little'))[0]
+                elif offset[1] == bool:
+                    value = "true" if raw_value != 0 else "false"
+                else:
+                    value = raw_value
+                    print("Could not determine the value of trigger from its type; displaying integer value.")
+                print(f"{value}")
             elif request.params[0].lower() == "controller":
                 ## open the file specified by the breakpoint
                 if ctx.current_breakpoint == None or debugger == None:

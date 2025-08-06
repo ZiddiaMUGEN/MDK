@@ -37,6 +37,15 @@ def getVariable(index: int, offset: int, size: int, is_float: bool, target: Debu
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)
         return (variable_value & mask.value) >> offset
+    
+## utility function to read trigger values from memory
+def getValue(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> int:
+    if ctx.current_owner == 0:
+        print(f"Cannot get trigger values when the current owner is not known!")
+        return 0
+
+    process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
+    return get_uncached(ctx.current_owner + offset, process_handle)
 
 ## helper to get a value from cache if possible.
 def get_cached(addr: int, handle: int, launch_info: DebuggerLaunchInfo) -> int:

@@ -25,7 +25,24 @@ ADDRESS_MUGEN_11B1 = {
     "player": 0x12278,
     "stateno": 0xCCC,
     "var": 0xF1C,
-    "fvar": 0x100C
+    "fvar": 0x100C,
+    "triggers": {
+        "time": [0xED4, int],
+        "helperid": [0x1644, int],
+        "parent": [0x1648, int],
+        "prevstateno": [0xCD0, int],
+        "facing": [0x1E8, int],
+        "movecontact": [0xF0C, int],
+        "palno": [0x153C, int],
+        "stateno": [0xCCC, int],
+        "life": [0x1B8, int],
+        "power": [0x1D0, int],
+        "alive": [0xF00, bool],
+        "ctrl": [0xEE4, bool],
+        "pausemovetime": [0x228, int],
+        "supermovetime": [0x22C, int],
+        "ailevel": [0x2424, int]
+    }
 }
 
 ADDRESS_DATABASE = {

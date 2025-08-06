@@ -74,6 +74,7 @@ Displays info about the system or the current breakpoint. This command accepts a
 - `info controller` - displays the state controller for the currently-active breakpoint.
 - `info controller <n>` - displays `n` controllers starting with the currently-active breakpoint.
 - `info variables` - displays names, types, masks, and values of all local and global variables for the current state.
+- `info trigger <t>` - displays the value of a trigger (in the context of the character which is currently being debugged). only some triggers are supported by this command currently, and function-type triggers are unsupported.
 
 ## Debugging Database
 
