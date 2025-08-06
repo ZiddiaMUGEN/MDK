@@ -1,5 +1,5 @@
 from mdk.compiler import statedef, build, get_context
-from mdk.stdlib import ChangeState, Alive
+from mdk.stdlib import ChangeState, Alive, helper
 from mdk.types import IntVar
 
 @statedef(stateno = 9)
@@ -20,4 +20,4 @@ def stand():
 
 if __name__ == "__main__":
     build()
-    print(get_context())
+    #print(get_context())

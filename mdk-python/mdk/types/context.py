@@ -159,6 +159,13 @@ class BoolExpression(Expression):
             super().__init__(str(exprn))
 
 @dataclass
+class StringExpression(Expression):
+    def __init__(self, exprn: str):
+        if not isinstance(exprn, str):
+            raise Exception("Input to a StringExpression must always be a constant string, not a different expression.")
+        super().__init__(exprn)
+
+@dataclass
 class StateController:
     type: str
     params: dict[str, Expression]
