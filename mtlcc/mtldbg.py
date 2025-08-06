@@ -6,7 +6,7 @@ import readline
 from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
-from mtl.utils.func import match_filenames, mask_variable
+from mtl.utils.func import match_filenames, mask_variable, search_file
 from mtl.utils.debug import get_state_by_id
 
 def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget):
@@ -75,6 +75,11 @@ if __name__ == "__main__":
                 params = request.params[0].split(":")
                 filename = params[0]
                 line = int(params[1])
+                try:
+                    filename = search_file(filename, target, [f"stdlib/{filename}"])
+                except:
+                    print(f"Could not identify source file to use for {filename}.")
+                    continue
                 # find the closest match to `filename:line` in the database,
                 # which is either a statedef or a controller.
                 # if it's a statedef set on controller 0.

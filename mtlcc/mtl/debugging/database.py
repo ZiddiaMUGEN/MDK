@@ -1,3 +1,5 @@
+import os
+
 from mtl.types.context import *
 from mtl.types.shared import TranslationError, DebuggerError
 from mtl.utils.compiler import find_type, find, equals_insensitive, compiler_internal
@@ -8,12 +10,22 @@ def addStringToDatabase(name: str, ctx: TranslationContext):
     if name not in ctx.debugging.strings:
         ctx.debugging.strings.append(name)
 
+def getDefRelativePath(name: str, base: str) -> str:
+    def_path = os.path.dirname(os.path.abspath(base))
+    rel_path = os.path.relpath(os.path.abspath(name), def_path)
+    while rel_path.startswith("..\\") or rel_path.startswith("../"):
+        rel_path = rel_path[3:]
+    return rel_path
+
+def addPathToDatabase(name: str, ctx: TranslationContext):
+    addStringToDatabase(getDefRelativePath(name, ctx.filename), ctx)
+
 def addTypesToDatabase(ctx: TranslationContext):
     ## iterate each type.
     for type in ctx.types:
         info = DebugTypeInfo(type.name, type.category, [], [], type.size, type.location)
         addStringToDatabase(type.name, ctx)
-        addStringToDatabase(type.location.filename, ctx)
+        addPathToDatabase(type.location.filename, ctx)
         for member in type.members:
             if type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
                 addStringToDatabase(member, ctx)
@@ -36,7 +48,7 @@ def addTriggersToDatabase(ctx: TranslationContext):
     for trigger in ctx.triggers:
         info = DebugTriggerInfo(trigger.name, trigger.category, trigger.type, [], [], trigger.exprn, trigger.location)
         addStringToDatabase(trigger.name, ctx)
-        addStringToDatabase(trigger.location.filename, ctx)
+        addPathToDatabase(trigger.location.filename, ctx)
         for param in trigger.params:
             addStringToDatabase(param.name, ctx)
             info.parameter_names.append(param.name)
@@ -47,7 +59,7 @@ def addTemplatesToDatabase(ctx: TranslationContext):
     for template in ctx.templates:
         info = DebugTemplateInfo(template.name, template.category, [], [], [], [], template.location)
         addStringToDatabase(template.name, ctx)
-        addStringToDatabase(template.location.filename, ctx)
+        addPathToDatabase(template.location.filename, ctx)
         for param in template.params:
             addStringToDatabase(param.name, ctx)
             info.parameter_names.append(param.name)
@@ -74,7 +86,7 @@ def addStateDefinitionsToDatabase(ctx: TranslationContext):
             addStringToDatabase(local.name, ctx)
             info.locals.append(local_info)
         for controller in statedef.states:
-            addStringToDatabase(controller.location.filename, ctx)
+            addPathToDatabase(controller.location.filename, ctx)
             info.states.append(controller.location)
         ctx.debugging.states.append(info)
 
@@ -114,7 +126,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
                         write_integer(ctx.strings.index(type.member_names[index]), f)
                     else:
                         write_integer(-1, f)
-            write_integer(ctx.strings.index(type.location.filename), f)
+            write_integer(ctx.strings.index(getDefRelativePath(type.location.filename, ctx.filename)), f)
             write_integer(type.location.line, f)
 
         ## write triggers table
@@ -137,7 +149,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
             else:
                 write_byte(-2, f)
             """
-            write_integer(ctx.strings.index(trigger.location.filename), f)
+            write_integer(ctx.strings.index(getDefRelativePath(trigger.location.filename, ctx.filename)), f)
             write_integer(trigger.location.line, f)
 
         ## write templates table
@@ -159,7 +171,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
                     raise TranslationError(f"Could not find debug info for type definition with name {template.local_types[index].name}.", template.location)
                 write_integer(ctx.types.index(target), f)
                 write_integer(ctx.strings.index(template.local_names[index]), f)
-            write_integer(ctx.strings.index(template.location.filename), f)
+            write_integer(ctx.strings.index(getDefRelativePath(template.location.filename, ctx.filename)), f)
             write_integer(template.location.line, f)
 
         ## write global variables table
@@ -190,7 +202,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
             else:
                 write_integer(-1, f)
             write_byte(1 if state.is_common else 0, f)
-            write_integer(ctx.strings.index(state.location.filename), f)
+            write_integer(ctx.strings.index(getDefRelativePath(state.location.filename, ctx.filename)), f)
             write_integer(state.location.line, f)
             write_short(len(state.locals), f)
             for var in state.locals:
@@ -204,7 +216,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
                     write_byte(allocation[1], f)
             write_short(len(state.states), f)
             for controller in state.states:
-                write_integer(ctx.strings.index(controller.filename), f)
+                write_integer(ctx.strings.index(getDefRelativePath(controller.filename, ctx.filename)), f)
                 write_integer(controller.line, f)
 
 ## loads context.

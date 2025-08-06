@@ -135,6 +135,7 @@ class DebuggingContext:
     current_breakpoint: Optional[tuple[int, int]]
     passpoints: list[tuple[int, int]]
     last_index: int
+    filename: str
 
     def __init__(self):
         self.strings = []
@@ -147,6 +148,7 @@ class DebuggingContext:
         self.current_breakpoint = None
         self.passpoints = []
         self.last_index = 0
+        self.filename = ""
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

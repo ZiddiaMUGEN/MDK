@@ -85,7 +85,9 @@ if __name__ == "__main__":
         loadContext.includes.insert(0, loader.get_libmtl())
         loader.processIncludes([], loadContext)
 
+        loadContext.filename = os.path.abspath(args.input)
         translated = translator.translateContext(loadContext)
+        translated.filename = os.path.abspath(args.input)
 
         ## create output directory
         if not os.path.exists(args.output):
@@ -98,6 +100,7 @@ if __name__ == "__main__":
 
         ## generate debugging info
         debug_file = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".mdbg")
+        translated.debugging.filename = os.path.abspath(args.input)
         database.writeDatabase(debug_file, translated.debugging)
 
         ## emit CNS constants file
