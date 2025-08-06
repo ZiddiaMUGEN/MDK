@@ -31,15 +31,21 @@ if __name__ == "__main__":
     print(f"Successfully loaded MTL debugging database from {target}.")
 
     print(f"mtldbg is ready, run `launch` to start debugging from MUGEN at {mugen}.")
+    print(f"While MUGEN is running, press CTRL+C at any time to access the debug CLI.")
     command = DebuggerCommand.NONE
     while command != DebuggerCommand.EXIT:
         ## if the debugger state is EXIT, set debugger to None.
         if debugger != None and debugger.launch_info.state == DebugProcessState.EXIT:
             debugger = None
         ## if the process is not None, PAUSED, or SUSPENDED_WAIT, do not accept input.
-        if debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED]:
-            time.sleep(1/60)
-            continue
+        try:
+            while debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED]:
+                time.sleep(1/60)
+                if debugger.launch_info.state == DebugProcessState.EXIT:
+                    continue
+        except KeyboardInterrupt:
+            ## directly grants access to command prompt for one command
+            pass
 
         request = processDebugCommand(input("> "))
         command = request.command_type
@@ -62,7 +68,7 @@ if __name__ == "__main__":
                 print("Cannot continue when MUGEN has not been launched.")
                 continue
             process.cont(debugger)
-        elif command == DebuggerCommand.BREAK:
+        elif command == DebuggerCommand.BREAK or command == DebuggerCommand.BREAKP:
             ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index>
             if len(request.params) == 1:
                 # file:line
@@ -92,8 +98,12 @@ if __name__ == "__main__":
                 if match == None:
                     print(f"Could not determine the state or controller to use for breakpoint {filename}:{line}")
                 else:
-                    print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
-                    ctx.breakpoints.append(match)
+                    if command == DebuggerCommand.BREAK:
+                        print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
+                        ctx.breakpoints.append(match)
+                    elif command == DebuggerCommand.BREAKP:
+                        print(f"Created passpoint {len(ctx.passpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
+                        ctx.passpoints.append(match)
             elif len(request.params) == 2:
                 # stateno index, just set it directly...
                 stateno = int(request.params[0])
@@ -104,8 +114,12 @@ if __name__ == "__main__":
                 if index >= len(state.states):
                     print(f"State with ID {stateno} only has {len(state.states)} controllers (controller indices are 0-indexed).")
                     continue
-                print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                ctx.breakpoints.append((stateno, index))
+                if command == DebuggerCommand.BREAK:
+                    print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
+                    ctx.breakpoints.append((stateno, index))
+                elif command == DebuggerCommand.BREAKP:
+                    print(f"Created passpoint {len(ctx.passpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
+                    ctx.passpoints.append((stateno, index))
             else:
                 print("Format of arguments to `break` command should either be <file>:<line> or <stateno> <ctrl index>.")
                 continue
@@ -122,6 +136,13 @@ if __name__ == "__main__":
                 print(f"Could not find a breakpoint with ID {index}.")
                 continue
             ctx.breakpoints.remove(ctx.breakpoints[index - 1])
+        elif command == DebuggerCommand.DELETEP:
+            ## delete PP by ID.
+            index = int(request.params[0])
+            if index < 1 or index > len(ctx.passpoints):
+                print(f"Could not find a passpoint with ID {index}.")
+                continue
+            ctx.passpoints.remove(ctx.passpoints[index - 1])
         elif command == DebuggerCommand.EXIT:
             ## set the process state so the other threads can exit
             if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
@@ -131,6 +152,15 @@ if __name__ == "__main__":
                 print(f"ID \t{'Location':<64}\tState")
                 for index in range(len(ctx.breakpoints)):
                     bp = ctx.breakpoints[index]
+                    if (state := get_state_by_id(bp[0], ctx)) != None and bp[1] < len(state.states):
+                        location = state.states[bp[1]]
+                    else:
+                        location = "<?>"
+                    print(f"{index+1:<3}\t{str(location):<64}\t{bp[0]}, {bp[1]:<8}")
+            elif request.params[0].lower() == "passpoints":
+                print(f"ID \t{'Location':<64}\tState")
+                for index in range(len(ctx.passpoints)):
+                    bp = ctx.passpoints[index]
                     if (state := get_state_by_id(bp[0], ctx)) != None and bp[1] < len(state.states):
                         location = state.states[bp[1]]
                     else:

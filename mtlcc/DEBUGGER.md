@@ -18,6 +18,62 @@ Pass `-p <character path>` to specify the P2 character to use with debugging. By
 
 Pass `-a <on|off>` to enable or disable AI in the launched MUGEN process.
 
+### Debugging CLI
+
+If you run `mtldbg.py` with Python directly as suggested above, you will be presented with a CLI interface for working with the debugger.
+
+By default, the debugging database specified with `-d` (or the compiled debugging database for character specified with `-c`) will be loaded for debugging.
+
+To start, input command `launch` to start a MUGEN debugging process, then input command `continue` to start running the process. At any point while running, you can enter `CTRL+C` to access the command prompt again.
+
+#### `launch`
+
+Launches a MUGEN process for debugging. This can only be run if a debugging database is loaded. This will launch the process with p1 assigned as the character where the `mdbg` database is contained.
+
+#### `continue`
+
+Resumes MUGEN process execution from wherever it is paused. If this is run immediately after the process was `launch`ed, it will resume from a suspended state; otherwise it will resume from a breakpoint.
+
+#### `stop`
+
+Immediately stops debugging (even if stopped at a breakpoint) and shuts down the MUGEN process.
+
+#### `exit`
+
+Exits the debugging CLI.
+
+#### `break`
+
+Creates a new breakpoint. This command accepts two syntaxes.
+
+- `break <file>:<line>` - inserts a breakpoint for the controller containing `line` in `file`.
+- `break <stateno> <index>` - inserts a breakpoint for state with ID `stateno` at the `index`'th controller.
+
+#### `breakp`
+
+Creates a new passpoint. A passpoint is a special type of breakpoint that only fires if the state controller executes (i.e. at least 1 trigger group in the controller resolved to `true`).
+
+- `breakp <file>:<line>` - inserts a passpoint for the controller containing `line` in `file`.
+- `breakp <stateno> <index>` - inserts a passpoint for state with ID `stateno` at the `index`'th controller.
+
+#### `delete`
+
+Deletes a breakpoint. Pass the ID of the breakpoint to delete as a parameter.
+
+#### `deletep`
+
+Deletes a passpoint. Pass the ID of the passpoint to delete as a parameter.
+
+#### `info`
+
+Displays info about the system or the current breakpoint. This command accepts a variety of options:
+
+- `info breakpoints` - displays a list of active breakpoints.
+- `info passpoints` - displays a list of active passpoints.
+- `info controller` - displays the state controller for the currently-active breakpoint.
+- `info controller <n>` - displays `n` controllers starting with the currently-active breakpoint.
+- `info variables` - displays names, types, masks, and values of all local and global variables for the current state.
+
 ## Debugging Database
 
 The debugging database stores debugging information.

@@ -20,6 +20,7 @@ ADDRESS_MUGEN_11A4 = {
 ### otherwise, EDX = state data pointer
 ADDRESS_MUGEN_11B1 = {
     "SCTRL_BREAKPOINT_ADDR": 0x45C1F5,
+    "SCTRL_PASSPOINT_ADDR": 0x45C243,
     "game": 0x5040E8,
     "player": 0x12278,
     "stateno": 0xCCC,

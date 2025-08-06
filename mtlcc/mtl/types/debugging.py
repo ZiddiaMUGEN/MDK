@@ -39,6 +39,8 @@ class DebuggerCommand(Enum):
     STEP = 7
     STOP = 8
     DELETE = 9
+    BREAKP = 10
+    DELETEP = 11
 
 class DebugProcessState(Enum):
     EXIT = -1 # indicates the process is exited or wants to exit.
@@ -131,6 +133,8 @@ class DebuggingContext:
     states: list[DebugStateInfo]
     breakpoints: list[tuple[int, int]]
     current_breakpoint: Optional[tuple[int, int]]
+    passpoints: list[tuple[int, int]]
+    last_index: int
 
     def __init__(self):
         self.strings = []
@@ -141,6 +145,8 @@ class DebuggingContext:
         self.states = []
         self.breakpoints = []
         self.current_breakpoint = None
+        self.passpoints = []
+        self.last_index = 0
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

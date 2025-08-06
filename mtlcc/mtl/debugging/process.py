@@ -153,7 +153,8 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
     get_context(thread_handle, context)
 
     context.Dr0 = launch_info.database["SCTRL_BREAKPOINT_ADDR"]
-    context.Dr7 |= 0x103 # bits 0, 1, 8 enable breakpoint set on DR0.
+    context.Dr1 = launch_info.database["SCTRL_PASSPOINT_ADDR"]
+    context.Dr7 |= 0x103 | 0x0C # bits 0, 1, 2, 3, 8 enable breakpoint set on DR0 and DR1.
 
     set_context(thread_handle, context)
 
@@ -166,14 +167,61 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
             ## set timeout to a small number so it can continue if nothing arrives
             ## (it would be better to be infinite but then this thread never exits)
             next_event: DebugBreakEvent = events.get(True, 1/60)
-            if next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
+            if next_event.address == launch_info.database["SCTRL_PASSPOINT_ADDR"]:
                 ## early exit: if we have no breakpoints, nothing to worry about
-                if len(ctx.breakpoints) == 0:
+                if len(ctx.passpoints) == 0:
                     results.put(DebugBreakResult())
                     continue
 
                 ## now need to detect if the current state+controller are a target for a breakpoint
                 get_context(thread_handle, context)
+                # check the player address matches
+                game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
+                player_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
+                ## debugger only cares about p1 for now, skip other players (TODO: might differ in some versions?)
+                if player_address != context.Ebp:
+                    results.put(DebugBreakResult())
+                    continue
+
+                ## TODO: step for passpoints? does this work?
+                with_step = copy.deepcopy(ctx.passpoints)
+                if next_event.step:
+                    with_step.insert(0, (get_uncached(player_address + launch_info.database["stateno"], process_handle), ctx.last_index))
+                for bp in with_step:
+                    ## controller index was stored by the other breakpoint handler
+                    if bp[1] != ctx.last_index:
+                        continue
+                    ## stateno comes from player structure
+                    if bp[0] != get_uncached(player_address + launch_info.database["stateno"], process_handle):
+                        continue
+                    ## breakpoint was matched, pause and wait for input
+                    launch_info.state = DebugProcessState.PAUSED
+                    ctx.current_breakpoint = bp
+                    ## find the file and line corresponding to this breakpoint
+                    if (state := get_state_by_id(bp[0], ctx)) == None:
+                        print(f"Warning: Debugger could not find any state with ID {bp[0]} in database.")
+                        break
+                    if bp[1] >= len(state.states):
+                        print(f"Warning: Debugger could not match controller index {bp[1]} for state {bp[0]} in database.")
+                        break
+                    print(f"Encountered passpoint at: {state.states[bp[1]]} (state {bp[0]}, controller {bp[1]})")
+                    break
+                if launch_info.state != DebugProcessState.PAUSED:
+                    results.put(DebugBreakResult())
+            elif next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
+                ## early exit: if we have no breakpoints, nothing to worry about
+                if len(ctx.breakpoints) == 0 and len(ctx.passpoints) == 0:
+                    results.put(DebugBreakResult())
+                    continue
+
+                ## now need to detect if the current state+controller are a target for a breakpoint
+                get_context(thread_handle, context)
+                ## always store ECX for passpoints
+                ctx.last_index = context.Ecx
+                if len(ctx.breakpoints) == 0:
+                    results.put(DebugBreakResult())
+                    continue
+                # check the player address matches
                 game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
                 player_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
                 ## debugger only cares about p1 for now, skip other players (TODO: might differ in some versions?)

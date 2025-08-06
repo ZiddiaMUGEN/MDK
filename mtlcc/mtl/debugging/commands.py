@@ -19,10 +19,14 @@ def processDebugCommand(input: str) -> DebuggerRequest:
         return DebuggerRequest(DebuggerCommand.LOAD, input.split(" ")[1:])
     elif input.lower().startswith("delete "):
         return DebuggerRequest(DebuggerCommand.DELETE, input.split(" ")[1:])
+    elif input.lower().startswith("deletep "):
+        return DebuggerRequest(DebuggerCommand.DELETEP, input.split(" ")[1:])
     elif input.lower().startswith("info "):
         return DebuggerRequest(DebuggerCommand.INFO, input.split(" ")[1:])
     elif input.lower().startswith("break "):
         return DebuggerRequest(DebuggerCommand.BREAK, input.split(" ")[1:])
+    elif input.lower().startswith("breakp "):
+        return DebuggerRequest(DebuggerCommand.BREAKP, input.split(" ")[1:])
     
     print(f"Unrecognized debugger command: {input}")
     return DebuggerRequest(DebuggerCommand.NONE, [])
