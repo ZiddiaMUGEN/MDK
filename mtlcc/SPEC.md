@@ -12,12 +12,13 @@ This document describes the progress towards implementation of the MDK spec and 
         - There are currently no plans to expose tuples to users.
     - Custom Types - fully implemented.
     - Type Conversion Rules - fully implemented.
+    - Structures have limited support. It is currently not possible to initialize variables of structure types, but use of built-in structures (`Vel`, `Pos`) is fine.
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)
 4. Trigger Definitions - user-defined fully implemented; special types partially implemented
     - Operator Triggers - partially implemented; builtin operator triggers are supported but users cannot define operator triggers
 5. Named State Definitions - fully implemented.
 6. Named Variables - partially implemented; cannot specify system variables
-    - Variable Scope and Initialization - partially implemented
+    - Variable Scope and Initialization - partially implemented; local initialization not yet supported.
 7. Character Resource References - not implemented
     - State number/name references are supported.
 8. State Controller Repetition (Loops) - not implemented

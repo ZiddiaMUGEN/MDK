@@ -108,6 +108,8 @@ Stores every string used in the debugging database, which allows for strings to 
 
 For each string, the first 2 bytes encode the string length; then the string is encoded directly.
 
+Filenames should be converted to paths relative to the character DEF file before insertion.
+
 #### 2. Type Definitions
 
 Stores every type definition (including builtins).
@@ -118,6 +120,7 @@ For each type definition, store the following information:
 
 - 4 bytes: name (index into string table)
 - 1 byte: category
+- 4 bytes: size
 - 2 bytes: member count
     - for each member:
     - 4 bytes: index into string or type table for member (determined by category)
@@ -189,6 +192,7 @@ For each statedef, store the following information:
 - 4 bytes: ID
 - 1 byte: scope_type
 - 4 bytes: scope_target (or -1 for none)
+- 1 byte: bool indicating whether the state is from common states
 - 4 bytes: index into string table for filename
 - 4 bytes: line number for definition
 - ? bytes: Local Variable Table
