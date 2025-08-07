@@ -10,7 +10,7 @@
 - Statedef calls - IMPLEMENTED
     - calls to functions annotated with `@statedef` must be converted to ChangeState controllers.
 
-- Statedef output - NOT STARTED
+- Statedef output - PARTIALLY IMPLEMENTED
 
 - Variable declaration/assignment - PARTIALLY IMPLEMENTED
     - During annotation processing a list of variables used by the state must be generated.

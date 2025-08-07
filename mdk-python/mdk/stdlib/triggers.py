@@ -1,5 +1,5 @@
 from typing import Callable, Optional, Protocol
-from mdk.types.context import Expression, IntExpression, FloatExpression, BoolExpression, StringExpression, IntVar, FloatVar, BoolVar
+from mdk.types.context import Expression, Int, Float, Bool, String, IntVar, FloatVar, BoolVar, FloatExpression, IntExpression, BoolExpression, StringExpression
 
 ## use for a trigger function that accepts 1 argument of int/float, and produces the same type as output.
 def TriggerExpression_Numeric_Numeric(name: str) -> Callable[[Expression], Expression]:
@@ -12,74 +12,74 @@ def TriggerExpression_Numeric_Numeric(name: str) -> Callable[[Expression], Expre
     return _numeric
 
 ## use for a trigger function that accepts 1 argument of int/float, and produces a float as output.
-def TriggerExpression_Numeric_Float(name: str) -> Callable[[Expression], FloatExpression]:
-    def _numeric(exprn: Expression) -> FloatExpression:
+def TriggerExpression_Numeric_Float(name: str) -> Callable[[Expression], Float]:
+    def _numeric(exprn: Expression) -> Float:
         if isinstance(exprn, FloatExpression) or isinstance(exprn, FloatVar) or isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
             return FloatExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Int or Float, not {type(exprn)}.")
     return _numeric
 
 ## use for a trigger function that accepts 1 argument of int, and produces a int as output.
-def TriggerExpression_Int_Int(name: str) -> Callable[[IntExpression], IntExpression]:
-    def _numeric(exprn: IntExpression) -> IntExpression:
+def TriggerExpression_Int_Int(name: str) -> Callable[[Int], Int]:
+    def _numeric(exprn: Int) -> Int:
         if isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
             return IntExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
     return _numeric
 
 ## use for a trigger function that accepts 1 argument of float, and produces a int as output.
-def TriggerExpression_Float_Int(name: str) -> Callable[[FloatExpression], IntExpression]:
-    def _numeric(exprn: FloatExpression) -> IntExpression:
+def TriggerExpression_Float_Int(name: str) -> Callable[[Float], Int]:
+    def _numeric(exprn: Float) -> Int:
         if isinstance(exprn, FloatExpression) or isinstance(exprn, FloatVar):
             return IntExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Float, not {type(exprn)}.")
     return _numeric
 
 ## use for a trigger function that accepts 1 argument of int, and produces a bool as output.
-def TriggerExpression_Int_Bool(name: str) -> Callable[[IntExpression], IntExpression]:
-    def _numeric(exprn: IntExpression) -> IntExpression:
-        if isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
-            return IntExpression(f"{name}({exprn.exprn})")
+def TriggerExpression_Int_Bool(name: str) -> Callable[[Int], Bool]:
+    def _numeric(exprn: Int) -> Bool:
+        if isinstance(exprn, Int) or isinstance(exprn, IntVar):
+            return BoolExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
     return _numeric
 
 ## use for a trigger function that accepts 1 argument of string, and produces a float as output.
-def TriggerExpression_String_Float(name: str) -> Callable[[StringExpression], FloatExpression]:
-    def _numeric(exprn: StringExpression) -> FloatExpression:
-        if isinstance(exprn, StringExpression):
+def TriggerExpression_String_Float(name: str) -> Callable[[String], Float]:
+    def _numeric(exprn: String) -> Float:
+        if isinstance(exprn, String):
             return FloatExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be String, not {type(exprn)}.")
     return _numeric
 
-def TriggerExpression_String_String(name: str) -> Callable[[StringExpression], StringExpression]:
-    def _numeric(exprn: StringExpression) -> StringExpression:
-        if isinstance(exprn, StringExpression):
+def TriggerExpression_String_String(name: str) -> Callable[[String], String]:
+    def _numeric(exprn: String) -> String:
+        if isinstance(exprn, String):
             return StringExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be String, not {type(exprn)}.")
     return _numeric
 
 class MaybeInt_Bool(Protocol):
-    def __call__(self, x: IntExpression = ..., /) -> BoolExpression:
+    def __call__(self, x: Int = ..., /) -> Bool:
         ...
 
 def TriggerExpression_MaybeInt_Bool(name: str) -> MaybeInt_Bool:
-    def _numeric(exprn: Optional[IntExpression] = None) -> BoolExpression:
+    def _numeric(exprn: Optional[Int] = None) -> Bool:
         if exprn == None:
             return BoolExpression(f"{name}")
-        if isinstance(exprn, IntExpression):
+        if isinstance(exprn, Int):
             return BoolExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
     return _numeric
 
 class MaybeInt_Int(Protocol):
-    def __call__(self, x: IntExpression = ..., /) -> IntExpression:
+    def __call__(self, x: Int = ..., /) -> Int:
         ...
 
 def TriggerExpression_MaybeInt_Int(name: str) -> MaybeInt_Int:
-    def _numeric(exprn: Optional[IntExpression] = None) -> IntExpression:
+    def _numeric(exprn: Optional[Int] = None) -> Int:
         if exprn == None:
             return IntExpression(f"{name}")
-        if isinstance(exprn, IntExpression):
+        if isinstance(exprn, Int):
             return IntExpression(f"{name}({exprn.exprn})")
         raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
     return _numeric
@@ -96,12 +96,12 @@ AnimExist = TriggerExpression_Int_Bool("AnimExist")
 AnimTime = IntExpression("AnimTime")
 Asin = TriggerExpression_Numeric_Float("asin")
 Atan = TriggerExpression_Numeric_Float("atan")
-AuthorName = StringExpression("AuthorName")
+AuthorName = String("AuthorName")
 BackEdgeBodyDist = FloatExpression("BackEdgeBodyDist")
 BackEdgeDist = FloatExpression("BackEdgeDist")
 CanRecover = BoolExpression("CanRecover")
 Ceil = TriggerExpression_Float_Int("ceil")
-Command = StringExpression("Command")
+Command = String("Command")
 ## Cond
 Const = TriggerExpression_String_Float("Const")
 Const240p = TriggerExpression_Numeric_Float("Const240p")
@@ -145,7 +145,7 @@ MoveGuarded = IntExpression("MoveGuarded")
 MoveHit = IntExpression("MoveHit")
 ## MoveType
 MoveReversed = IntExpression("MoveReversed")
-Name = StringExpression("Name")
+Name = String("Name")
 NumEnemy = IntExpression("NumEnemy")
 NumExplod = TriggerExpression_MaybeInt_Int("NumExplod")
 NumHelper = TriggerExpression_MaybeInt_Int("NumHelper")
@@ -153,16 +153,16 @@ NumPartner = IntExpression("NumPartner")
 NumProj = IntExpression("NumProj")
 NumProjID = TriggerExpression_Int_Int("NumProjID")
 NumTarget = TriggerExpression_MaybeInt_Int("NumTarget")
-P1Name = StringExpression("P1Name")
+P1Name = String("P1Name")
 ## P2BodyDist
 ## P2Dist
 P2Life = IntExpression("P2Life")
 ## P2MoveType
 P2StateNo = IntExpression("P2StateNo")
 ## P2StateType
-P2Name = StringExpression("P2Name")
-P3Name = StringExpression("P3Name")
-P4Name = StringExpression("P4Name")
+P2Name = String("P2Name")
+P3Name = String("P3Name")
+P4Name = String("P4Name")
 PalNo = IntExpression("PalNo")
 ## ParentDist
 Pi = IntExpression("pi")
@@ -183,7 +183,7 @@ RoundState = IntExpression("RoundState")
 ## ScreenPos
 SelfAnimExist = TriggerExpression_Int_Bool("SelfAnimExist")
 Sin = TriggerExpression_Numeric_Float("sin")
-StateNo = TriggerExpression_Numeric_Float("StateNo")
+StateNo = IntExpression("StateNo")
 ## StateType
 StageVar = TriggerExpression_String_String("StageVar")
 ## sysfvar

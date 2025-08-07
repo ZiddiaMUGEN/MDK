@@ -1,15 +1,16 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, get_args
 from functools import partial
 import ast
 import inspect
 import types
 
 from mdk.types.builtins import StateType, MoveType, PhysicsType
-from mdk.types.context import StateDefinition, IntExpression, BoolExpression, FloatExpression, Expression
+from mdk.types.context import StateDefinition, TemplateDefinition, IntExpression, BoolExpression, FloatExpression, Expression, StateController, Int, Float, Bool
 from mdk.types.triggers import TriggerException
 
 from mdk.utils.shared import format_tuple, format_bool, get_context
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
+from mdk.utils.controllers import make_controller
 
 from mdk.stdlib.controllers import ChangeState
 
@@ -112,9 +113,75 @@ def create_statedef(
 
     # add the new statedef to the context
     ctx = get_context()
+    if fn.__name__ in ctx.statedefs:
+        raise Exception(f"Attempted to overwrite statedef with name {fn.__name__}.")
     ctx.statedefs[fn.__name__] = statedef
 
     return partial(ChangeState, value = fn.__name__)
+
+def do_template(name: str, *args, **kwargs) -> StateController:
+    def generic_template(**kwargs):
+        result = StateController()
+        for arg in kwargs:
+            result.params[arg] = kwargs[arg]
+        return result
+    ctrl = make_controller(generic_template, *args, **kwargs)
+    ctrl.type = name
+    return ctrl
+
+def template(fn: Callable) -> Callable:
+    print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
+    # get params of decorated function
+    signature = inspect.signature(fn)
+    # get effective source code of the decorated function
+    source, line_number = inspect.getsourcelines(fn)
+    location = inspect.getsourcefile(fn)
+    # remove decorator lines at the start of the source
+    while source[0].strip().startswith('@'):
+        source = source[1:]
+    source = '\n'.join(source)
+    # parse AST from the decorated function
+    old_ast = ast.parse(source)
+    # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
+    new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
+    #print(ast.dump(new_ast, indent=4))
+    # fix location info since the modified nodes won't contain any data
+    ast.fix_missing_locations(new_ast)
+    # compile the updated AST to a function and use it as the resulting wrapped function.
+    new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
+    # add missing globals for each operation.
+    # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
+    new_globals = fn.__globals__
+    new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
+    new_globals["mdk.impl.TriggerOr"] = TriggerOr
+    new_globals["mdk.impl.TriggerNot"] = TriggerNot
+    new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
+    new_globals["mdk.impl.TriggerPush"] = TriggerPush
+    new_globals["mdk.impl.TriggerPop"] = TriggerPop
+    # create a new function including these globals.
+    new_fn = types.FunctionType(new_code_obj.co_consts[len(signature.parameters)], new_globals)
+
+    params: dict[str, type] = {}
+    for name in signature.parameters:
+        param = signature.parameters[name]
+
+        if get_args(param.annotation) == get_args(Int):
+            params[name] = IntExpression
+        elif get_args(param.annotation) == get_args(Float):
+            params[name] = FloatExpression
+        elif get_args(param.annotation) == get_args(Bool):
+            params[name] = BoolExpression
+        else:
+            raise Exception(f"Parameter {name} in template {fn.__name__} must have a builtin type, not {param.annotation}.")
+    template = TemplateDefinition(new_fn, params, [])
+
+    # add the new template to the context
+    ctx = get_context()
+    if fn.__name__ in ctx.templates:
+        raise Exception(f"Attempted to overwrite template with name {fn.__name__}.")
+    ctx.templates[fn.__name__] = template
+
+    return partial(do_template, fn.__name__)
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
     def __init__(self, location: Optional[str], line: int):

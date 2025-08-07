@@ -59,11 +59,11 @@ def TriggerAssign(expr1: Expression, expr2: Expression, filename: str, line: int
         if not isinstance(expr2, BoolVar) and not isinstance(expr2, BoolExpression):
             raise TriggerException(f"Second parameter to assignment statement for BoolVar should be BoolVar or BoolExpression, not {type(expr2)}.", filename, line)
 
-    return expr2.__class__(f"{expr1.exprn} := {expr2.exprn}")
+    return expr1.make_expression(f"{expr1.exprn} := {expr2.exprn}")
 
 def TriggerPush(file: str, line: int):
     ctx = get_context()
-    if ctx.current_trigger == None:
+    if not isinstance(ctx.current_trigger, Expression):
         ## it's legal for current_trigger to be None, it means the controller was called outside of an `if`.
         ## (i don't think it's possible for TriggerPush to invoke in this case, but better for safety).
         ctx.current_trigger = BoolExpression(True)
