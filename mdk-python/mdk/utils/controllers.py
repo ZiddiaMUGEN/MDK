@@ -19,9 +19,14 @@ def make_controller(fn, *args, ignorehitpause: Optional[bool] = None, persistent
     if persistent != None: ctrl.params["persistent"] = IntExpression(persistent)
 
     ctx = get_context()
-    if ctx.current_state == None:
+    if ctx.current_state == None and ctx.current_template == None:
         raise Exception("Attempted to call a state controller outside of a statedef function.")
+    
     ctrl.triggers = copy.deepcopy(ctx.trigger_stack)
     ctx.current_trigger = None
-    ctx.current_state.controllers.append(ctrl)
+    
+    if ctx.current_state != None:
+        ctx.current_state.controllers.append(ctrl)
+    elif ctx.current_template != None:
+        ctx.current_template.controllers.append(ctrl)
     return ctrl

@@ -1,3 +1,10 @@
+## Usage
+
+- Use the `@statedef` annotation to create your state definitions. Use controllers and triggers inside your state definition to build your character logic.
+- Use the `IntVar`, `FloatVar`, and `BoolVar` types to create local and global variable definitions. By default, a variable declared inside a `@statedef` function is local, and variables declared outside of a `@statedef` function are global.
+- Use the `@template` annotation to create reusable MTL templates. When you generate your character, all templates will be added to source files and included in your main state file.
+- Use `build` to build your character's states, and `library` to build specified templates to a MTL library include file.
+
 ## Implementation Progress
 
 ### 1. Basic logic

@@ -214,6 +214,7 @@ class StateDefinition:
 @dataclass
 class TemplateDefinition:
     fn: Callable
+    library: Optional[str]
     params: dict[str, type]
     controllers: list[StateController]
 
@@ -222,6 +223,7 @@ class CompilerContext:
     statedefs: dict[str, StateDefinition]
     templates: dict[str, TemplateDefinition]
     current_state: Optional[StateDefinition]
+    current_template: Optional[TemplateDefinition]
     current_trigger: Optional[Expression]
     trigger_stack: list[Expression]
 
@@ -229,6 +231,7 @@ class CompilerContext:
         self.statedefs = {}
         self.templates = {}
         self.current_state = None
+        self.current_template = None
         self.current_trigger = None
         self.trigger_stack = []
 

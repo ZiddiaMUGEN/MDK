@@ -3,6 +3,7 @@ from functools import partial
 import ast
 import inspect
 import types
+import io
 
 from mdk.types.builtins import StateType, MoveType, PhysicsType
 from mdk.types.context import StateDefinition, TemplateDefinition, IntExpression, BoolExpression, FloatExpression, Expression, StateController, Int, Float, Bool
@@ -14,7 +15,7 @@ from mdk.utils.controllers import make_controller
 
 from mdk.stdlib.controllers import ChangeState
 
-def build():
+def build(output: str, skip_templates: bool = False):
     try:
         ## builds the character from the input data.
         context = get_context()
@@ -22,8 +23,89 @@ def build():
             definition = context.statedefs[state]
             context.current_state = definition
             definition.fn() # this call registers the controllers in the statedef with the statedef itself.
+            context.current_state = None
+
+        template_groups = set()
+        if not skip_templates and len(context.templates) != 0:
+            templates: list[Callable] = []
+            for t in context.templates:
+                templates.append(context.templates[t].fn)
+                if context.templates[t].library == None:
+                    context.templates[t].library = output + ".inc"
+                template_groups.add(context.templates[t].library)
+            library(templates)
+        
+        with open(output, mode="w") as f:
+            if not skip_templates and len(context.templates) != 0:
+                for group in template_groups:
+                    f.write("[Include]\n")
+                    f.write(f"source = {group}\n")
+            f.write("\n")
+            for name in context.statedefs:
+                statedef = context.statedefs[name]
+                f.write(f"[Statedef {name}]\n")
+                for param in statedef.params:
+                    f.write(f"{param} = {statedef.params[param]}\n")
+                f.write("\n")
+                for controller in statedef.controllers:
+                    write_controller(controller, f)
+                    f.write("\n")
+                f.write("\n")
     except TriggerException as exc:
         print(exc.get_message())
+
+def library(templates: list[Callable], output: Optional[str] = None):
+    if len(templates) == 0:
+        raise Exception("Please specify some templates to be built.")
+    try:
+        context = get_context()
+        per_file: dict[str, list[TemplateDefinition]] = {}
+        for template in context.templates:
+            definition = context.templates[template]
+            context.current_template = definition
+            kwargs = {}
+            for param in definition.params:
+                type = definition.params[param]
+                kwargs[param] = type(param)
+            definition.fn(**kwargs)
+            context.current_template = None
+            if definition.library == None and output == None:
+                raise Exception(f"Output library was not specified for template {definition.fn.__name__}, either specify a default output in call to library() or specify a library in the template() annotation.")
+            if definition.library == None and output != None and definition.fn in templates:
+                definition.library = output
+            if definition.library not in per_file:
+                per_file[definition.library] = [] # type: ignore
+            per_file[definition.library].append(definition) # type: ignore
+
+        for group in per_file:
+            print(f"Creating output include file {group}.")
+            with open(group, mode="w") as f:
+                for definition in per_file[group]:
+                    f.write("[Define Template]\n")
+                    f.write(f"name = {definition.fn.__name__}\n\n")
+                    f.write("[Define Parameters]\n")
+                    for param in definition.params:
+                        typename = ""
+                        if definition.params[param] == IntExpression: typename = "int"
+                        elif definition.params[param] == FloatExpression: typename = "float"
+                        elif definition.params[param] == BoolExpression: typename = "bool"
+                        f.write(f"{param} = {typename}\n")
+                    f.write("\n")
+                    for controller in definition.controllers:
+                        write_controller(controller, f)
+                        f.write("\n")
+                    f.write("\n")
+    except TriggerException as exc:
+        print(exc.get_message())
+
+def write_controller(ctrl: StateController, f: io.TextIOWrapper):
+    f.write("[State ]\n")
+    f.write(f"type = {ctrl.type}\n")
+    if len(ctrl.triggers) == 0: ctrl.triggers.append(BoolExpression(True))
+    for trigger in ctrl.triggers:
+        f.write(f"trigger1 = {trigger}\n")
+    for param in ctrl.params:
+        f.write(f"{param} = {ctrl.params[param]}\n")
 
 def statedef(
     type: StateType = StateType.U,
@@ -120,7 +202,9 @@ def create_statedef(
     return partial(ChangeState, value = fn.__name__)
 
 def do_template(name: str, *args, **kwargs) -> StateController:
-    def generic_template(**kwargs):
+    def generic_template(*args, **kwargs):
+        if len(args) != 0:
+            raise Exception("Templates cannot be called with positional arguments, only keyword arguments.")
         result = StateController()
         for arg in kwargs:
             result.params[arg] = kwargs[arg]
@@ -129,59 +213,61 @@ def do_template(name: str, *args, **kwargs) -> StateController:
     ctrl.type = name
     return ctrl
 
-def template(fn: Callable) -> Callable:
-    print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
-    # get params of decorated function
-    signature = inspect.signature(fn)
-    # get effective source code of the decorated function
-    source, line_number = inspect.getsourcelines(fn)
-    location = inspect.getsourcefile(fn)
-    # remove decorator lines at the start of the source
-    while source[0].strip().startswith('@'):
-        source = source[1:]
-    source = '\n'.join(source)
-    # parse AST from the decorated function
-    old_ast = ast.parse(source)
-    # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
-    #print(ast.dump(new_ast, indent=4))
-    # fix location info since the modified nodes won't contain any data
-    ast.fix_missing_locations(new_ast)
-    # compile the updated AST to a function and use it as the resulting wrapped function.
-    new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
-    # add missing globals for each operation.
-    # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
-    new_globals = fn.__globals__
-    new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
-    new_globals["mdk.impl.TriggerOr"] = TriggerOr
-    new_globals["mdk.impl.TriggerNot"] = TriggerNot
-    new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
-    new_globals["mdk.impl.TriggerPush"] = TriggerPush
-    new_globals["mdk.impl.TriggerPop"] = TriggerPop
-    # create a new function including these globals.
-    new_fn = types.FunctionType(new_code_obj.co_consts[len(signature.parameters)], new_globals)
+def template(library: Optional[str] = None) -> Callable:
+    def decorator(fn: Callable):
+        print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
+        # get params of decorated function
+        signature = inspect.signature(fn)
+        # get effective source code of the decorated function
+        source, line_number = inspect.getsourcelines(fn)
+        location = inspect.getsourcefile(fn)
+        # remove decorator lines at the start of the source
+        while source[0].strip().startswith('@'):
+            source = source[1:]
+        source = '\n'.join(source)
+        # parse AST from the decorated function
+        old_ast = ast.parse(source)
+        # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
+        new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
+        #print(ast.dump(new_ast, indent=4))
+        # fix location info since the modified nodes won't contain any data
+        ast.fix_missing_locations(new_ast)
+        # compile the updated AST to a function and use it as the resulting wrapped function.
+        new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
+        # add missing globals for each operation.
+        # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
+        new_globals = fn.__globals__
+        new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
+        new_globals["mdk.impl.TriggerOr"] = TriggerOr
+        new_globals["mdk.impl.TriggerNot"] = TriggerNot
+        new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
+        new_globals["mdk.impl.TriggerPush"] = TriggerPush
+        new_globals["mdk.impl.TriggerPop"] = TriggerPop
+        # create a new function including these globals.
+        new_fn = types.FunctionType(new_code_obj.co_consts[len(signature.parameters)], new_globals)
 
-    params: dict[str, type] = {}
-    for name in signature.parameters:
-        param = signature.parameters[name]
+        params: dict[str, type] = {}
+        for name in signature.parameters:
+            param = signature.parameters[name]
 
-        if get_args(param.annotation) == get_args(Int):
-            params[name] = IntExpression
-        elif get_args(param.annotation) == get_args(Float):
-            params[name] = FloatExpression
-        elif get_args(param.annotation) == get_args(Bool):
-            params[name] = BoolExpression
-        else:
-            raise Exception(f"Parameter {name} in template {fn.__name__} must have a builtin type, not {param.annotation}.")
-    template = TemplateDefinition(new_fn, params, [])
+            if get_args(param.annotation) == get_args(Int):
+                params[name] = IntExpression
+            elif get_args(param.annotation) == get_args(Float):
+                params[name] = FloatExpression
+            elif get_args(param.annotation) == get_args(Bool):
+                params[name] = BoolExpression
+            else:
+                raise Exception(f"Parameter {name} in template {fn.__name__} must have a builtin type, not {param.annotation}.")
+        template = TemplateDefinition(new_fn, library, params, [])
 
-    # add the new template to the context
-    ctx = get_context()
-    if fn.__name__ in ctx.templates:
-        raise Exception(f"Attempted to overwrite template with name {fn.__name__}.")
-    ctx.templates[fn.__name__] = template
+        # add the new template to the context
+        ctx = get_context()
+        if fn.__name__ in ctx.templates:
+            raise Exception(f"Attempted to overwrite template with name {fn.__name__}.")
+        ctx.templates[fn.__name__] = template
 
-    return partial(do_template, fn.__name__)
+        return partial(do_template, fn.__name__)
+    return decorator
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
     def __init__(self, location: Optional[str], line: int):
