@@ -17,9 +17,15 @@ class Expression:
     
     ## comparisons
     def __eq__(self, other): # type: ignore
+        ## allow eq/neq to check for None.
+        if isinstance(self, Expression) and other == None:
+            return False
         check_types_assignable(self, other)
         return BoolExpression(f"{self} = {other}")
     def __ne__(self, other): # type: ignore
+        ## allow eq/neq to check for None.
+        if isinstance(self, Expression) and other == None:
+            return False
         check_types_assignable(self, other)
         return BoolExpression(f"{self} != {other}")
     def __lt__(self, other):

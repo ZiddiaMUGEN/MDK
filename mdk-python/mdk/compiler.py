@@ -4,6 +4,8 @@ import ast
 import inspect
 import types
 import io
+import traceback
+import sys
 
 from mdk.types.builtins import StateType, MoveType, PhysicsType
 from mdk.types.context import StateDefinition, TemplateDefinition, IntExpression, BoolExpression, FloatExpression, Expression, StateController, Int, Float, Bool
@@ -15,6 +17,9 @@ from mdk.utils.controllers import make_controller
 
 from mdk.stdlib.controllers import ChangeState
 
+class CompilationException(Exception):
+    pass
+
 def build(output: str, skip_templates: bool = False):
     try:
         ## builds the character from the input data.
@@ -22,7 +27,10 @@ def build(output: str, skip_templates: bool = False):
         for state in context.statedefs:
             definition = context.statedefs[state]
             context.current_state = definition
-            definition.fn() # this call registers the controllers in the statedef with the statedef itself.
+            try:
+                definition.fn() # this call registers the controllers in the statedef with the statedef itself.
+            except Exception as exc:
+                raise CompilationException(exc)
             context.current_state = None
 
         template_groups = set()
@@ -57,8 +65,8 @@ def build(output: str, skip_templates: bool = False):
 def library(templates: list[Callable], output: Optional[str] = None):
     if len(templates) == 0:
         raise Exception("Please specify some templates to be built.")
+    context = get_context()
     try:
-        context = get_context()
         per_file: dict[str, list[TemplateDefinition]] = {}
         for template in context.templates:
             definition = context.templates[template]
@@ -67,10 +75,13 @@ def library(templates: list[Callable], output: Optional[str] = None):
             for param in definition.params:
                 type = definition.params[param]
                 kwargs[param] = type(param)
-            definition.fn(**kwargs)
+            try:
+                definition.fn(**kwargs)
+            except Exception as exc:
+                raise CompilationException(exc)
             context.current_template = None
             if definition.library == None and output == None:
-                raise Exception(f"Output library was not specified for template {definition.fn.__name__}, either specify a default output in call to library() or specify a library in the template() annotation.")
+                raise CompilationException(f"Output library was not specified for template {definition.fn.__name__}, either specify a default output in call to library() or specify a library in the template() annotation.")
             if definition.library == None and output != None and definition.fn in templates:
                 definition.library = output
             if definition.library not in per_file:
@@ -97,6 +108,26 @@ def library(templates: list[Callable], output: Optional[str] = None):
                     f.write("\n")
     except TriggerException as exc:
         print(exc.get_message())
+    except CompilationException as exc:
+        ## extract the portion of the stack trace that is actually relevant...
+        _exc = exc
+        if exc.__context__ != None:
+            _exc = exc.__context__
+        tb = traceback.extract_tb(_exc.__traceback__)
+        ## we want to identify the user-side issue (because the traceback contains a bunch of MDK internals as well)
+        save_lines: list[str] = []
+        for fs in tb:
+            for tm in context.templates:
+                if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
+        ## now print full exception and likely causes.
+        traceback.print_exception(_exc)
+        print()
+        print("Likely cause(s) in user-code at:")
+        print("\n".join(save_lines))
+        print()
+        sys.exit(-1)
+    except Exception as exc:
+        print("An internal error occurred while compiling a template, bug the developers.")
 
 def write_controller(ctrl: StateController, f: io.TextIOWrapper):
     f.write("[State ]\n")
@@ -159,8 +190,7 @@ def create_statedef(
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
     new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
     #print(ast.dump(new_ast, indent=4))
-    # fix location info since the modified nodes won't contain any data
-    ast.fix_missing_locations(new_ast)
+    ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
     # add missing globals for each operation.
@@ -224,14 +254,14 @@ def template(library: Optional[str] = None) -> Callable:
         # remove decorator lines at the start of the source
         while source[0].strip().startswith('@'):
             source = source[1:]
+            line_number -= 1
         source = '\n'.join(source)
         # parse AST from the decorated function
         old_ast = ast.parse(source)
         # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
         new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
         #print(ast.dump(new_ast, indent=4))
-        # fix location info since the modified nodes won't contain any data
-        ast.fix_missing_locations(new_ast)
+        ast.increment_lineno(new_ast, line_number)
         # compile the updated AST to a function and use it as the resulting wrapped function.
         new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
         # add missing globals for each operation.
@@ -244,17 +274,18 @@ def template(library: Optional[str] = None) -> Callable:
         new_globals["mdk.impl.TriggerPush"] = TriggerPush
         new_globals["mdk.impl.TriggerPop"] = TriggerPop
         # create a new function including these globals.
-        new_fn = types.FunctionType(new_code_obj.co_consts[len(signature.parameters)], new_globals)
+        ### -1 = return type, -2 = name, -3 = code obj (maybe?)
+        new_fn = types.FunctionType(new_code_obj.co_consts[-3], new_globals)
 
         params: dict[str, type] = {}
         for name in signature.parameters:
             param = signature.parameters[name]
 
-            if get_args(param.annotation) == get_args(Int):
+            if get_args(param.annotation) == get_args(Int) or get_args(param.annotation) == get_args(Int | None):
                 params[name] = IntExpression
-            elif get_args(param.annotation) == get_args(Float):
+            elif get_args(param.annotation) == get_args(Float) or get_args(param.annotation) == get_args(Float | None):
                 params[name] = FloatExpression
-            elif get_args(param.annotation) == get_args(Bool):
+            elif get_args(param.annotation) == get_args(Bool) or get_args(param.annotation) == get_args(Bool | None):
                 params[name] = BoolExpression
             else:
                 raise Exception(f"Parameter {name} in template {fn.__name__} must have a builtin type, not {param.annotation}.")
@@ -281,7 +312,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         value = node.value
         if isinstance(node.targets[0], ast.Name) and isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ["IntVar", "FloatVar", "BoolVar", "VariableExpression"]:
             value.args.append(ast.Constant(
-                value=node.targets[0].id
+                value=node.targets[0].id,
+                lineno=node.targets[0].lineno,
+                col_offset=node.targets[0].col_offset
             ))
 
         return node
@@ -299,11 +332,15 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         
         # add location information as an argument
         node.values.insert(len(node.values), ast.Constant(
-                value=self.location
+                value=self.location,
+                lineno=node.lineno,
+                col_offset=node.col_offset
             )
         )
         node.values.insert(len(node.values), ast.Constant(
-                value=self.line+node.lineno-1
+                value=self.line+node.lineno,
+                lineno=node.lineno,
+                col_offset=node.col_offset
             )
         )
         
@@ -312,7 +349,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         return ast.Call(
             func=ast.Name(id=target, ctx=ast.Load()),
             args=node.values,
-            keywords=[]
+            keywords=[],
+            lineno=node.lineno,
+            col_offset=node.col_offset
         )
     
     def visit_UnaryOp(self, node: ast.UnaryOp):
@@ -331,13 +370,19 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             args=[
                 node.operand, 
                 ast.Constant(
-                    value=self.location
+                    value=self.location,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
                 ),
                 ast.Constant(
-                    value=self.line+node.lineno-1
+                    value=self.line+node.lineno,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
                 )
             ],
-            keywords=[]
+            keywords=[],
+            lineno=node.lineno,
+            col_offset=node.col_offset
         )
     
     def visit_NamedExpr(self, node: ast.NamedExpr):
@@ -346,18 +391,24 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         # then, replace the NamedExpr directly with a Call to the assignment override,
         # with arguments provided from the inner values.
         return ast.Call(
-            func=ast.Name(id="mdk.impl.TriggerAssign", ctx=ast.Load()),
+            func=ast.Name(id="mdk.impl.TriggerAssign", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
             args=[
-                ast.Name(id=node.target.id, ctx=ast.Load()),
+                ast.Name(id=node.target.id, ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                 node.value,
                 ast.Constant(
-                    value=self.location
+                    value=self.location,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
                 ),
                 ast.Constant(
-                    value=self.line+node.lineno-1
+                    value=self.line+node.lineno,
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
                 )
             ],
-            keywords=[]
+            keywords=[],
+            lineno=node.lineno,
+            col_offset=node.col_offset
         )
     
     def visit_If(self, node: ast.If):
@@ -369,31 +420,47 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         # and append a call to mdk.impl.TriggerPop at the end of the block.
         node.body.insert(0, ast.Expr(
             value=ast.Call(
-                func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load()),
+                func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                 args=[
                     ast.Constant(
-                        value=self.location
+                        value=self.location,
+                        lineno=node.lineno,
+                        col_offset=node.col_offset
                     ),
                     ast.Constant(
-                        value=self.line+node.lineno-1
+                        value=self.line+node.lineno,
+                        lineno=node.lineno,
+                        col_offset=node.col_offset
                     )
                 ],
-                keywords=[]
-            )
+                keywords=[],
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ),
+            lineno=node.lineno,
+            col_offset=node.col_offset
         ))
         node.body.insert(len(node.body), ast.Expr(
             value=ast.Call(
-                func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load()),
+                func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                 args=[
                     ast.Constant(
-                        value=self.location
+                        value=self.location,
+                        lineno=node.lineno,
+                        col_offset=node.col_offset
                     ),
                     ast.Constant(
-                        value=self.line+node.lineno-1
+                        value=self.line+node.lineno,
+                        lineno=node.lineno,
+                        col_offset=node.col_offset
                     )
                 ],
-                keywords=[]
-            )
+                keywords=[],
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ),
+            lineno=node.lineno,
+            col_offset=node.col_offset
         ))
 
         results.append(node)
@@ -409,48 +476,72 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             ## we need to wrap these up in another If with the negation of the previous statement.
             new_node = ast.If(
                 test=ast.Call(
-                    func=ast.Name(id='mdk.impl.TriggerNot', ctx=ast.Load()),
+                    func=ast.Name(id='mdk.impl.TriggerNot', ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                     args=[
                         node.test,
                         ast.Constant(
-                            value=self.location
+                            value=self.location,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         ),
                         ast.Constant(
-                            value=self.line+node.lineno-1
+                            value=self.line+node.lineno,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         )
                     ],
-                    keywords=[]
+                    keywords=[],
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
                 ),
                 body=node.orelse,
-                orelse=[]
+                orelse=[],
+                lineno=node.lineno,
+                col_offset=node.col_offset
             )
             new_node.body.insert(0, ast.Expr(
                 value=ast.Call(
-                    func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load()),
+                    func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                     args=[
                         ast.Constant(
-                            value=self.location
+                            value=self.location,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         ),
                         ast.Constant(
-                            value=self.line+node.lineno-1
+                            value=self.line+node.lineno,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         )
                     ],
-                    keywords=[]
-                )
+                    keywords=[],
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
+                ),
+                lineno=node.lineno,
+                col_offset=node.col_offset
             ))
             new_node.body.insert(len(new_node.body), ast.Expr(
                 value=ast.Call(
-                    func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load()),
+                    func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                     args=[
                         ast.Constant(
-                            value=self.location
+                            value=self.location,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         ),
                         ast.Constant(
-                            value=self.line+node.lineno-1
+                            value=self.line+node.lineno,
+                            lineno=node.lineno,
+                            col_offset=node.col_offset
                         )
                     ],
-                    keywords=[]
-                )
+                    keywords=[],
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
+                ),
+                lineno=node.lineno,
+                col_offset=node.col_offset
             ))
             results.append(new_node)
             node.orelse = []
