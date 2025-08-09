@@ -1,6 +1,6 @@
 from typing import Protocol, Optional, Callable, TypeVar
 
-from mdk.types.context import Expression, Int, Float, Bool, String, IntExpression, FloatExpression, BoolExpression
+from mdk.types.context import Expression
 import mdk.stdlib.triggers as triggers
 
 class RedirectTarget:
@@ -68,7 +68,7 @@ class RedirectTarget:
         self.ProjHitTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjHitTime)  # type: ignore
         self.SelfAnimExist: Callable[[Int], Bool] = self._redirect_function(triggers.SelfAnimExist)  # type: ignore
         self.StateNo = self._redirect_atom(triggers.StateNo)
-        self.SelfAnimExist: Callable[[String], String] = self._redirect_function(triggers.StageVar)  # type: ignore
+        self.SelfAnimExist = self._redirect_function(triggers.StageVar)  # type: ignore
         self.TeamSide = self._redirect_atom(triggers.TeamSide)
         self.Time = self._redirect_atom(triggers.Time)
         self.Win = self._redirect_atom(triggers.Win)
@@ -76,8 +76,7 @@ class RedirectTarget:
         self.WinPerfect = self._redirect_atom(triggers.WinPerfect)
         self.WinTime = self._redirect_atom(triggers.WinTime)
 
-    T = TypeVar('T', IntExpression, FloatExpression, BoolExpression, String)
-    def _redirect_atom(self, expr: T) -> T:
+    def _redirect_atom(self, expr: Expression) -> Expression:
         return expr.make_expression(f"{self.__repr__()},{expr.exprn}")
 
     def _redirect_function(self, fn: Callable[..., Expression]) -> Callable[..., Expression]:

@@ -1,48 +1,20 @@
+mdk-python is an implementation of the MDK spec in Python, allowing MUGEN character developers to write their character code in Python.
+
+mdk-python targets MTL for compilation, which is an existing language which implements the MDK spec. This is done to reduce the amount of effort required to implement the MDK spec.
+
 ## Usage
 
-- Use the `@statedef` annotation to create your state definitions. Use controllers and triggers inside your state definition to build your character logic.
-- Use the `IntVar`, `FloatVar`, and `BoolVar` types to create local and global variable definitions. By default, a variable declared inside a `@statedef` function is local, and variables declared outside of a `@statedef` function are global.
-- Use the `@template` annotation to create reusable MTL templates. When you generate your character, all templates will be added to source files and included in your main state file.
-- Use `build` to build your character's states, and `library` to build specified templates to a MTL library include file.
+### Building
 
-## Implementation Progress
+When you have created your character file, run `mdk.compiler.build()` to build to a MTL source file.
 
-### 1. Basic logic
+If you are building a MTL library instead, run `mdk.compiler.library()` to create a MTL include file. You must also specify which templates and types to add to the include library.
 
-- Statedef annotation - IMPLEMENTED
-    - Python functions can have the `@statedef` annotation to mark them for inclusion in the output file.
-    - `@statedef` must accept optional statedef keyword parameters.
-    - `@statedef` must optionally accept state number and output file parameters.
+### Type Definitions
 
-- Statedef calls - IMPLEMENTED
-    - calls to functions annotated with `@statedef` must be converted to ChangeState controllers.
+MDK support type definitions using the `mdk.types.TypeSpecifier` type. To create a new type definition, you should use one of the type specifier factories provided in this module.
 
-- Statedef output - PARTIALLY IMPLEMENTED
+### State Definitions
 
-- Variable declaration/assignment - PARTIALLY IMPLEMENTED
-    - During annotation processing a list of variables used by the state must be generated.
-    - Unique IDs must be assigned to each variable.
-    - variables cannot be default-initialized on state entry, this is something to consider later.
+A Python function can be annotated with `@statedef` to specify the function creates a state definition. The @statedef annotation accepts a variety of parameters to set values for the statedef, such as the state ID.
 
-- If conversion - IMPLEMENTED
-    - Any `if` statement in the statedef is converted to use Expression types.
-    - `else` and `elif` are converted to separate `if` statements with negations of the parent `if`'s statement.
-
-### 2. CNS constructs
-
-- State controller definitions, typing - IN PROGRESS
-
-### 3. MTL constructs
-
-- Import from MTL include file - NOT STARTED
-    - Make use of MTL include functionality to import directly from `inc` files.
-    - Convert any MTL templates into Python functions.
-
-- MTL template annotation - NOT STARTED
-    - Python functions can have the `@template` annotation to mark them for inclusion in a template file.
-    - `@template` must accept a mandatory output file parameter
-    - Output files from `@template` need to be usable in an external MTL project.
-
-### 4. Checks and lints
-
-- Compile-time/runtime variable lint - NOT STARTED

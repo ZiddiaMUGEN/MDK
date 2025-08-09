@@ -1,203 +1,133 @@
-from typing import Callable, Optional, Protocol
-from mdk.types.context import Expression, Int, Float, Bool, String, IntVar, FloatVar, BoolVar, FloatExpression, IntExpression, BoolExpression, StringExpression
+from typing import Callable
+from mdk.types.context import Expression, TypeSpecifier, IntType, BoolType, FloatType, StringType
 
-## use for a trigger function that accepts 1 argument of int/float, and produces the same type as output.
-def TriggerExpression_Numeric_Numeric(name: str) -> Callable[[Expression], Expression]:
-    def _numeric(exprn: Expression) -> Expression:
-        if isinstance(exprn, FloatExpression) or isinstance(exprn, FloatVar):
-            return FloatExpression(f"{name}({exprn.exprn})")
-        if isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
-            return IntExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int or Float, not {type(exprn)}.")
-    return _numeric
+## helper function to take 1 argument and the types involved and produce an output.
+def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable:
+    def _callable(*args) -> Expression:
+        if len(args) != len(inputs):
+            raise Exception(f"Trigger expression {name} expected {len(inputs)} inputs, but got {len(args)} instead.")
+        for index in range(len(args)):
+            if not isinstance(args[index], Expression):
+                raise Exception(f"Inputs to trigger expressions should always be Expressions, not {type(args[index])}.")
+            if args[index].type != inputs[index]:
+                raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {args[index].type.name}")
+        return Expression(f"{name}({', '.join([str(arg) for arg in args])})", output)
+    return _callable
 
-## use for a trigger function that accepts 1 argument of int/float, and produces a float as output.
-def TriggerExpression_Numeric_Float(name: str) -> Callable[[Expression], Float]:
-    def _numeric(exprn: Expression) -> Float:
-        if isinstance(exprn, FloatExpression) or isinstance(exprn, FloatVar) or isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
-            return FloatExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int or Float, not {type(exprn)}.")
-    return _numeric
-
-## use for a trigger function that accepts 1 argument of int, and produces a int as output.
-def TriggerExpression_Int_Int(name: str) -> Callable[[Int], Int]:
-    def _numeric(exprn: Int) -> Int:
-        if isinstance(exprn, IntExpression) or isinstance(exprn, IntVar):
-            return IntExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
-    return _numeric
-
-## use for a trigger function that accepts 1 argument of float, and produces a int as output.
-def TriggerExpression_Float_Int(name: str) -> Callable[[Float], Int]:
-    def _numeric(exprn: Float) -> Int:
-        if isinstance(exprn, FloatExpression) or isinstance(exprn, FloatVar):
-            return IntExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Float, not {type(exprn)}.")
-    return _numeric
-
-## use for a trigger function that accepts 1 argument of int, and produces a bool as output.
-def TriggerExpression_Int_Bool(name: str) -> Callable[[Int], Bool]:
-    def _numeric(exprn: Int) -> Bool:
-        if isinstance(exprn, Int) or isinstance(exprn, IntVar):
-            return BoolExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
-    return _numeric
-
-## use for a trigger function that accepts 1 argument of string, and produces a float as output.
-def TriggerExpression_String_Float(name: str) -> Callable[[String], Float]:
-    def _numeric(exprn: String) -> Float:
-        if isinstance(exprn, String):
-            return FloatExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be String, not {type(exprn)}.")
-    return _numeric
-
-def TriggerExpression_String_String(name: str) -> Callable[[String], String]:
-    def _numeric(exprn: String) -> String:
-        if isinstance(exprn, String):
-            return StringExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be String, not {type(exprn)}.")
-    return _numeric
-
-class MaybeInt_Bool(Protocol):
-    def __call__(self, x: Int = ..., /) -> Bool:
-        ...
-
-def TriggerExpression_MaybeInt_Bool(name: str) -> MaybeInt_Bool:
-    def _numeric(exprn: Optional[Int] = None) -> Bool:
-        if exprn == None:
-            return BoolExpression(f"{name}")
-        if isinstance(exprn, Int):
-            return BoolExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
-    return _numeric
-
-class MaybeInt_Int(Protocol):
-    def __call__(self, x: Int = ..., /) -> Int:
-        ...
-
-def TriggerExpression_MaybeInt_Int(name: str) -> MaybeInt_Int:
-    def _numeric(exprn: Optional[Int] = None) -> Int:
-        if exprn == None:
-            return IntExpression(f"{name}")
-        if isinstance(exprn, Int):
-            return IntExpression(f"{name}({exprn.exprn})")
-        raise Exception(f"Argument to trigger {name} should be Int, not {type(exprn)}.")
-    return _numeric
-
-Abs = TriggerExpression_Numeric_Numeric("abs")
-Acos = TriggerExpression_Numeric_Float("acos")
-AiLevel = IntExpression("AiLevel")
-Alive = BoolExpression("Alive")
-Anim = IntExpression("Anim")
+Abs = TriggerExpression("abs", [FloatType], FloatType)
+Acos = TriggerExpression("acos", [FloatType], FloatType)
+AiLevel = Expression("AiLevel", IntType)
+Alive = Expression("Alive", BoolType)
+Anim = Expression("Anim", IntType)
 ## AnimElem
-AnimElemNo = TriggerExpression_Int_Int("AnimElemNo")
-AnimElemTime = TriggerExpression_Int_Int("AnimElemTime")
-AnimExist = TriggerExpression_Int_Bool("AnimExist")
-AnimTime = IntExpression("AnimTime")
-Asin = TriggerExpression_Numeric_Float("asin")
-Atan = TriggerExpression_Numeric_Float("atan")
-AuthorName = String("AuthorName")
-BackEdgeBodyDist = FloatExpression("BackEdgeBodyDist")
-BackEdgeDist = FloatExpression("BackEdgeDist")
-CanRecover = BoolExpression("CanRecover")
-Ceil = TriggerExpression_Float_Int("ceil")
-Command = String("Command")
+AnimElemNo = TriggerExpression("AnimElemNo", [IntType], IntType)
+AnimElemTime = TriggerExpression("AnimElemTime", [IntType], IntType)
+AnimExist = TriggerExpression("AnimExist", [IntType], BoolType)
+AnimTime = Expression("AnimTime", IntType)
+Asin = TriggerExpression("asin", [FloatType], FloatType)
+Atan = TriggerExpression("atan", [FloatType], FloatType)
+AuthorName = Expression("AuthorName", StringType)
+BackEdgeBodyDist = Expression("BackEdgeBodyDist", FloatType)
+BackEdgeDist = Expression("BackEdgeDist", FloatType)
+CanRecover = Expression("CanRecover", BoolType)
+Ceil = TriggerExpression("ceil", [FloatType], IntType)
+Command = Expression("Command", StringType)
 ## Cond
-Const = TriggerExpression_String_Float("Const")
-Const240p = TriggerExpression_Numeric_Float("Const240p")
-Const480p = TriggerExpression_Numeric_Float("Const480p")
-Const720p = TriggerExpression_Numeric_Float("Const720p")
-Cos = TriggerExpression_Numeric_Float("cos")
-Ctrl = BoolExpression("Ctrl")
-DrawGame = BoolExpression("DrawGame")
-E = FloatExpression("E")
-Exp = TriggerExpression_Numeric_Float("exp")
-Facing = IntExpression("Facing")
-Floor = TriggerExpression_Float_Int("floor")
-FrontEdgeBodyDist = FloatExpression("FrontEdgeBodyDist")
-FrontEdgeDist = FloatExpression("FrontEdgeDist")
+Const = TriggerExpression("Const", [StringType], FloatType)
+Const240p = TriggerExpression("Const240p", [FloatType], FloatType)
+Const480p = TriggerExpression("Const480p", [FloatType], FloatType)
+Const720p = TriggerExpression("Const720p", [FloatType], FloatType)
+Cos = TriggerExpression("cos", [FloatType], FloatType)
+Ctrl = Expression("Ctrl", BoolType)
+DrawGame = Expression("DrawGame", BoolType)
+E = Expression("E", FloatType)
+Exp = TriggerExpression("exp", [FloatType], FloatType)
+Facing = Expression("Facing", IntType)
+Floor = TriggerExpression("floor", [FloatType], IntType)
+FrontEdgeBodyDist = Expression("FrontEdgeBodyDist", FloatType)
+FrontEdgeDist = Expression("FrontEdgeDist", FloatType)
 ## fvar
-GameHeight = FloatExpression("GameHeight")
-GameTime = IntExpression("GameTime")
-GameWidth = IntExpression("GameWidth")
-GetHitVar = TriggerExpression_String_Float("GetHitVar")
-HitCount = IntExpression("HitCount")
+GameHeight = Expression("GameHeight", FloatType)
+GameTime = Expression("GameTime", IntType)
+GameWidth = Expression("GameWidth", IntType)
+GetHitVar = TriggerExpression("GetHitVar", [StringType], FloatType)
+HitCount = Expression("HitCount", IntType)
 ## HitDefAttr
-HitFall = BoolExpression("HitFall")
-HitOver = BoolExpression("HitOver")
-HitPauseTime = IntExpression("HitPauseTime")
-HitShakeOver = BoolExpression("HitShakeOver")
+HitFall = Expression("HitFall", BoolType)
+HitOver = Expression("HitOver", BoolType)
+HitPauseTime = Expression("HitPauseTime", IntType)
+HitShakeOver = Expression("HitShakeOver", BoolType)
 ## HitVel
-ID = IntExpression("ID")
+ID = Expression("ID", IntType)
 ## ifelse
-InGuardDist = BoolExpression("InGuardDist")
-IsHelper = TriggerExpression_MaybeInt_Bool("IsHelper")
-IsHomeTeam = BoolExpression("IsHomeTeam")
-Life = IntExpression("Life")
-LifeMax = IntExpression("LifeMax")
-Ln = TriggerExpression_Numeric_Float("ln")
-Log = TriggerExpression_Numeric_Float("log")
-Lose = BoolExpression("Lose")
-MatchNo = IntExpression("MatchNo")
-MatchOver = BoolExpression("MatchOver")
-MoveContact = IntExpression("MoveContact")
-MoveGuarded = IntExpression("MoveGuarded")
-MoveHit = IntExpression("MoveHit")
+InGuardDist = Expression("InGuardDist", BoolType)
+IsHelper = TriggerExpression("IsHelper", [IntType], BoolType)
+IsHomeTeam = Expression("IsHomeTeam", BoolType)
+Life = Expression("Life", IntType)
+LifeMax = Expression("LifeMax", IntType)
+Ln = TriggerExpression("ln", [FloatType], FloatType)
+Log = TriggerExpression("log", [FloatType], FloatType)
+Lose = Expression("Lose", BoolType)
+MatchNo = Expression("MatchNo", IntType)
+MatchOver = Expression("MatchOver", BoolType)
+MoveContact = Expression("MoveContact", IntType)
+MoveGuarded = Expression("MoveGuarded", IntType)
+MoveHit = Expression("MoveHit", IntType)
 ## MoveType
-MoveReversed = IntExpression("MoveReversed")
-Name = String("Name")
-NumEnemy = IntExpression("NumEnemy")
-NumExplod = TriggerExpression_MaybeInt_Int("NumExplod")
-NumHelper = TriggerExpression_MaybeInt_Int("NumHelper")
-NumPartner = IntExpression("NumPartner")
-NumProj = IntExpression("NumProj")
-NumProjID = TriggerExpression_Int_Int("NumProjID")
-NumTarget = TriggerExpression_MaybeInt_Int("NumTarget")
-P1Name = String("P1Name")
+MoveReversed = Expression("MoveReversed", IntType)
+Name = Expression("Name", StringType)
+NumEnemy = Expression("NumEnemy", IntType)
+NumExplod = TriggerExpression("NumExplod", [IntType], IntType)
+NumHelper = TriggerExpression("NumHelper", [IntType], IntType)
+NumPartner = Expression("NumPartner", IntType)
+NumProj = Expression("NumProj", IntType)
+NumProjID = TriggerExpression("NumProjID", [IntType], IntType)
+NumTarget = TriggerExpression("NumTarget", [IntType], IntType)
+P1Name = Expression("P1Name", StringType)
 ## P2BodyDist
 ## P2Dist
-P2Life = IntExpression("P2Life")
+P2Life = Expression("P2Life", IntType)
 ## P2MoveType
-P2StateNo = IntExpression("P2StateNo")
+P2StateNo = Expression("P2StateNo", IntType)
 ## P2StateType
-P2Name = String("P2Name")
-P3Name = String("P3Name")
-P4Name = String("P4Name")
-PalNo = IntExpression("PalNo")
+P2Name = Expression("P2Name", StringType)
+P3Name = Expression("P3Name", StringType)
+P4Name = Expression("P4Name", StringType)
+PalNo = Expression("PalNo", IntType)
 ## ParentDist
-Pi = IntExpression("pi")
+Pi = Expression("pi", IntType)
 ## Pos
-Power = IntExpression("Power")
-PowerMax = IntExpression("PowerMax")
-PlayerIDExist = TriggerExpression_Int_Bool("PlayerIDExist")
-PrevStateNo = IntExpression("PrevStateNo")
-ProjCancelTime = TriggerExpression_Int_Int("ProjCancelTime")
-ProjContactTime = TriggerExpression_Int_Int("ProjContactTime")
-ProjGuardedTime = TriggerExpression_Int_Int("ProjGuardedTime")
-ProjHitTime = TriggerExpression_Int_Int("ProjHitTime")
-Random = IntExpression("Random")
+Power = Expression("Power", IntType)
+PowerMax = Expression("PowerMax", IntType)
+PlayerIDExist = TriggerExpression("PlayerIDExist", [IntType], IntType)
+PrevStateNo = Expression("PrevStateNo", IntType)
+ProjCancelTime = TriggerExpression("ProjCancelTime", [IntType], IntType)
+ProjContactTime = TriggerExpression("ProjContactTime", [IntType], IntType)
+ProjGuardedTime = TriggerExpression("ProjGuardedTime", [IntType], IntType)
+ProjHitTime = TriggerExpression("ProjHitTime", [IntType], IntType)
+Random = Expression("Random", IntType)
 ## RootDist
-RoundNo = IntExpression("RoundNo")
-RoundsExisted = IntExpression("RoundsExisted")
-RoundState = IntExpression("RoundState")
+RoundNo = Expression("RoundNo", IntType)
+RoundsExisted = Expression("RoundsExisted", IntType)
+RoundState = Expression("RoundState", IntType)
 ## ScreenPos
-SelfAnimExist = TriggerExpression_Int_Bool("SelfAnimExist")
-Sin = TriggerExpression_Numeric_Float("sin")
-StateNo = IntExpression("StateNo")
+SelfAnimExist = TriggerExpression("SelfAnimExist", [IntType], BoolType)
+Sin = TriggerExpression("sin", [FloatType], FloatType)
+StateNo = Expression("StateNo", IntType)
 ## StateType
-StageVar = TriggerExpression_String_String("StageVar")
+StageVar = TriggerExpression("StageVar", [StringType], StringType)
 ## sysfvar
 ## sysvar
-Tan = TriggerExpression_Numeric_Float("tan")
+Tan = TriggerExpression("tan", [FloatType], FloatType)
 ## TeamMode
-TeamSide = IntExpression("TeamSide")
-TicksPerSecond = IntExpression("TicksPerSecond")
-Time = IntExpression("Time")
+TeamSide = Expression("TeamSide", IntType)
+TicksPerSecond = Expression("TicksPerSecond", IntType)
+Time = Expression("Time", IntType)
 ## TimeMod
 ## UniqHitCount
 ## var
 ## Vel
-Win = BoolExpression("Win")
-WinKO = BoolExpression("WinKO")
-WinTime = BoolExpression("WinTime")
-WinPerfect = BoolExpression("WinPerfect")
+Win = Expression("Win", BoolType)
+WinKO = Expression("WinKO", BoolType)
+WinTime = Expression("WinTime", BoolType)
+WinPerfect = Expression("WinPerfect", BoolType)

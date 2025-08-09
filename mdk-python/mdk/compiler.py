@@ -7,8 +7,7 @@ import io
 import traceback
 import sys
 
-from mdk.types.builtins import StateType, MoveType, PhysicsType
-from mdk.types.context import StateDefinition, TemplateDefinition, IntExpression, BoolExpression, FloatExpression, Expression, StateController, Int, Float, Bool
+from mdk.types.context import StateDefinition, TemplateDefinition, Expression, StateController, StateType, MoveType, PhysicsType, IntType, TypeSpecifier
 from mdk.types.triggers import TriggerException
 
 from mdk.utils.shared import format_tuple, format_bool, get_context
@@ -95,7 +94,7 @@ def library(templates: list[Callable], output: Optional[str] = None):
             kwargs = {}
             for param in definition.params:
                 type = definition.params[param]
-                kwargs[param] = type(param)
+                kwargs[param] = Expression(param, type)
             try:
                 definition.fn(**kwargs)
             except Exception as exc:
@@ -117,11 +116,7 @@ def library(templates: list[Callable], output: Optional[str] = None):
                     f.write(f"name = {definition.fn.__name__}\n\n")
                     f.write("[Define Parameters]\n")
                     for param in definition.params:
-                        typename = ""
-                        if definition.params[param] == IntExpression: typename = "int"
-                        elif definition.params[param] == FloatExpression: typename = "float"
-                        elif definition.params[param] == BoolExpression: typename = "bool"
-                        f.write(f"{param} = {typename}\n")
+                        f.write(f"{param} = {definition.params[param].name}\n")
                     f.write("\n")
                     for controller in definition.controllers:
                         write_controller(controller, f)
@@ -154,16 +149,16 @@ def library(templates: list[Callable], output: Optional[str] = None):
 def write_controller(ctrl: StateController, f: io.TextIOWrapper):
     f.write("[State ]\n")
     f.write(f"type = {ctrl.type}\n")
-    if len(ctrl.triggers) == 0: ctrl.triggers.append(BoolExpression(True))
+    if len(ctrl.triggers) == 0: ctrl.triggers.append(format_bool(True))
     for trigger in ctrl.triggers:
         f.write(f"trigger1 = {trigger}\n")
     for param in ctrl.params:
         f.write(f"{param} = {ctrl.params[param]}\n")
 
 def statedef(
-    type: StateType = StateType.U,
-    movetype: MoveType = MoveType.U,
-    physics: PhysicsType = PhysicsType.U,
+    type: Expression = StateType.U,
+    movetype: Expression = MoveType.U,
+    physics: Expression = PhysicsType.U,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -184,9 +179,9 @@ def statedef(
 ## but can also be used by character developers to create statedefs ad-hoc (e.g. in a loop).
 def create_statedef(
     fn: Callable,
-    type: StateType = StateType.U,
-    movetype: MoveType = MoveType.U,
-    physics: PhysicsType = PhysicsType.U,
+    type: Expression = StateType.U,
+    movetype: Expression = MoveType.U,
+    physics: Expression = PhysicsType.U,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -230,20 +225,20 @@ def create_statedef(
     statedef = StateDefinition(new_fn, {}, [])
 
     # apply each parameter
-    if stateno != None: statedef.params["id"] = IntExpression(stateno)
-    statedef.params["type"] = Expression(type.name)
-    statedef.params["movetype"] = Expression(movetype.name)
-    statedef.params["physics"] = Expression(physics.name)
-    if anim != None: statedef.params["anim"] = IntExpression(anim)
+    if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
+    statedef.params["type"] = type
+    statedef.params["movetype"] = movetype
+    statedef.params["physics"] = physics
+    if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
     if velset != None: statedef.params["velset"] = format_tuple(velset)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)
-    if poweradd != None: statedef.params["poweradd"] = IntExpression(poweradd)
-    if juggle != None: statedef.params["juggle"] = IntExpression(juggle)
+    if poweradd != None: statedef.params["poweradd"] = Expression(str(poweradd), IntType)
+    if juggle != None: statedef.params["juggle"] = Expression(str(juggle), IntType)
     if facep2 != None: statedef.params["facep2"] = format_bool(facep2)
     if hitdefpersist != None: statedef.params["hitdefpersist"] = format_bool(hitdefpersist)
     if movehitpersist != None: statedef.params["movehitpersist"] = format_bool(movehitpersist)
     if hitcountpersist != None: statedef.params["hitcountpersist"] = format_bool(hitcountpersist)
-    if sprpriority != None: statedef.params["sprpriority"] = IntExpression(sprpriority)
+    if sprpriority != None: statedef.params["sprpriority"] = Expression(str(sprpriority), IntType)
 
     # add the new statedef to the context
     ctx = get_context()
@@ -265,7 +260,7 @@ def do_template(name: str, *args, **kwargs) -> StateController:
     ctrl.type = name
     return ctrl
 
-def template(library: Optional[str] = None) -> Callable:
+def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Callable:
     def decorator(fn: Callable):
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
         # get params of decorated function
@@ -299,18 +294,13 @@ def template(library: Optional[str] = None) -> Callable:
         ### -1 = return type, -2 = name, -3 = code obj (maybe?)
         new_fn = types.FunctionType(new_code_obj.co_consts[-3], new_globals)
 
-        params: dict[str, type] = {}
-        for name in signature.parameters:
-            param = signature.parameters[name]
-
-            if get_args(param.annotation) == get_args(Int) or get_args(param.annotation) == get_args(Int | None):
-                params[name] = IntExpression
-            elif get_args(param.annotation) == get_args(Float) or get_args(param.annotation) == get_args(Float | None):
-                params[name] = FloatExpression
-            elif get_args(param.annotation) == get_args(Bool) or get_args(param.annotation) == get_args(Bool | None):
-                params[name] = BoolExpression
-            else:
-                raise Exception(f"Parameter {name} in template {fn.__name__} must have a builtin type, not {param.annotation}.")
+        if len(signature.parameters) != len(inputs):
+            raise Exception(f"Mismatch in template parameter count: saw {len(inputs)} input types, and {len(signature.parameters)} real parameters.")
+        params: dict[str, TypeSpecifier] = {}
+        index = 0
+        for param in signature.parameters:
+            params[param] = inputs[index]
+            index += 1
         template = TemplateDefinition(new_fn, library, params, [])
 
         # add the new template to the context

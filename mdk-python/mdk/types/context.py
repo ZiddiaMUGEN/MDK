@@ -1,85 +1,184 @@
 from dataclasses import dataclass
 from typing import Callable, Optional, Union
+from enum import Enum
+import functools
 
 from mdk.types.triggers import TriggerException
 
+## this specifies a subset of the type categories provided by MTL.
+class TypeCategory(Enum):
+    #INVALID = -1
+    #ALIAS = 0
+    #UNION = 1
+    ENUM = 2
+    FLAG = 3
+    STRUCTURE = 4
+    #BUILTIN_STRUCTURE = 96 Note MDK does not need to differentiate between builtin and user-defined structs.
+    #STRING_FLAG = 97 Note MDK does not need string flag/enum as it uses MTL for intermediate (where all enum/flag can be passed as string)
+    #STRING_ENUM = 98
+    BUILTIN = 99
+    #BUILTIN_DENY = 100 Note MDK does not need to worry about BUILTIN_DENY as the MTL side can handle denying creation anyway.
+
+## defines a generic type. this type is not intended for end-users, instead they should use a
+## type specifier creation function (for user-defined enums, flags, and structs).
+class TypeSpecifier:
+    name: str
+    category: TypeCategory
+    def __init__(self, name: str, category: TypeCategory):
+        self.name = name
+        self.category = category
+
+## these are builtin types which must be available to all characters.
+IntType = TypeSpecifier("int", TypeCategory.BUILTIN)
+FloatType = TypeSpecifier("float", TypeCategory.BUILTIN)
+BoolType = TypeSpecifier("bool", TypeCategory.BUILTIN)
+ShortType = TypeSpecifier("short", TypeCategory.BUILTIN)
+ByteType = TypeSpecifier("byte", TypeCategory.BUILTIN)
+CharType = TypeSpecifier("char", TypeCategory.BUILTIN)
+StringType = TypeSpecifier("string", TypeCategory.BUILTIN)
+
+StateNoType = TypeSpecifier("stateno", TypeCategory.BUILTIN)
+
+def check_types_assignable(spec1: TypeSpecifier, spec2: TypeSpecifier) -> Optional[TypeSpecifier]:
+    ## TODO: confirm the types are assignable, use the MDK spec type conversion rules.
+    return None
+
+## represents a structure member, mapping its field name to a type.
+@dataclass
+class StructureMember:
+    name: str
+    type: TypeSpecifier
+
+class StructureType(TypeSpecifier):
+    members: list[StructureMember]
+    def __init__(self, name: str, category: TypeCategory, members: list[StructureMember]):
+        self.name = name
+        self.category = category
+        self.members = members
+
+class EnumType(TypeSpecifier):
+    members: list[str]
+    def __init__(self, name: str, category: TypeCategory, members: list[str]):
+        self.name = name
+        self.category = category
+        self.members = members
+    def __getattribute__(self, name: str) -> 'Expression':
+        for member in self.members:
+            if member == name: return Expression(f"{self.name}.{member}", self)
+        raise AttributeError(f"Member {name} does not exist on enum type {self.name}.")
+    
+class FlagType(TypeSpecifier):
+    members: list[str]
+    def __init__(self, name: str, category: TypeCategory, members: list[str]):
+        self.name = name
+        self.category = category
+        self.members = members
+    def __getattribute__(self, name: str) -> 'Expression':
+        all_members: list[str] = []
+        for character in name:
+            for member in self.members:
+                if member == character: all_members.append(member)
+            raise AttributeError(f"Member {character} does not exist on flag type {self.name}.")
+        return Expression(f"{self.name}.{name}", self)
+
+StateType = EnumType("StateType", TypeCategory.ENUM, ["S", "C", "A", "L", "U"])
+MoveType = EnumType("MoveType", TypeCategory.ENUM, ["A", "I", "H", "U"])
+PhysicsType = EnumType("PhysicsType", TypeCategory.ENUM, ["S", "C", "A", "N", "U"])
+
+## an Expression is a core component of building CNS.
+## Expressions represent all trigger expressions, parameter expressions, etc.
 class Expression:
     exprn: str
-    def __init__(self, exprn: str):
+    type: TypeSpecifier
+    def __init__(self, exprn: str, type: TypeSpecifier):
         self.exprn = exprn
+        self.type = type
     def __repr__(self):
         return self.exprn
     def __str__(self):
         return self.exprn
     
     def make_expression(self, exprn: str):
-        return Expression(exprn)
+        return Expression(exprn, self.type)
     
     ## comparisons
     def __eq__(self, other): # type: ignore
         ## allow eq/neq to check for None.
-        if isinstance(self, Expression) and other == None:
-            return False
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} = {other}")
+        if not isinstance(other, Expression):
+            return NotImplemented
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} = {other}", BoolType)
     def __ne__(self, other): # type: ignore
         ## allow eq/neq to check for None.
-        if isinstance(self, Expression) and other == None:
-            return False
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} != {other}")
+        if not isinstance(other, Expression):
+            return NotImplemented
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} != {other}", BoolType)
     def __lt__(self, other):
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} < {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} < {other}", BoolType)
     def __lte__(self, other):
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} <= {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} <= {other}", BoolType)
     def __gt__(self, other):
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} > {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} > {other}", BoolType)
     def __gte__(self, other):
-        check_types_assignable(self, other)
-        return BoolExpression(f"{self} >= {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
+        return Expression(f"{self} >= {other}", BoolType)
     
     ## mathematical operations
     def __add__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} + {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be added.")
+        return Expression(f"{self} + {other}", self.type)
     def __sub__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} - {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be subtracted.")
+        return Expression(f"{self} - {other}", self.type)
     def __mul__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} * {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be multiplied.")
+        return Expression(f"{self} * {other}", self.type)
     def __truediv__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} / {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be divided.")
+        return Expression(f"{self} / {other}", self.type)
     def __floordiv__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"floor({self} / {other})")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be divided.")
+        return Expression(f"floor({self} / {other})", self.type)
     def __mod__(self, other):
-        check_types_assignable(self, other)
-        if not isinstance(self, IntExpression) and not isinstance(self, IntVar):
-            raise Exception(f"Operands for the modulus operator must be integer, not {type(self)}.")
-        if not isinstance(other, IntExpression) and not isinstance(other, IntVar):
-            raise Exception(f"Operands for the modulus operator must be integer, not {type(other)}.")
-        return IntExpression(f"{self} % {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have modulus taken.")
+        ## TODO: confirm the input types are both `int` or assignable to `int`
+        return Expression(f"{self} % {other}", IntType)
     def __pow__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} ** {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have exponentiation taken.")
+        return Expression(f"{self} ** {other}", self.type)
     def __rshift__(self, other):
         raise Exception()
     def __lshift__(self, other):
         raise Exception()
     def __and__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} & {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise and taken.")
+        return Expression(f"{self} & {other}", self.type)
     def __or__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} | {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise or taken.")
+        return Expression(f"{self} | {other}", self.type)
     def __xor__(self, other):
-        check_types_assignable(self, other)
-        return self.make_expression(f"{self} ^ {other}")
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise xor taken.")
+        return Expression(f"{self} ^ {other}", self.type)
     def __radd__(self, other): return self.__add__(other)
     def __rsub__(self, other): return self.__sub__(other)
     def __rmul__(self, other): return self.__mul__(other)
@@ -93,21 +192,21 @@ class Expression:
     def __ror__(self, other): return self.__or__(other)
     def __rxor__(self, other): return self.__xor__(other)
     def __neg__(self):
-        return self.make_expression(f"-({self})")
+        return Expression(f"-({self})", self.type)
     def __pos__(self):
-        return self.make_expression(f"+({self})")
+        return Expression(f"+({self})", self.type)
     def __abs__(self):
-        return self.make_expression(f"abs({self})")
+        return Expression(f"abs({self})", self.type)
     def __invert__(self):
-        return self.make_expression(f"~({self})")
+        return Expression(f"~({self})", self.type)
     def __round__(self):
-        return self.make_expression(f"floor({self})")
+        return Expression(f"floor({self})", self.type)
     def __trunc__(self):
-        return self.make_expression(f"floor({self})")
+        return Expression(f"floor({self})", self.type)
     def __floor__(self):
-        return self.make_expression(f"floor({self})")
+        return Expression(f"floor({self})", self.type)
     def __ceil__(self):
-        return self.make_expression(f"ceil({self})")
+        return Expression(f"ceil({self})", self.type)
     
     # Trigger must ALWAYS be truthy, because any conditions a Trigger is used in should be TRUE to evaluate the statements below the condition.
     def __bool__(self):
@@ -117,79 +216,20 @@ class Expression:
         ctx = CompilerContext.instance
         ctx.current_trigger = self
         return True
-    
-def check_types_assignable(expr1: Expression, expr2: Expression):
-    ## checks if the 2 expressions have a matching type.
-    if isinstance(expr1, IntExpression) or isinstance(expr1, IntVar) or isinstance(expr1, int):
-        if not isinstance(expr2, IntExpression) and not isinstance(expr2, IntVar) and not isinstance(expr2, int):
-            raise Exception(f"Operands to operator must have compatible types; provided types are {type(expr1)} and {type(expr2)}.")
-    if isinstance(expr1, FloatExpression) or isinstance(expr1, FloatVar) or isinstance(expr1, float):
-        if not isinstance(expr2, FloatExpression) and not isinstance(expr2, FloatVar) and not isinstance(expr2, float):
-            raise Exception(f"Operands to operator must have compatible types; provided types are {type(expr1)} and {type(expr2)}.")
-    if isinstance(expr1, BoolExpression) or isinstance(expr1, BoolVar) or isinstance(expr1, bool):
-        if not isinstance(expr2, BoolExpression) and not isinstance(expr2, BoolVar) and not isinstance(expr2, bool):
-            raise Exception(f"Operands to operator must have compatible types; provided types are {type(expr1)} and {type(expr2)}.")
 
+## these are helpers for specifying expressions for commonly-used built-in types.
+IntExpression = functools.partial(Expression, type = IntType)
+
+## a special type of Expression which represents a variable access.
+## generally speaking this is just treated differently so that we can
+## detect variable initialization and scope in the state/template code.
 class VariableExpression(Expression):
-    def __init__(self, name: str = ""):
+    def __init__(self, type: TypeSpecifier, name: str = ""):
         self.exprn = name
+        self.type = type
 
     def make_expression(self, exprn: str):
-        return Expression(exprn)
-
-class IntVar(VariableExpression):
-    def __init__(self, name: str = ""):
-        self.exprn = name
-
-    def make_expression(self, exprn: str):
-        return IntExpression(exprn)
-
-class FloatVar(VariableExpression):
-    def __init__(self, name: str = ""):
-        self.exprn = name
-
-    def make_expression(self, exprn: str):
-        return FloatExpression(exprn)
-
-class BoolVar(VariableExpression):
-    def __init__(self, name: str = ""):
-        self.exprn = name
-
-    def make_expression(self, exprn: str):
-        return BoolExpression(exprn)
-
-class IntExpression(Expression):
-    def __init__(self, exprn: Union[str, int, Expression]):
-        super().__init__(str(exprn))
-
-    def make_expression(self, exprn: str):
-        return IntExpression(exprn)
-
-class FloatExpression(Expression):
-    def __init__(self, exprn: Union[str, float, Expression]):
-        super().__init__(str(exprn))
-
-    def make_expression(self, exprn: str):
-        return FloatExpression(exprn)
-
-class BoolExpression(Expression):
-    def __init__(self, exprn: Union[str, bool, Expression]):
-        if isinstance(exprn, bool):
-            super().__init__("true" if exprn else "false")
-        else:
-            super().__init__(str(exprn))
-
-    def make_expression(self, exprn: str):
-        return BoolExpression(exprn)
-
-class StringExpression(Expression):
-    def __init__(self, exprn: str):
-        if not isinstance(exprn, str):
-            raise Exception("Input to a StringExpression must always be a constant string, not a different expression.")
-        super().__init__(exprn)
-
-    def make_expression(self, exprn: str):
-        return StringExpression(exprn)
+        return Expression(exprn, self.type)
 
 @dataclass
 class StateController:
@@ -221,7 +261,7 @@ class StateDefinition:
 class TemplateDefinition:
     fn: Callable
     library: Optional[str]
-    params: dict[str, type]
+    params: dict[str, TypeSpecifier]
     controllers: list[StateController]
 
 @dataclass
@@ -245,8 +285,3 @@ class CompilerContext:
         if not hasattr(cls, 'instance'):
             cls.instance = super(CompilerContext, cls).__new__(cls)
         return cls.instance
-    
-Int = IntExpression | IntVar
-Float = FloatExpression | FloatVar
-Bool = BoolExpression | BoolVar
-String = StringExpression

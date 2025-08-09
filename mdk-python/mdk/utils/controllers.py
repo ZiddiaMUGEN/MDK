@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 import copy
 
-from mdk.types.context import StateController, IntExpression
+from mdk.types.context import StateController, Expression, IntType
 
 from mdk.utils.shared import format_bool, get_context
 
@@ -16,7 +16,7 @@ def make_controller(fn, *args, ignorehitpause: Optional[bool] = None, persistent
     ctrl: StateController = fn(*args, **kwargs)
     ctrl.type = fn.__name__
     if ignorehitpause != None: ctrl.params["ignorehitpause"] = format_bool(ignorehitpause)
-    if persistent != None: ctrl.params["persistent"] = IntExpression(persistent)
+    if persistent != None: ctrl.params["persistent"] = Expression(str(persistent), IntType)
 
     ctx = get_context()
     if ctx.current_state == None and ctx.current_template == None:
