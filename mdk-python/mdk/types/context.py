@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 from typing import Callable, Optional, Union
 from enum import Enum
+import traceback
 import functools
+import random
+import string
 
 from mdk.types.triggers import TriggerException
+
+def generate_random_string(length: int):
+    return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 
 ## this specifies a subset of the type categories provided by MTL.
 class TypeCategory(Enum):
@@ -62,7 +68,7 @@ class EnumType(TypeSpecifier):
         self.name = name
         self.category = category
         self.members = members
-    def __getattribute__(self, name: str) -> 'Expression':
+    def __getattr__(self, name: str) -> 'Expression':
         for member in self.members:
             if member == name: return Expression(f"{self.name}.{member}", self)
         raise AttributeError(f"Member {name} does not exist on enum type {self.name}.")
@@ -73,7 +79,7 @@ class FlagType(TypeSpecifier):
         self.name = name
         self.category = category
         self.members = members
-    def __getattribute__(self, name: str) -> 'Expression':
+    def __getattr__(self, name: str) -> 'Expression':
         all_members: list[str] = []
         for character in name:
             for member in self.members:
@@ -224,12 +230,34 @@ IntExpression = functools.partial(Expression, type = IntType)
 ## generally speaking this is just treated differently so that we can
 ## detect variable initialization and scope in the state/template code.
 class VariableExpression(Expression):
-    def __init__(self, type: TypeSpecifier, name: str = ""):
-        self.exprn = name
+    def __init__(self, type: TypeSpecifier):
         self.type = type
+        self.exprn = ""
+
+        ## in order to determine a name for this variable, we need to walk through the backtrace
+        ## and find calling code which originates from a statedef or template function, or
+        ## from the top level of a module (other than this one).
+        context = CompilerContext.instance
+        for frame in traceback.extract_stack():
+            function_name = frame.name
+            if function_name in context.statedefs or function_name in context.templates:
+                ## means this is a line from a statedef or template function, so we should check the assignment
+                if frame.line != None and len(frame.line.split("=")) == 2:
+                    self.exprn = frame.line.split("=")[0].strip()
+        
+        ## if it could not be found, print a warning and assign a variable name.
+        if context.current_state != None and self.exprn == "":
+            self.exprn = f"_anon_{generate_random_string(8)}"
+            print(f"Warning: Could not automatically identify the name of a variable in {context.current_state.fn.__name__}, assigning anonymous name {self.exprn}.")
+        elif context.current_template != None and self.exprn == "":
+            self.exprn = f"_anon_{generate_random_string(8)}"
+            print(f"Warning: Could not automatically identify the name of a variable in {context.current_template.fn.__name__}, assigning anonymous name {self.exprn}.")
 
     def make_expression(self, exprn: str):
         return Expression(exprn, self.type)
+    
+## these are helpers for creating variables from commonly-used built-in types.
+IntVar = functools.partial(VariableExpression, type = IntType)
 
 @dataclass
 class StateController:

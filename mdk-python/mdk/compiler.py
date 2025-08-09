@@ -201,6 +201,7 @@ def create_statedef(
     # remove decorator lines at the start of the source
     while source[0].strip().startswith('@'):
         source = source[1:]
+        line_number -= 1
     source = '\n'.join(source)
     # parse AST from the decorated function
     old_ast = ast.parse(source)
@@ -291,8 +292,14 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
         new_globals["mdk.impl.TriggerPush"] = TriggerPush
         new_globals["mdk.impl.TriggerPop"] = TriggerPop
         # create a new function including these globals.
-        ### -1 = return type, -2 = name, -3 = code obj (maybe?)
-        new_fn = types.FunctionType(new_code_obj.co_consts[-3], new_globals)
+        ## find the last code object in the const list.
+        new_fn = None
+        for index in range(len(new_code_obj.co_consts)):
+            if type(new_code_obj.co_consts[index]) == types.CodeType:
+                new_fn = types.FunctionType(new_code_obj.co_consts[index], new_globals)
+        
+        if new_fn == None:
+            raise Exception("Failed to find function code object during template patchup.")
 
         if len(signature.parameters) != len(inputs):
             raise Exception(f"Mismatch in template parameter count: saw {len(inputs)} input types, and {len(signature.parameters)} real parameters.")
@@ -317,19 +324,26 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         self.location = location
         self.line = line
 
+    """
     def visit_Assign(self, node: ast.Assign):
         # if we assign to VariableExpression, IntVar, FloatVar, or BoolVar,
         # the name field needs to be populated.
         node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
         value = node.value
         if isinstance(node.targets[0], ast.Name) and isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ["IntVar", "FloatVar", "BoolVar", "VariableExpression"]:
-            value.args.append(ast.Constant(
-                value=node.targets[0].id,
+            value.keywords.append(ast.keyword(
+                arg="name",
+                value=ast.Constant(
+                    value=node.targets[0].id,
+                    lineno=node.targets[0].lineno,
+                    col_offset=node.targets[0].col_offset
+                ),
                 lineno=node.targets[0].lineno,
                 col_offset=node.targets[0].col_offset
             ))
 
         return node
+    """
 
     def visit_BoolOp(self, node: ast.BoolOp):
         # inspect child nodes.
