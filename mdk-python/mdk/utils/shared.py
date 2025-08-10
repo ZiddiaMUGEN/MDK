@@ -8,6 +8,4 @@ def format_bool(b: bool) -> Expression:
 
 ## singleton context.
 def get_context() -> CompilerContext:
-    if not hasattr(CompilerContext, 'instance'):
-        return CompilerContext()
-    return CompilerContext.instance
+    return CompilerContext.instance()

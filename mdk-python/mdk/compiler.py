@@ -53,6 +53,8 @@ def build(output: str, skip_templates: bool = False):
                 f.write(f"[Statedef {name}]\n")
                 for param in statedef.params:
                     f.write(f"{param} = {statedef.params[param]}\n")
+                for local in statedef.locals:
+                    f.write(f"local = {local.name} = {local.type.name}\n")
                 f.write("\n")
                 for controller in statedef.controllers:
                     write_controller(controller, f)
@@ -71,6 +73,8 @@ def build(output: str, skip_templates: bool = False):
         for fs in tb:
             for tm in context.templates:
                 if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
+            for sd in context.statedefs:
+                if context.statedefs[sd].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
         ## now print full exception and likely causes.
         traceback.print_exception(_exc)
         print()
@@ -113,7 +117,10 @@ def library(templates: list[Callable], output: Optional[str] = None):
             with open(group, mode="w") as f:
                 for definition in per_file[group]:
                     f.write("[Define Template]\n")
-                    f.write(f"name = {definition.fn.__name__}\n\n")
+                    f.write(f"name = {definition.fn.__name__}\n")
+                    for local in definition.locals:
+                        f.write(f"local = {local.name} = {local.type.name}\n")
+                    f.write("\n")
                     f.write("[Define Parameters]\n")
                     for param in definition.params:
                         f.write(f"{param} = {definition.params[param].name}\n")
@@ -135,6 +142,8 @@ def library(templates: list[Callable], output: Optional[str] = None):
         for fs in tb:
             for tm in context.templates:
                 if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
+            for sd in context.statedefs:
+                if context.statedefs[sd].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
         ## now print full exception and likely causes.
         traceback.print_exception(_exc)
         print()
@@ -201,8 +210,7 @@ def create_statedef(
     # remove decorator lines at the start of the source
     while source[0].strip().startswith('@'):
         source = source[1:]
-        line_number -= 1
-    source = '\n'.join(source)
+    source = ''.join(source)
     # parse AST from the decorated function
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
@@ -223,7 +231,7 @@ def create_statedef(
     # create a new function including these globals.
     new_fn = types.FunctionType(new_code_obj.co_consts[0], new_globals)
 
-    statedef = StateDefinition(new_fn, {}, [])
+    statedef = StateDefinition(new_fn, {}, [], [])
 
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
@@ -272,8 +280,7 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
         # remove decorator lines at the start of the source
         while source[0].strip().startswith('@'):
             source = source[1:]
-            line_number -= 1
-        source = '\n'.join(source)
+        source = ''.join(source)
         # parse AST from the decorated function
         old_ast = ast.parse(source)
         # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
@@ -308,7 +315,7 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
         for param in signature.parameters:
             params[param] = inputs[index]
             index += 1
-        template = TemplateDefinition(new_fn, library, params, [])
+        template = TemplateDefinition(new_fn, library, params, [], [])
 
         # add the new template to the context
         ctx = get_context()
@@ -323,27 +330,6 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
     def __init__(self, location: Optional[str], line: int):
         self.location = location
         self.line = line
-
-    """
-    def visit_Assign(self, node: ast.Assign):
-        # if we assign to VariableExpression, IntVar, FloatVar, or BoolVar,
-        # the name field needs to be populated.
-        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
-        value = node.value
-        if isinstance(node.targets[0], ast.Name) and isinstance(value, ast.Call) and isinstance(value.func, ast.Name) and value.func.id in ["IntVar", "FloatVar", "BoolVar", "VariableExpression"]:
-            value.keywords.append(ast.keyword(
-                arg="name",
-                value=ast.Constant(
-                    value=node.targets[0].id,
-                    lineno=node.targets[0].lineno,
-                    col_offset=node.targets[0].col_offset
-                ),
-                lineno=node.targets[0].lineno,
-                col_offset=node.targets[0].col_offset
-            ))
-
-        return node
-    """
 
     def visit_BoolOp(self, node: ast.BoolOp):
         # inspect child nodes.

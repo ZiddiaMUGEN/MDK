@@ -5,5 +5,7 @@ source = superarmor.inc
 type = StateType.U
 movetype = MoveType.U
 physics = PhysicsType.U
+local = myVar = int
+local = newVar = int
 
 

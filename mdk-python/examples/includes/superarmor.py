@@ -4,7 +4,7 @@ sys.path.append("c:\\Users\\ziddi\\MDK\\mdk-python")
 
 ## This is a straight conversion of a CNS superarmor shared in https://mugenarchive.com/forums/showthread.php?126780-Help-with-super-armor-coding
 from mdk.compiler import library, template, statedef, build
-from mdk.types import IntExpression, IntType, IntVar
+from mdk.types import IntExpression, IntType, IntVar, FloatVar
 from mdk.stdlib import *
 
 @template(inputs = [IntType], library = "superarmor.inc")
@@ -19,3 +19,4 @@ def CreateArmor(helperID: Expression):
 
 if __name__ == "__main__":
     library([CreateArmor])
+    build("superarmor.mtl")

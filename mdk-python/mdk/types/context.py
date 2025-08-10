@@ -219,12 +219,18 @@ class Expression:
         ## unfortunately this can't use mdk.utils.shared.get_context since that causes circular imports.
         ## but it can access the context itself here.
         ## we only need to set this expression onto TriggerStack when it is used as a bool.
-        ctx = CompilerContext.instance
+        ctx = CompilerContext.instance()
         ctx.current_trigger = self
         return True
 
 ## these are helpers for specifying expressions for commonly-used built-in types.
 IntExpression = functools.partial(Expression, type = IntType)
+
+class ScopeType(Enum):
+    SHARED = 0
+    PLAYER = 1
+    HELPER = 2
+    TARGET = 3
 
 ## a special type of Expression which represents a variable access.
 ## generally speaking this is just treated differently so that we can
@@ -237,13 +243,29 @@ class VariableExpression(Expression):
         ## in order to determine a name for this variable, we need to walk through the backtrace
         ## and find calling code which originates from a statedef or template function, or
         ## from the top level of a module (other than this one).
-        context = CompilerContext.instance
+        context = CompilerContext.instance()
+        traceback.extract_tb(None)
         for frame in traceback.extract_stack():
             function_name = frame.name
-            if function_name in context.statedefs or function_name in context.templates:
+            if function_name in context.statedefs and frame.line != None and len(frame.line.split("=")) == 2:
                 ## means this is a line from a statedef or template function, so we should check the assignment
-                if frame.line != None and len(frame.line.split("=")) == 2:
-                    self.exprn = frame.line.split("=")[0].strip()
+                self.exprn = frame.line.split("=")[0].strip()
+                if next(filter(lambda k: k.name == self.exprn, context.statedefs[function_name].locals), None) != None:
+                    raise Exception(f"Attempted to create 2 local variables with the same name {self.exprn} in state definition {function_name}.")
+                context.statedefs[function_name].locals.append(ParameterDefinition(self.type, self.exprn))
+                break
+            elif function_name in context.templates and frame.line != None and len(frame.line.split("=")) == 2:
+                ## means this is a line from a statedef or template function, so we should check the assignment
+                self.exprn = frame.line.split("=")[0].strip()
+                if next(filter(lambda k: k.name == self.exprn, context.templates[function_name].locals), None) != None:
+                    raise Exception(f"Attempted to create 2 local variables with the same name {self.exprn} in template definition {function_name}.")
+                context.templates[function_name].locals.append(ParameterDefinition(self.type, self.exprn))
+            elif context.current_state == None and context.current_template == None and function_name == "<module>" and frame.line != None and len(frame.line.split("=")) == 2:
+                ## means this is a line from a global scope
+                self.exprn = frame.line.split("=")[0].strip()
+                if next(filter(lambda k: k.name == self.exprn, context.globals), None) != None:
+                    raise Exception(f"Attempted to create 2 global variables with the same name {self.exprn}.")
+                context.globals.append(ParameterDefinition(self.type, self.exprn))
         
         ## if it could not be found, print a warning and assign a variable name.
         if context.current_state != None and self.exprn == "":
@@ -252,12 +274,16 @@ class VariableExpression(Expression):
         elif context.current_template != None and self.exprn == "":
             self.exprn = f"_anon_{generate_random_string(8)}"
             print(f"Warning: Could not automatically identify the name of a variable in {context.current_template.fn.__name__}, assigning anonymous name {self.exprn}.")
+        elif context.current_template == None and context.current_state == None and self.exprn == "":
+            self.exprn = f"_anon_{generate_random_string(8)}"
+            print(f"Warning: Could not automatically identify the name of a variable in global state, assigning anonymous name {self.exprn}.")
 
     def make_expression(self, exprn: str):
         return Expression(exprn, self.type)
     
 ## these are helpers for creating variables from commonly-used built-in types.
 IntVar = functools.partial(VariableExpression, type = IntType)
+FloatVar = functools.partial(VariableExpression, type = FloatType)
 
 @dataclass
 class StateController:
@@ -278,12 +304,18 @@ class StateController:
         for param in self.params:
             result += f"\n{param} = {self.params[param]}"
         return result
+    
+@dataclass
+class ParameterDefinition:
+    type: TypeSpecifier
+    name: str
 
 @dataclass
 class StateDefinition:
     fn: Callable
     params: dict[str, Expression]
     controllers: list[StateController]
+    locals: list[ParameterDefinition]
 
 @dataclass
 class TemplateDefinition:
@@ -291,6 +323,7 @@ class TemplateDefinition:
     library: Optional[str]
     params: dict[str, TypeSpecifier]
     controllers: list[StateController]
+    locals: list[ParameterDefinition]
 
 @dataclass
 class CompilerContext:
@@ -300,6 +333,7 @@ class CompilerContext:
     current_template: Optional[TemplateDefinition]
     current_trigger: Optional[Expression]
     trigger_stack: list[Expression]
+    globals: list[ParameterDefinition]
 
     def __init__(self):
         self.statedefs = {}
@@ -308,8 +342,10 @@ class CompilerContext:
         self.current_template = None
         self.current_trigger = None
         self.trigger_stack = []
-
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(CompilerContext, cls).__new__(cls)
-        return cls.instance
+        self.globals = []
+    
+    @classmethod
+    def instance(cls):
+        if not hasattr(cls, '_instance'):
+            cls._instance = CompilerContext()
+        return cls._instance
