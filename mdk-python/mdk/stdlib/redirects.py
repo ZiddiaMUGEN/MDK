@@ -1,4 +1,4 @@
-from typing import Protocol, Optional, Callable, TypeVar
+from typing import Protocol, Optional, Callable
 
 from mdk.types.context import Expression
 import mdk.stdlib.triggers as triggers

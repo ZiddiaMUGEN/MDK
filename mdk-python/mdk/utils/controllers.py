@@ -1,9 +1,11 @@
 from typing import Callable, Optional
 import copy
 
-from mdk.types.context import StateController, Expression, IntType
+from mdk.types.context import StateController, CompilerContext
+from mdk.types.expressions import Expression
+from mdk.types.specifier import IntType
 
-from mdk.utils.shared import format_bool, get_context
+from mdk.utils.shared import format_bool
 
 # decorator which provides a wrapper around each controller.
 # this adds some extra debugging info, and also simplifies adding triggers to controllers and handling controller insertion into the active statedef.
@@ -18,7 +20,7 @@ def make_controller(fn, *args, ignorehitpause: Optional[bool] = None, persistent
     if ignorehitpause != None: ctrl.params["ignorehitpause"] = format_bool(ignorehitpause)
     if persistent != None: ctrl.params["persistent"] = Expression(str(persistent), IntType)
 
-    ctx = get_context()
+    ctx = CompilerContext.instance()
     if ctx.current_state == None and ctx.current_template == None:
         raise Exception("Attempted to call a state controller outside of a statedef function.")
     

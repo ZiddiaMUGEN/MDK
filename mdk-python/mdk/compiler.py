@@ -8,16 +8,13 @@ import traceback
 import sys
 
 from mdk.types.context import StateDefinition, TemplateDefinition, Expression, StateController, StateType, MoveType, PhysicsType, IntType, TypeSpecifier
-from mdk.types.triggers import TriggerException
+from mdk.types.errors import TriggerException, CompilationException
 
 from mdk.utils.shared import format_tuple, format_bool, get_context
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
 from mdk.utils.controllers import make_controller
 
 from mdk.stdlib.controllers import ChangeState
-
-class CompilationException(Exception):
-    pass
 
 def build(output: str, skip_templates: bool = False):
     context = get_context()
@@ -63,25 +60,7 @@ def build(output: str, skip_templates: bool = False):
     except TriggerException as exc:
         print(exc.get_message())
     except CompilationException as exc:
-        ## extract the portion of the stack trace that is actually relevant...
-        _exc = exc
-        if exc.__context__ != None:
-            _exc = exc.__context__
-        tb = traceback.extract_tb(_exc.__traceback__)
-        ## we want to identify the user-side issue (because the traceback contains a bunch of MDK internals as well)
-        save_lines: list[str] = []
-        for fs in tb:
-            for tm in context.templates:
-                if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
-            for sd in context.statedefs:
-                if context.statedefs[sd].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
-        ## now print full exception and likely causes.
-        traceback.print_exception(_exc)
-        print()
-        print("Likely cause(s) in user-code at:")
-        print("\n".join(save_lines))
-        print()
-        sys.exit(-1)
+        create_compile_error(exc)
     except Exception as exc:
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc

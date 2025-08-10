@@ -1,7 +1,10 @@
-from mdk.types.context import Expression, VariableExpression, BoolType, check_types_assignable
-from mdk.types.triggers import TriggerException
+from mdk.types.context import CompilerContext
+from mdk.types.expressions import Expression, VariableExpression
+from mdk.types.specifier import BoolType
+from mdk.types.errors import TriggerException
 
-from mdk.utils.shared import get_context, format_bool
+from mdk.utils.shared import format_bool
+from mdk.utils.expressions import check_types_assignable
 
 def TriggerAnd(expr1: Expression, expr2: Expression, filename: str, line: int):
     ## auto-convert bools to BoolExpression.
@@ -55,7 +58,7 @@ def TriggerAssign(expr1: Expression, expr2: Expression, filename: str, line: int
     return expr1.make_expression(f"{expr1.exprn} := {expr2.exprn}")
 
 def TriggerPush(file: str, line: int):
-    ctx = get_context()
+    ctx = CompilerContext.instance()
     if not isinstance(ctx.current_trigger, Expression):
         ## it's legal for current_trigger to be None, it means the controller was called outside of an `if`.
         ## (i don't think it's possible for TriggerPush to invoke in this case, but better for safety).
@@ -63,7 +66,7 @@ def TriggerPush(file: str, line: int):
     ctx.trigger_stack.append(ctx.current_trigger)
 
 def TriggerPop(file: str, line: int):
-    ctx = get_context()
+    ctx = CompilerContext.instance()
     if len(ctx.trigger_stack) == 0:
         raise TriggerException(f"Tried to pop triggers from an empty trigger stack.", file, line)
     ctx.trigger_stack.pop()

@@ -1,5 +1,6 @@
 from typing import Callable
-from mdk.types.context import Expression, TypeSpecifier, IntType, BoolType, FloatType, StringType
+from mdk.types.context import Expression
+from mdk.types.specifier import TypeSpecifier, IntType, BoolType, FloatType, StringType
 
 ## helper function to take 1 argument and the types involved and produce an output.
 def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable:
