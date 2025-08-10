@@ -1,6 +1,8 @@
 from enum import Enum
 from dataclasses import dataclass
 
+from mdk.types.expressions import Expression
+
 ## this specifies a subset of the type categories provided by MTL.
 class TypeCategory(Enum):
     #INVALID = -1

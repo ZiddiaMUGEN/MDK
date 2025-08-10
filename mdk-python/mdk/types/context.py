@@ -68,3 +68,13 @@ class CompilerContext:
         if not hasattr(cls, '_instance'):
             cls._instance = CompilerContext()
         return cls._instance
+
+## EXTREMELY NASTY HACK
+def _overwrite_bool(self: Expression):
+    ## unfortunately this can't use mdk.utils.shared.get_context since that causes circular imports.
+    ## but it can access the context itself here.
+    ## we only need to set this expression onto TriggerStack when it is used as a bool.
+    ctx = CompilerContext.instance()
+    ctx.current_trigger = self
+    return True
+Expression.__bool__ = _overwrite_bool

@@ -1,3 +1,9 @@
+from dataclasses import dataclass
+from typing import Optional, Callable
+
+from mdk.types.specifier import TypeSpecifier
+from mdk.types.expressions import Expression
+
 @dataclass
 class StateController:
     type: str

@@ -1,6 +1,7 @@
 import traceback
 import random
 import string
+import sys
 
 from mdk.types.errors import CompilationException
 from mdk.types.context import CompilerContext
