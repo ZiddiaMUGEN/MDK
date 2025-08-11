@@ -3,17 +3,22 @@ from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.builtins import IntType, BoolType, FloatType, StringType
 
+from mdk.utils.shared import convert
+
 ## helper function to take 1 argument and the types involved and produce an output.
 def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable:
     def _callable(*args) -> Expression:
         if len(args) != len(inputs):
             raise Exception(f"Trigger expression {name} expected {len(inputs)} inputs, but got {len(args)} instead.")
+        conv_args: list[Expression] = []
         for index in range(len(args)):
-            if not isinstance(args[index], Expression):
+            next_arg = convert(args[index])
+            if not isinstance(next_arg, Expression):
                 raise Exception(f"Inputs to trigger expressions should always be Expressions, not {type(args[index])}.")
-            if args[index].type != inputs[index]:
-                raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {args[index].type.name}")
-        return Expression(f"{name}({', '.join([str(arg) for arg in args])})", output)
+            if next_arg.type != inputs[index]:
+                raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {next_arg.type.name}")
+            conv_args.append(next_arg)
+        return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
     return _callable
 
 Abs = TriggerExpression("abs", [FloatType], FloatType)

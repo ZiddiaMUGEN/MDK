@@ -1,12 +1,13 @@
 import traceback
 import functools
+import copy
 
-from mdk.types.expressions import Expression
+from mdk.types.expressions import Expression, ConvertibleExpression
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.context import CompilerContext, ParameterDefinition
+from mdk.types.context import CompilerContext, ParameterDefinition, StateController
 from mdk.types.builtins import IntType, FloatType
 
-from mdk.utils.shared import generate_random_string
+from mdk.utils.shared import generate_random_string, convert, format_bool
 
 ## a special type of Expression which represents a variable access.
 ## generally speaking this is just treated differently so that we can
@@ -56,6 +57,38 @@ class VariableExpression(Expression):
 
     def make_expression(self, exprn: str):
         return Expression(exprn, self.type)
+    
+    def set(self, val: ConvertibleExpression):
+        context = CompilerContext.instance()
+        new_value = convert(val)
+        new_controller = StateController()
+        new_controller.type = "VarSet"
+        new_controller.params = {}
+        new_controller.params[self.exprn] = new_value
+        if len(context.trigger_stack) != 0:
+            new_controller.triggers = copy.deepcopy(context.trigger_stack)
+        else:
+            new_controller.triggers = [format_bool(True)]
+        if context.current_state != None:
+            context.current_state.controllers.append(new_controller)
+        elif context.current_template != None:
+            context.current_template.controllers.append(new_controller)
+
+    def add(self, val: ConvertibleExpression):
+        context = CompilerContext.instance()
+        new_value = convert(val)
+        new_controller = StateController()
+        new_controller.type = "VarAdd"
+        new_controller.params = {}
+        new_controller.params[self.exprn] = new_value
+        if len(context.trigger_stack) != 0:
+            new_controller.triggers = copy.deepcopy(context.trigger_stack)
+        else:
+            new_controller.triggers = [format_bool(True)]
+        if context.current_state != None:
+            context.current_state.controllers.append(new_controller)
+        elif context.current_template != None:
+            context.current_template.controllers.append(new_controller)
     
 ## these are helpers for creating variables from commonly-used built-in types.
 IntVar = functools.partial(VariableExpression, type = IntType)

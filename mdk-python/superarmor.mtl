@@ -1,0 +1,15 @@
+[Include]
+source = superarmor.inc
+
+[Statedef myCustomState]
+id = -2
+type = StateType.U
+movetype = MoveType.U
+physics = PhysicsType.U
+
+[State ]
+type = CreateArmor
+trigger1 = true
+helperID = 11777
+
+

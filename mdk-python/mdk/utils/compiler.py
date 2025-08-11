@@ -30,7 +30,6 @@ def rewrite_function(fn: Callable) -> Callable:
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
     new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
-    #print(ast.dump(new_ast, indent=4))
     ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
@@ -86,7 +85,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         # then, replace the BoolOp directly with a Call to the appropriate override,
         # with arguments provided from the inner values.
         return ast.Call(
-            func=ast.Name(id=target, ctx=ast.Load()),
+            func=ast.Name(id=target, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
             args=node.values,
             keywords=[],
             lineno=node.lineno,
@@ -105,7 +104,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         # then, replace the BoolOp directly with a Call to the appropriate override,
         # with arguments provided from the inner values.
         return ast.Call(
-            func=ast.Name(id=target, ctx=ast.Load()),
+            func=ast.Name(id=target, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
             args=[
                 node.operand, 
                 ast.Constant(

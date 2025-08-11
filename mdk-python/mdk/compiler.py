@@ -1,16 +1,16 @@
 from typing import Optional, Callable
 from functools import partial
 import inspect
+import copy
 
 from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, StateScopeType
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import TriggerException, CompilationException
 from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType
-from mdk.types.defined import StateType, MoveType, PhysicsType
+from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType
 
 from mdk.utils.shared import convert_tuple, format_bool, create_compiler_error
-from mdk.utils.controllers import make_controller
 from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
@@ -167,7 +167,7 @@ def create_statedef(
     statedef.params["movetype"] = movetype
     statedef.params["physics"] = physics
     if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
-    if velset != None: statedef.params["velset"] = convert_tuple(velset)
+    if velset != None: statedef.params["velset"] = convert_tuple(velset, FloatPairType)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)
     if poweradd != None: statedef.params["poweradd"] = Expression(str(poweradd), IntType)
     if juggle != None: statedef.params["juggle"] = Expression(str(juggle), IntType)
@@ -185,19 +185,34 @@ def create_statedef(
 
     return partial(ChangeState, value = fn.__name__)
 
-def do_template(name: str, *args, **kwargs) -> StateController:
+def do_template(name: str, validator: Optional[Callable], *args, **kwargs) -> StateController:
     def generic_template(*args, **kwargs):
         if len(args) != 0:
             raise Exception("Templates cannot be called with positional arguments, only keyword arguments.")
-        result = StateController()
+        ## if a validator was provided, we give the template author a chance to validate and even modify input arguments.
+        if validator != None and (kwargs := validator(**kwargs)) == None:
+            raise Exception(f"Could not place call to template with name {name}, template validation check failed.")
+        context = CompilerContext.instance()
+        new_controller = StateController()
+        new_controller.type = name
+        new_controller.params = {}
         for arg in kwargs:
-            result.params[arg] = kwargs[arg]
-        return result
-    ctrl = make_controller(generic_template, *args, **kwargs)
+            new_controller.params[arg] = kwargs[arg]
+        if len(context.trigger_stack) != 0:
+            new_controller.triggers = copy.deepcopy(context.trigger_stack)
+        else:
+            new_controller.triggers = [format_bool(True)]
+        return new_controller
+    ctrl = generic_template(*args, **kwargs)
     ctrl.type = name
+    context = CompilerContext.instance()
+    if context.current_state != None:
+        context.current_state.controllers.append(ctrl)
+    elif context.current_template != None:
+        context.current_template.controllers.append(ctrl)
     return ctrl
 
-def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Callable:
+def template(inputs: list[TypeSpecifier], library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
     def decorator(fn: Callable):
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
         # get params of decorated function
@@ -223,7 +238,7 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
             raise Exception(f"Attempted to overwrite template with name {fn.__name__}.")
         ctx.templates[fn.__name__] = template
 
-        return partial(do_template, fn.__name__)
+        return partial(do_template, fn.__name__, validator)
     return decorator
     
 __all__ = ["build", "library", "statedef", "create_statedef", "template"]

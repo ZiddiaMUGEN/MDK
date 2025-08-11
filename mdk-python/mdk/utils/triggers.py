@@ -9,9 +9,9 @@ from mdk.utils.expressions import check_types_assignable
 
 def TriggerAnd(expr1: Expression, expr2: Expression, filename: str, line: int):
     ## auto-convert bools to BoolExpression.
-    if isinstance(expr1, bool):
+    if type(expr1) == bool:
         expr1 = format_bool(expr1)
-    if isinstance(expr2, bool):
+    if type(expr2) == bool:
         expr2 = format_bool(expr2)
 
     if expr1.type != BoolType:
@@ -23,9 +23,9 @@ def TriggerAnd(expr1: Expression, expr2: Expression, filename: str, line: int):
 
 def TriggerOr(expr1: Expression, expr2: Expression, filename: str, line: int):
     ## auto-convert bools to BoolExpression.
-    if isinstance(expr1, bool):
+    if type(expr1) == bool:
         expr1 = format_bool(expr1)
-    if isinstance(expr2, bool):
+    if type(expr2) == bool:
         expr2 = format_bool(expr2)
 
     if expr1.type != BoolType:
@@ -37,7 +37,7 @@ def TriggerOr(expr1: Expression, expr2: Expression, filename: str, line: int):
 
 def TriggerNot(expr: Expression, filename: str, line: int):
     ## auto-convert bools to BoolExpression.
-    if isinstance(expr, bool):
+    if type(expr) == bool:
         expr = format_bool(expr)
 
     """

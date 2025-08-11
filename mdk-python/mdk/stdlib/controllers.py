@@ -30,7 +30,12 @@ def set_if_tuple(ctrl: StateController, name: str, val: Optional[TupleExpression
 def set_stateno(ctrl: StateController, name: str, val: Optional[Union[Expression, Callable, str, int]]):
     if val != None:
         if isinstance(val, partial):
-            ctrl.params[name] = Expression(val.keywords["value"], StateNoType)
+            if "value" in val.keywords:
+                ctrl.params[name] = Expression(val.keywords["value"], StateNoType)
+            elif len(val.args) == 1:
+                ctrl.params[name] = Expression(val.args[0], StateNoType)
+            else:
+                raise Exception(f"Could not determine target state definition name from input: {val} - bug the developers.")
         elif isinstance(val, Callable):
             ctrl.params[name] = Expression(val.__name__, StateNoType)
         elif isinstance(val, str):
@@ -429,7 +434,7 @@ def Helper(
     pos: Optional[TupleExpression] = None, 
     postype: Optional[ConvertibleExpression] = None, 
     facing: Optional[ConvertibleExpression] = None,
-    stateno: Optional[ConvertibleExpression] = None, 
+    stateno: Optional[Union[Expression, str, int, Callable]] = None, 
     keyctrl: Optional[ConvertibleExpression] = None, 
     ownpal: Optional[ConvertibleExpression] = None, 
     supermovetime: Optional[ConvertibleExpression] = None, 
@@ -454,7 +459,7 @@ def Helper(
     set_if_tuple(result, "pos", pos, FloatPairType)
     set_if(result, "postype", postype)
     set_if(result, "facing", facing)
-    set_if(result, "stateno", stateno)
+    set_stateno(result, "stateno", stateno)
     set_if(result, "keyctrl", keyctrl)
     set_if(result, "ownpal", ownpal)
     set_if(result, "supermovetime", supermovetime)
@@ -620,8 +625,8 @@ def HitDef(
     p1facing: Optional[ConvertibleExpression] = None,
     p1getp2facing: Optional[ConvertibleExpression] = None,
     p2facing: Optional[ConvertibleExpression] = None,
-    p1stateno: Optional[ConvertibleExpression] = None,
-    p2stateno: Optional[ConvertibleExpression] = None,
+    p1stateno: Optional[Union[Expression, str, int, Callable]] = None,
+    p2stateno: Optional[Union[Expression, str, int, Callable]] = None,
     p2getp1state: Optional[ConvertibleExpression] = None,
     forcestand: Optional[ConvertibleExpression] = None,
     fall: Optional[ConvertibleExpression] = None,
@@ -703,8 +708,8 @@ def HitDef(
     set_if(result, "p1facing", p1facing)
     set_if(result, "p1getp2facing", p1getp2facing)
     set_if(result, "p2facing", p2facing)
-    set_if(result, "p1stateno", p1stateno)
-    set_if(result, "p2stateno", p2stateno)
+    set_stateno(result, "p1stateno", p1stateno)
+    set_stateno(result, "p2stateno", p2stateno)
     set_if(result, "p2getp1state", p2getp1state)
     set_if(result, "forcestand", forcestand)
     set_if(result, "fall", fall)
@@ -768,11 +773,11 @@ def HitFallVel():
     time = [IntType, None],
     forceair = [BoolType, None]
 )
-def HitOverride(attr: TupleExpression, stateno: Optional[ConvertibleExpression] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None):
+def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, int, Callable]] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None):
     result = StateController()
 
     set_if_tuple(result, "attr", attr, HitStringType)
-    set_if(result, "stateno", stateno)
+    set_stateno(result, "stateno", stateno)
     set_if(result, "slot", slot)
     set_if(result, "time", time)
     set_if(result, "forceair", forceair)
@@ -1201,8 +1206,8 @@ def ReversalDef(
     pausetime: Optional[TupleExpression] = None, 
     sparkno: Optional[ConvertibleExpression] = None, 
     hitsound: Optional[TupleExpression] = None, 
-    p1stateno: Optional[ConvertibleExpression] = None, 
-    p2stateno: Optional[ConvertibleExpression] = None, 
+    p1stateno: Optional[Union[Expression, str, int, Callable]] = None, 
+    p2stateno: Optional[Union[Expression, str, int, Callable]] = None, 
     p1sprpriority: Optional[ConvertibleExpression] = None, 
     p2sprpriority: Optional[ConvertibleExpression] = None, 
     sparkxy: Optional[TupleExpression] = None
@@ -1213,8 +1218,8 @@ def ReversalDef(
     set_if_tuple(result, "pausetime", pausetime, IntPairType)
     set_if(result, "sparkno", sparkno)
     set_if_tuple(result, "hitsound", hitsound, IntPairType)
-    set_if(result, "p1stateno", p1stateno)
-    set_if(result, "p2stateno", p2stateno)
+    set_stateno(result, "p1stateno", p1stateno)
+    set_stateno(result, "p2stateno", p2stateno)
     set_if(result, "p1sprpriority", p1sprpriority)
     set_if(result, "p2sprpriority", p2sprpriority)
     set_if_tuple(result, "sparkxy", sparkxy, IntPairType)
@@ -1358,10 +1363,10 @@ def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None
     return result
 
 @controller(value = [StateNoType], id = [IntType, None])
-def TargetState(value: Expression, id: Optional[ConvertibleExpression] = None):
+def TargetState(value: Union[Expression, str, int, Callable], id: Optional[ConvertibleExpression] = None):
     result = StateController()
 
-    set_if(result, "value", value)
+    set_stateno(result, "value", value)
     set_if(result, "id", id)
 
     return result

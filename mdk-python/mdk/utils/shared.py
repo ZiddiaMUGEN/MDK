@@ -10,15 +10,19 @@ from mdk.types.expressions import Expression, TupleExpression
 from mdk.types.builtins import BoolType, IntType, FloatType, StringType
 from mdk.types.defined import TupleType
 
-def convert(input: Union[str, int, float, bool]) -> Expression:
-    if isinstance(input, str):
+def convert(input: Union[Expression, str, int, float, bool]) -> Expression:
+    if isinstance(input, Expression):
+        return input
+    elif type(input) == str:
         return Expression(input, StringType)
-    elif isinstance(input, int):
+    elif type(input) == int:
         return Expression(str(input), IntType)
-    elif isinstance(input, float):
+    elif type(input) == float:
         return Expression(str(input), FloatType)
-    elif isinstance(input, bool):
+    elif type(input) == bool:
         return Expression("true" if input else "false", BoolType)
+    else:
+        raise Exception(f"Attempted to convert from unsupported builtin type {type(input)}.")
 
 def generate_random_string(length: int):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))

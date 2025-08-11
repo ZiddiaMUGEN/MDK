@@ -12,16 +12,16 @@ class StructureMember:
 
 class StructureType(TypeSpecifier):
     members: list[StructureMember]
-    def __init__(self, name: str, category: TypeCategory, members: list[StructureMember]):
+    def __init__(self, name: str, members: list[StructureMember]):
         self.name = name
-        self.category = category
+        self.category = TypeCategory.STRUCTURE
         self.members = members
 
 class EnumType(TypeSpecifier):
     members: list[str]
-    def __init__(self, name: str, category: TypeCategory, members: list[str]):
+    def __init__(self, name: str, members: list[str]):
         self.name = name
-        self.category = category
+        self.category = TypeCategory.ENUM
         self.members = members
     def __getattr__(self, name: str) -> Expression:
         for member in self.members:
@@ -30,16 +30,22 @@ class EnumType(TypeSpecifier):
     
 class FlagType(TypeSpecifier):
     members: list[str]
-    def __init__(self, name: str, category: TypeCategory, members: list[str]):
+    def __init__(self, name: str, members: list[str]):
         self.name = name
-        self.category = category
+        self.category = TypeCategory.FLAG
         self.members = members
     def __getattr__(self, name: str) -> Expression:
         all_members: list[str] = []
         for character in name:
+            found = False
             for member in self.members:
-                if member == character: all_members.append(member)
-            raise AttributeError(f"Member {character} does not exist on flag type {self.name}.")
+                if member == character: 
+                    all_members.append(member)
+                    found = True
+                    break
+            if not found:
+                raise AttributeError(f"Member {character} does not exist on flag type {self.name}.")
+
         return Expression(f"{self.name}.{name}", self)
     
 class TupleType(TypeSpecifier):
@@ -49,26 +55,26 @@ class TupleType(TypeSpecifier):
         self.category = category
         self.members = members
     
-StateType = EnumType("StateType", TypeCategory.ENUM, ["S", "C", "A", "L", "U"])
-MoveType = EnumType("MoveType", TypeCategory.ENUM, ["A", "I", "H", "U"])
-PhysicsType = EnumType("PhysicsType", TypeCategory.ENUM, ["S", "C", "A", "N", "U"])
+StateType = EnumType("StateType", ["S", "C", "A", "L", "U"])
+MoveType = EnumType("MoveType", ["A", "I", "H", "U"])
+PhysicsType = EnumType("PhysicsType", ["S", "C", "A", "N", "U"])
 
-HitType = EnumType("HitType", TypeCategory.FLAG, ["S", "C", "A"])
-HitAttr = EnumType("HitAttr", TypeCategory.FLAG, ["N", "S", "H", "A", "T", "P"])
+HitType = FlagType("HitType", ["S", "C", "A"])
+HitAttr = FlagType("HitAttr", ["N", "S", "H", "A", "T", "P"])
 
-TransType = EnumType("TransType", TypeCategory.ENUM, ["add", "add1", "sub", "none"])
-AssertType = EnumType("AssertType", TypeCategory.ENUM, ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"])
-WaveType = EnumType("WaveType", TypeCategory.ENUM, ["Sine", "Square", "SineSquare", "Off"])
-HelperType = EnumType("HelperType", TypeCategory.ENUM, ["Normal", "Player", "Proj"])
-TeamType = EnumType("TeamType", TypeCategory.ENUM, ["E", "B", "F"])
-HitAnimType = EnumType("HitAnimType", TypeCategory.ENUM, ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"])
-AttackType = EnumType("AttackType", TypeCategory.ENUM, ["High", "Low", "Trip", "None"])
-PriorityType = EnumType("PriorityType", TypeCategory.ENUM, ["Hit", "Miss", "Dodge"])
-PosType = EnumType("PosType", TypeCategory.ENUM, ["P1", "P2", "Front", "Back", "Left", "Right", "None"])
+TransType = EnumType("TransType", ["add", "add1", "sub", "none"])
+AssertType = EnumType("AssertType", ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"])
+WaveType = EnumType("WaveType", ["Sine", "Square", "SineSquare", "Off"])
+HelperType = EnumType("HelperType", ["Normal", "Player", "Proj"])
+TeamType = EnumType("TeamType", ["E", "B", "F"])
+HitAnimType = EnumType("HitAnimType", ["Light", "Medium", "Hard", "Back", "Up", "DiagUp"])
+AttackType = EnumType("AttackType", ["High", "Low", "Trip", "None"])
+PriorityType = EnumType("PriorityType", ["Hit", "Miss", "Dodge"])
+PosType = EnumType("PosType", ["P1", "P2", "Front", "Back", "Left", "Right", "None"])
 
 ## TODO: +/- won't work.
-HitFlagType = FlagType("HitFlagType", TypeCategory.FLAG, ["H", "L", "A", "M", "F", "D", "+", "-"])
-GuardFlagType = FlagType("GuardFlagType", TypeCategory.FLAG, ["H", "L", "A", "M"])
+HitFlagType = FlagType("HitFlagType", ["H", "L", "A", "M", "F", "D", "+", "-"])
+GuardFlagType = FlagType("GuardFlagType", ["H", "L", "A", "M"])
 
 ColorType = TupleType("ColorType", TypeCategory.TUPLE, [IntType, IntType, IntType])
 ColorMultType = TupleType("ColorMultType", TypeCategory.TUPLE, [FloatType, FloatType, FloatType])
@@ -77,7 +83,7 @@ FloatPosType = TupleType("FloatPosType", TypeCategory.TUPLE, [FloatType, FloatTy
 IntPairType = TupleType("IntPairType", TypeCategory.TUPLE, [IntType, IntType])
 BoolPairType = TupleType("BoolPairType", TypeCategory.TUPLE, [BoolType, BoolType])
 WaveTupleType = TupleType("WaveTupleType", TypeCategory.TUPLE, [IntType, FloatType, FloatType, FloatType])
-HitStringType = TupleType("HitStringType", TypeCategory.TUPLE, [IntType, FloatType, FloatType, FloatType])
+HitStringType = TupleType("HitStringType", TypeCategory.TUPLE, [HitType, HitAttr])
 PriorityPairType = TupleType("PriorityPairType", TypeCategory.TUPLE, [IntType, PriorityType])
 SoundPairType = TupleType("SoundPairType", TypeCategory.TUPLE, [SoundType, IntType])
 PeriodicColorType = TupleType("PeriodicColorType", TypeCategory.TUPLE, [IntType, IntType, IntType, IntType])
