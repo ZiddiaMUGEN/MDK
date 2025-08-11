@@ -2,17 +2,41 @@ import traceback
 import random
 import string
 import sys
+from typing import Union
 
 from mdk.types.errors import CompilationException
 from mdk.types.context import CompilerContext
-from mdk.types.expressions import Expression
-from mdk.types.builtins import BoolType
+from mdk.types.expressions import Expression, TupleExpression
+from mdk.types.builtins import BoolType, IntType, FloatType, StringType
+from mdk.types.defined import TupleType
+
+def convert(input: Union[str, int, float, bool]) -> Expression:
+    if isinstance(input, str):
+        return Expression(input, StringType)
+    elif isinstance(input, int):
+        return Expression(str(input), IntType)
+    elif isinstance(input, float):
+        return Expression(str(input), FloatType)
+    elif isinstance(input, bool):
+        return Expression("true" if input else "false", BoolType)
 
 def generate_random_string(length: int):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
 
-def format_tuple(t: tuple) -> Expression:
-    return Expression(", ".join(t))
+def format_tuple(t: tuple) -> TupleExpression:
+    result: list[Expression] = []
+
+    for index in range(len(t)):
+        if isinstance(t[index], Expression):
+            result.append(t[index])
+        else:
+            result.append(convert(t[index]))
+
+    return tuple(result)
+
+def convert_tuple(t: tuple, t2: TupleType) -> Expression:
+    expression = format_tuple(t)
+    return Expression(", ".join([t.exprn for t in expression]), t2) # type: ignore
 
 def format_bool(b: bool) -> Expression:
     return Expression("true" if b else "false", BoolType)

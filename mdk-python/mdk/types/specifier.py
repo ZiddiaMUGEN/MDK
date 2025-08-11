@@ -8,6 +8,7 @@ class TypeCategory(Enum):
     ENUM = 2
     FLAG = 3
     STRUCTURE = 4
+    TUPLE = 20
     #BUILTIN_STRUCTURE = 96 Note MDK does not need to differentiate between builtin and user-defined structs.
     #STRING_FLAG = 97 Note MDK does not need string flag/enum as it uses MTL for intermediate (where all enum/flag can be passed as string)
     #STRING_ENUM = 98

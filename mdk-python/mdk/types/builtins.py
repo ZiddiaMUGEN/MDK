@@ -10,5 +10,11 @@ CharType = TypeSpecifier("char", TypeCategory.BUILTIN)
 StringType = TypeSpecifier("string", TypeCategory.BUILTIN)
 
 StateNoType = TypeSpecifier("stateno", TypeCategory.BUILTIN)
+AnimType = TypeSpecifier("anim", TypeCategory.BUILTIN)
+SoundType = TypeSpecifier("sound", TypeCategory.BUILTIN)
+SpriteType = TypeSpecifier("sprite", TypeCategory.BUILTIN)
 
-__all__ = ["IntType", "FloatType", "BoolType", "ShortType", "ByteType", "CharType", "StringType", "StateNoType"]
+__all__ = [
+    "IntType", "FloatType", "BoolType", "ShortType", "ByteType", "CharType", "StringType",
+    "StateNoType", "AnimType", "SoundType", "SpriteType"
+]

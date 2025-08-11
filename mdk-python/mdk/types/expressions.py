@@ -1,4 +1,5 @@
 import functools
+from typing import Union
 
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.builtins import IntType, BoolType
@@ -137,4 +138,8 @@ class Expression:
 ## these are helpers for specifying expressions for commonly-used built-in types.
 IntExpression = functools.partial(Expression, type = IntType)
 
-__all__ = ["Expression", "IntExpression"]
+## type hint for a tuple with variable length
+type ConvertibleExpression = Union[Expression, str, int, float, bool]
+type TupleExpression = tuple[ConvertibleExpression, ...]
+
+__all__ = ["Expression", "IntExpression", "TupleExpression"]

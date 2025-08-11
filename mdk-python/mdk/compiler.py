@@ -9,7 +9,7 @@ from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType
 from mdk.types.defined import StateType, MoveType, PhysicsType
 
-from mdk.utils.shared import format_tuple, format_bool, create_compiler_error
+from mdk.utils.shared import convert_tuple, format_bool, create_compiler_error
 from mdk.utils.controllers import make_controller
 from mdk.utils.compiler import write_controller, rewrite_function
 
@@ -167,7 +167,7 @@ def create_statedef(
     statedef.params["movetype"] = movetype
     statedef.params["physics"] = physics
     if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
-    if velset != None: statedef.params["velset"] = format_tuple(velset)
+    if velset != None: statedef.params["velset"] = convert_tuple(velset)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)
     if poweradd != None: statedef.params["poweradd"] = Expression(str(poweradd), IntType)
     if juggle != None: statedef.params["juggle"] = Expression(str(juggle), IntType)
