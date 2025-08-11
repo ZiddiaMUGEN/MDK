@@ -1,23 +1,22 @@
-from typing import Optional, Callable, get_args
+from typing import Optional, Callable
 from functools import partial
-import ast
 import inspect
-import types
-import io
-import traceback
-import sys
 
-from mdk.types.context import StateDefinition, TemplateDefinition, Expression, StateController, StateType, MoveType, PhysicsType, IntType, TypeSpecifier
+from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, StateScopeType
+from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import TriggerException, CompilationException
+from mdk.types.expressions import Expression
+from mdk.types.builtins import IntType
+from mdk.types.defined import StateType, MoveType, PhysicsType
 
-from mdk.utils.shared import format_tuple, format_bool, get_context
-from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
+from mdk.utils.shared import format_tuple, format_bool, create_compiler_error
 from mdk.utils.controllers import make_controller
+from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
 
 def build(output: str, skip_templates: bool = False):
-    context = get_context()
+    context = CompilerContext.instance()
     try:
         ## builds the character from the input data.
         for state in context.statedefs:
@@ -60,7 +59,7 @@ def build(output: str, skip_templates: bool = False):
     except TriggerException as exc:
         print(exc.get_message())
     except CompilationException as exc:
-        create_compile_error(exc)
+        create_compiler_error(exc)
     except Exception as exc:
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
@@ -68,7 +67,7 @@ def build(output: str, skip_templates: bool = False):
 def library(templates: list[Callable], output: Optional[str] = None):
     if len(templates) == 0:
         raise Exception("Please specify some templates to be built.")
-    context = get_context()
+    context = CompilerContext.instance()
     try:
         per_file: dict[str, list[TemplateDefinition]] = {}
         for template in context.templates:
@@ -111,37 +110,10 @@ def library(templates: list[Callable], output: Optional[str] = None):
     except TriggerException as exc:
         print(exc.get_message())
     except CompilationException as exc:
-        ## extract the portion of the stack trace that is actually relevant...
-        _exc = exc
-        if exc.__context__ != None:
-            _exc = exc.__context__
-        tb = traceback.extract_tb(_exc.__traceback__)
-        ## we want to identify the user-side issue (because the traceback contains a bunch of MDK internals as well)
-        save_lines: list[str] = []
-        for fs in tb:
-            for tm in context.templates:
-                if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
-            for sd in context.statedefs:
-                if context.statedefs[sd].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
-        ## now print full exception and likely causes.
-        traceback.print_exception(_exc)
-        print()
-        print("Likely cause(s) in user-code at:")
-        print("\n".join(save_lines))
-        print()
-        sys.exit(-1)
+        create_compiler_error(exc)
     except Exception as exc:
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
-
-def write_controller(ctrl: StateController, f: io.TextIOWrapper):
-    f.write("[State ]\n")
-    f.write(f"type = {ctrl.type}\n")
-    if len(ctrl.triggers) == 0: ctrl.triggers.append(format_bool(True))
-    for trigger in ctrl.triggers:
-        f.write(f"trigger1 = {trigger}\n")
-    for param in ctrl.params:
-        f.write(f"{param} = {ctrl.params[param]}\n")
 
 def statedef(
     type: Expression = StateType.U,
@@ -157,10 +129,11 @@ def statedef(
     movehitpersist: Optional[bool] = None,
     hitcountpersist: Optional[bool] = None,
     sprpriority: Optional[int] = None,
-    stateno: Optional[int] = None
+    stateno: Optional[int] = None,
+    scope: Optional[StateScope] = None
 ) -> Callable:
     def decorator(fn: Callable) -> Callable:
-        return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno)
+        return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno, scope)
     return decorator
 
 ## used by the @statedef decorator to create new statedefs,
@@ -180,36 +153,12 @@ def create_statedef(
     movehitpersist: Optional[bool] = None,
     hitcountpersist: Optional[bool] = None,
     sprpriority: Optional[int] = None,
-    stateno: Optional[int] = None
+    stateno: Optional[int] = None,
+    scope: Optional[StateScope] = None
 ) -> Callable:
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
-    # get effective source code of the decorated function
-    source, line_number = inspect.getsourcelines(fn)
-    location = inspect.getsourcefile(fn)
-    # remove decorator lines at the start of the source
-    while source[0].strip().startswith('@'):
-        source = source[1:]
-    source = ''.join(source)
-    # parse AST from the decorated function
-    old_ast = ast.parse(source)
-    # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
-    #print(ast.dump(new_ast, indent=4))
-    ast.increment_lineno(new_ast, line_number)
-    # compile the updated AST to a function and use it as the resulting wrapped function.
-    new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
-    # add missing globals for each operation.
-    # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
-    new_globals = fn.__globals__
-    new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
-    new_globals["mdk.impl.TriggerOr"] = TriggerOr
-    new_globals["mdk.impl.TriggerNot"] = TriggerNot
-    new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
-    new_globals["mdk.impl.TriggerPush"] = TriggerPush
-    new_globals["mdk.impl.TriggerPop"] = TriggerPop
-    # create a new function including these globals.
-    new_fn = types.FunctionType(new_code_obj.co_consts[0], new_globals)
-
+    
+    new_fn = rewrite_function(fn)
     statedef = StateDefinition(new_fn, {}, [], [])
 
     # apply each parameter
@@ -229,7 +178,7 @@ def create_statedef(
     if sprpriority != None: statedef.params["sprpriority"] = Expression(str(sprpriority), IntType)
 
     # add the new statedef to the context
-    ctx = get_context()
+    ctx = CompilerContext.instance()
     if fn.__name__ in ctx.statedefs:
         raise Exception(f"Attempted to overwrite statedef with name {fn.__name__}.")
     ctx.statedefs[fn.__name__] = statedef
@@ -253,42 +202,14 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
         # get params of decorated function
         signature = inspect.signature(fn)
-        # get effective source code of the decorated function
-        source, line_number = inspect.getsourcelines(fn)
-        location = inspect.getsourcefile(fn)
-        # remove decorator lines at the start of the source
-        while source[0].strip().startswith('@'):
-            source = source[1:]
-        source = ''.join(source)
-        # parse AST from the decorated function
-        old_ast = ast.parse(source)
-        # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-        new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
-        #print(ast.dump(new_ast, indent=4))
-        ast.increment_lineno(new_ast, line_number)
-        # compile the updated AST to a function and use it as the resulting wrapped function.
-        new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
-        # add missing globals for each operation.
-        # these globals are placed into `mdk.impl` namespace to make it easier to identify them in error cases.
-        new_globals = fn.__globals__
-        new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
-        new_globals["mdk.impl.TriggerOr"] = TriggerOr
-        new_globals["mdk.impl.TriggerNot"] = TriggerNot
-        new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
-        new_globals["mdk.impl.TriggerPush"] = TriggerPush
-        new_globals["mdk.impl.TriggerPop"] = TriggerPop
-        # create a new function including these globals.
-        ## find the last code object in the const list.
-        new_fn = None
-        for index in range(len(new_code_obj.co_consts)):
-            if type(new_code_obj.co_consts[index]) == types.CodeType:
-                new_fn = types.FunctionType(new_code_obj.co_consts[index], new_globals)
-        
-        if new_fn == None:
-            raise Exception("Failed to find function code object during template patchup.")
 
+        # create new function with ast fixes
+        new_fn = rewrite_function(fn)
+
+        # ensure parameters align
         if len(signature.parameters) != len(inputs):
             raise Exception(f"Mismatch in template parameter count: saw {len(inputs)} input types, and {len(signature.parameters)} real parameters.")
+
         params: dict[str, TypeSpecifier] = {}
         index = 0
         for param in signature.parameters:
@@ -297,244 +218,12 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None) -> Call
         template = TemplateDefinition(new_fn, library, params, [], [])
 
         # add the new template to the context
-        ctx = get_context()
+        ctx = CompilerContext.instance()
         if fn.__name__ in ctx.templates:
             raise Exception(f"Attempted to overwrite template with name {fn.__name__}.")
         ctx.templates[fn.__name__] = template
 
         return partial(do_template, fn.__name__)
     return decorator
-
-class ReplaceLogicalOperators(ast.NodeTransformer):
-    def __init__(self, location: Optional[str], line: int):
-        self.location = location
-        self.line = line
-
-    def visit_BoolOp(self, node: ast.BoolOp):
-        # inspect child nodes.
-        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
-        # get the type of operation: we support transforming AND, OR for boolop.
-        if type(node.op) == ast.And:
-            target = 'mdk.impl.TriggerAnd'
-        elif type(node.op) == ast.Or:
-            target = 'mdk.impl.TriggerOr'
-        else:
-            return node
-        
-        # add location information as an argument
-        node.values.insert(len(node.values), ast.Constant(
-                value=self.location,
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            )
-        )
-        node.values.insert(len(node.values), ast.Constant(
-                value=self.line+node.lineno,
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            )
-        )
-        
-        # then, replace the BoolOp directly with a Call to the appropriate override,
-        # with arguments provided from the inner values.
-        return ast.Call(
-            func=ast.Name(id=target, ctx=ast.Load()),
-            args=node.values,
-            keywords=[],
-            lineno=node.lineno,
-            col_offset=node.col_offset
-        )
     
-    def visit_UnaryOp(self, node: ast.UnaryOp):
-        # recursively inspect child nodes.
-        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
-        # get the type of operation: we support transforming NOT for unaryop
-        if type(node.op) == ast.Not:
-            target = 'mdk.impl.TriggerNot'
-        else:
-            return node
-        
-        # then, replace the BoolOp directly with a Call to the appropriate override,
-        # with arguments provided from the inner values.
-        return ast.Call(
-            func=ast.Name(id=target, ctx=ast.Load()),
-            args=[
-                node.operand, 
-                ast.Constant(
-                    value=self.location,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                ast.Constant(
-                    value=self.line+node.lineno,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                )
-            ],
-            keywords=[],
-            lineno=node.lineno,
-            col_offset=node.col_offset
-        )
-    
-    def visit_NamedExpr(self, node: ast.NamedExpr):
-        # recursively inspect child nodes.
-        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
-        # then, replace the NamedExpr directly with a Call to the assignment override,
-        # with arguments provided from the inner values.
-        return ast.Call(
-            func=ast.Name(id="mdk.impl.TriggerAssign", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-            args=[
-                ast.Name(id=node.target.id, ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                node.value,
-                ast.Constant(
-                    value=self.location,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                ast.Constant(
-                    value=self.line+node.lineno,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                )
-            ],
-            keywords=[],
-            lineno=node.lineno,
-            col_offset=node.col_offset
-        )
-    
-    def visit_If(self, node: ast.If):
-        results: list[ast.If] = []
-        # recursively inspect child nodes.
-        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
-
-        # append a call to mdk.impl.TriggerPush at the start of the block,
-        # and append a call to mdk.impl.TriggerPop at the end of the block.
-        node.body.insert(0, ast.Expr(
-            value=ast.Call(
-                func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[
-                    ast.Constant(
-                        value=self.location,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    ),
-                    ast.Constant(
-                        value=self.line+node.lineno,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    )
-                ],
-                keywords=[],
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            ),
-            lineno=node.lineno,
-            col_offset=node.col_offset
-        ))
-        node.body.insert(len(node.body), ast.Expr(
-            value=ast.Call(
-                func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[
-                    ast.Constant(
-                        value=self.location,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    ),
-                    ast.Constant(
-                        value=self.line+node.lineno,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    )
-                ],
-                keywords=[],
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            ),
-            lineno=node.lineno,
-            col_offset=node.col_offset
-        ))
-
-        results.append(node)
-
-        # if the 'orelse' block does not start with an 'if' (i.e. is not an 'elif')
-        if len(node.orelse) == 1 and isinstance(node.orelse, ast.If):
-            ## this is the case for 'elif' blocks.
-            ## just pull the If out of the orelse and append it.
-            results.append(node.orelse)
-            node.orelse = []
-        elif len(node.orelse) != 0:
-            ## this is the case for 'else' blocks.
-            ## we need to wrap these up in another If with the negation of the previous statement.
-            new_node = ast.If(
-                test=ast.Call(
-                    func=ast.Name(id='mdk.impl.TriggerNot', ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[
-                        node.test,
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
-                    ],
-                    keywords=[],
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                body=node.orelse,
-                orelse=[],
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            )
-            new_node.body.insert(0, ast.Expr(
-                value=ast.Call(
-                    func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
-                    ],
-                    keywords=[],
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            ))
-            new_node.body.insert(len(new_node.body), ast.Expr(
-                value=ast.Call(
-                    func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
-                    ],
-                    keywords=[],
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            ))
-            results.append(new_node)
-            node.orelse = []
-
-        return results
+__all__ = ["build", "library", "statedef", "create_statedef", "template"]

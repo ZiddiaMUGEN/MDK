@@ -1,16 +1,10 @@
 import functools
-from enum import Enum
 
-from mdk.types.specifier import TypeSpecifier, IntType, BoolType
+from mdk.types.specifier import TypeSpecifier
+from mdk.types.builtins import IntType, BoolType
+from mdk.types.context import CompilerContext
 
 from mdk.utils.expressions import check_types_assignable
-from mdk.utils.shared import generate_random_string
-
-class ScopeType(Enum):
-    SHARED = 0
-    PLAYER = 1
-    HELPER = 2
-    TARGET = 3
 
 ## an Expression is a core component of building CNS.
 ## Expressions represent all trigger expressions, parameter expressions, etc.
@@ -134,6 +128,13 @@ class Expression:
         return Expression(f"floor({self})", self.type)
     def __ceil__(self):
         return Expression(f"ceil({self})", self.type)
-
+    
+    def __bool__(self):
+        ctx = CompilerContext.instance()
+        ctx.current_trigger = self
+        return True
+    
 ## these are helpers for specifying expressions for commonly-used built-in types.
 IntExpression = functools.partial(Expression, type = IntType)
+
+__all__ = ["Expression", "IntExpression"]

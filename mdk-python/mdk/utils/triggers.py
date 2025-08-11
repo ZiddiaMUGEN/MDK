@@ -1,6 +1,7 @@
 from mdk.types.context import CompilerContext
-from mdk.types.expressions import Expression, VariableExpression
-from mdk.types.specifier import BoolType
+from mdk.types.expressions import Expression
+from mdk.types.variables import VariableExpression
+from mdk.types.builtins import BoolType
 from mdk.types.errors import TriggerException
 
 from mdk.utils.shared import format_bool

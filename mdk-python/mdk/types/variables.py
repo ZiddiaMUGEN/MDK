@@ -2,8 +2,9 @@ import traceback
 import functools
 
 from mdk.types.expressions import Expression
-from mdk.types.specifier import TypeSpecifier, IntType, FloatType
+from mdk.types.specifier import TypeSpecifier
 from mdk.types.context import CompilerContext, ParameterDefinition
+from mdk.types.builtins import IntType, FloatType
 
 from mdk.utils.shared import generate_random_string
 
@@ -59,3 +60,5 @@ class VariableExpression(Expression):
 ## these are helpers for creating variables from commonly-used built-in types.
 IntVar = functools.partial(VariableExpression, type = IntType)
 FloatVar = functools.partial(VariableExpression, type = FloatType)
+
+__all__ = ["VariableExpression", "IntVar", "FloatVar"]

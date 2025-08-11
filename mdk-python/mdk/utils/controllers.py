@@ -3,7 +3,7 @@ import copy
 
 from mdk.types.context import StateController, CompilerContext
 from mdk.types.expressions import Expression
-from mdk.types.specifier import IntType
+from mdk.types.builtins import IntType
 
 from mdk.utils.shared import format_bool
 

@@ -1,8 +1,25 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Callable, Optional
+from typing import Callable, Optional, TYPE_CHECKING
+from enum import Enum
 
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.expressions import Expression
+
+## an ugly hack, necessary due to circular import.
+if TYPE_CHECKING:
+    from mdk.types.expressions import Expression
+
+class StateScopeType(Enum):
+    SHARED = 0
+    PLAYER = 1
+    HELPER = 2
+    TARGET = 3
+
+@dataclass
+class StateScope:
+    scope: StateScopeType
+    target: int
 
 @dataclass
 class StateController:
@@ -68,13 +85,3 @@ class CompilerContext:
         if not hasattr(cls, '_instance'):
             cls._instance = CompilerContext()
         return cls._instance
-
-## EXTREMELY NASTY HACK
-def _overwrite_bool(self: Expression):
-    ## unfortunately this can't use mdk.utils.shared.get_context since that causes circular imports.
-    ## but it can access the context itself here.
-    ## we only need to set this expression onto TriggerStack when it is used as a bool.
-    ctx = CompilerContext.instance()
-    ctx.current_trigger = self
-    return True
-Expression.__bool__ = _overwrite_bool

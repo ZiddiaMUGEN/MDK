@@ -2,8 +2,9 @@ from typing import Union, Callable, Optional
 from functools import partial
 
 from mdk.utils.controllers import controller
-from mdk.types.context import StateController, Expression
-from mdk.types.specifier import StateNoType, IntType, BoolType
+from mdk.types.context import StateController
+from mdk.types.builtins import StateNoType, IntType, BoolType
+from mdk.types.expressions import Expression
 
 @controller
 def ChangeState(value: Union[Expression, str, Callable, int], ctrl: Optional[Expression] = None, anim: Optional[Expression] = None) -> StateController:
@@ -31,3 +32,5 @@ def ChangeState(value: Union[Expression, str, Callable, int], ctrl: Optional[Exp
         result.params["anim"] = anim
 
     return result
+
+__all__ = ["ChangeState"]

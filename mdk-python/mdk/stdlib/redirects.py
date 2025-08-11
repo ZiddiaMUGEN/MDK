@@ -1,6 +1,6 @@
 from typing import Protocol, Optional, Callable
 
-from mdk.types.context import Expression
+from mdk.types.expressions import Expression
 import mdk.stdlib.triggers as triggers
 
 class RedirectTarget:
@@ -109,3 +109,5 @@ target = RedirectTargetBuilder("target")
 enemy = RedirectTargetBuilder("enemy")
 enemynear = RedirectTargetBuilder("enemynear")
 playerID = RedirectTargetBuilder("playerID")
+
+__all__ = ["parent", "root", "partner", "helper", "target", "enemy", "enemynear", "playerID"]

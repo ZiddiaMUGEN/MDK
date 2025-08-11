@@ -6,7 +6,7 @@ import sys
 from mdk.types.errors import CompilationException
 from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
-from mdk.types.specifier import BoolType
+from mdk.types.builtins import BoolType
 
 def generate_random_string(length: int):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
