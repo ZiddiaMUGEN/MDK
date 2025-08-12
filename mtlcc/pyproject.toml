@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mtl"
+name = "mtl-mugen"
 version = "0.0.1"
 dependencies = [
     "lark>=1.2.2",
