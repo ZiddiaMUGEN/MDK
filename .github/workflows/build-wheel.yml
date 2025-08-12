@@ -1,0 +1,22 @@
+name: Build Wheels and Upload to Artifacts
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mdk-python/**.py"
+      - "mtlcc/**.py"
+jobs:
+  check-bats-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --upgrade pip build
+      - run: cd mtlcc && python3 -m build
+      - run: cd mdk-python && python3 -m build
+      - run: mkdir dist && cp mtlcc/dist/* dist/ && cp mdk-python/dist/* dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mdk-latest
+          path: dist
+
