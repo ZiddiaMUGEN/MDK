@@ -1,16 +1,16 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, Union
 from functools import partial
 import inspect
 import copy
 
-from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, StateScopeType
+from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import TriggerException, CompilationException
 from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType
 from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType
 
-from mdk.utils.shared import convert_tuple, format_bool, create_compiler_error
+from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
 from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
@@ -64,19 +64,19 @@ def build(output: str, skip_templates: bool = False):
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
 
-def library(templates: list[Callable], output: Optional[str] = None):
-    if len(templates) == 0:
-        raise Exception("Please specify some templates to be built.")
+def library(inputs: list[Callable], output: Optional[str] = None):
+    if len(inputs) == 0:
+        raise Exception("Please specify some templates and/or triggers to be built.")
     context = CompilerContext.instance()
     try:
-        per_file: dict[str, list[TemplateDefinition]] = {}
+        per_file: dict[str, list[Union[TriggerDefinition, TemplateDefinition]]] = {}
         for template in context.templates:
             definition = context.templates[template]
             context.current_template = definition
             kwargs = {}
             for param in definition.params:
-                type = definition.params[param]
-                kwargs[param] = Expression(param, type)
+                t = definition.params[param]
+                kwargs[param] = Expression(param, t)
             try:
                 definition.fn(**kwargs)
             except Exception as exc:
@@ -84,7 +84,23 @@ def library(templates: list[Callable], output: Optional[str] = None):
             context.current_template = None
             if definition.library == None and output == None:
                 raise CompilationException(f"Output library was not specified for template {definition.fn.__name__}, either specify a default output in call to library() or specify a library in the template() annotation.")
-            if definition.library == None and output != None and definition.fn in templates:
+            if definition.library == None and output != None and definition.fn in inputs:
+                definition.library = output
+            if definition.library not in per_file:
+                per_file[definition.library] = [] # type: ignore
+            per_file[definition.library].append(definition) # type: ignore
+
+        for trigger in context.triggers:
+            definition = context.triggers[trigger]
+            kwargs = {}
+            for param in definition.params:
+                t = definition.params[param]
+                kwargs[param] = Expression(param, t)
+            try:
+                definition.exprn = definition.fn(**kwargs)
+            except Exception as exc:
+                raise CompilationException(exc)
+            if definition.library == None and output != None and definition.fn in inputs:
                 definition.library = output
             if definition.library not in per_file:
                 per_file[definition.library] = [] # type: ignore
@@ -94,19 +110,33 @@ def library(templates: list[Callable], output: Optional[str] = None):
             print(f"Creating output include file {group}.")
             with open(group, mode="w") as f:
                 for definition in per_file[group]:
-                    f.write("[Define Template]\n")
-                    f.write(f"name = {definition.fn.__name__}\n")
-                    for local in definition.locals:
-                        f.write(f"local = {local.name} = {local.type.name}\n")
-                    f.write("\n")
-                    f.write("[Define Parameters]\n")
-                    for param in definition.params:
-                        f.write(f"{param} = {definition.params[param].name}\n")
-                    f.write("\n")
-                    for controller in definition.controllers:
-                        write_controller(controller, f)
+                    if isinstance(definition, TemplateDefinition):
+                        f.write("[Define Template]\n")
+                        f.write(f"name = {definition.fn.__name__}\n")
+                        for local in definition.locals:
+                            f.write(f"local = {local.name} = {local.type.name}\n")
                         f.write("\n")
-                    f.write("\n")
+                        f.write("[Define Parameters]\n")
+                        for param in definition.params:
+                            f.write(f"{param} = {definition.params[param].name}\n")
+                        f.write("\n")
+                        for controller in definition.controllers:
+                            write_controller(controller, f)
+                            f.write("\n")
+                        f.write("\n")
+                    elif isinstance(definition, TriggerDefinition):
+                        f.write("[Define Trigger]\n")
+                        f.write(f"name = {definition.fn.__name__}\n")
+                        f.write(f"type = {definition.result.name}\n")
+                        if not isinstance(definition.exprn, Expression):
+                            raise Exception(f"Trigger definition {definition.fn.__name__} returned {type(definition.exprn)}, but must return Expression instead.")
+                        f.write(f"value = {definition.exprn.exprn}\n")
+                        f.write("\n")
+                        f.write("[Define Parameters]\n")
+                        for param in definition.params:
+                            f.write(f"{param} = {definition.params[param].name}\n")
+                        f.write("\n")
+
     except TriggerException as exc:
         print(exc.get_message())
     except CompilationException as exc:
@@ -212,6 +242,17 @@ def do_template(name: str, validator: Optional[Callable], *args, **kwargs) -> St
         context.current_template.controllers.append(ctrl)
     return ctrl
 
+def do_trigger(name: str, validator: Optional[Callable], *args, **kwargs) -> Expression:
+    if len(kwargs) != 0:
+        raise Exception("Triggers cannot be called with keyword arguments, only positional arguments.")
+    ## if a validator was provided, we give the trigger author a chance to validate and even modify input arguments.
+    if validator != None and (args := validator(*args)) == None:
+        raise Exception(f"Could not place call to trigger with name {name}, trigger validation check failed.")
+    context = CompilerContext.instance()
+    param_string = ", ".join([convert(arg).exprn for arg in args])
+    ## just trust the output type. the MTL side will do final type validation during trigger replacement.
+    return Expression(f"{name}({param_string})", context.triggers[name].result)
+
 def template(inputs: list[TypeSpecifier], library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
     def decorator(fn: Callable):
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
@@ -240,5 +281,32 @@ def template(inputs: list[TypeSpecifier], library: Optional[str] = None, validat
 
         return partial(do_template, fn.__name__, validator)
     return decorator
+
+def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
+    def decorator(fn: Callable):
+        print(f"Discovered a new Trigger named {fn.__name__}. Will process and load this Trigger.")
+        # get params of decorated function
+        signature = inspect.signature(fn)
+
+        # ensure parameters align
+        if len(signature.parameters) != len(inputs):
+            raise Exception(f"Mismatch in trigger parameter count: saw {len(inputs)} input types, and {len(signature.parameters)} real parameters.")
+
+        params: dict[str, TypeSpecifier] = {}
+        index = 0
+        for param in signature.parameters:
+            params[param] = inputs[index]
+            index += 1
+
+        trigger = TriggerDefinition(fn, library, result, params)
+
+        # add the new template to the context
+        ctx = CompilerContext.instance()
+        if fn.__name__ in ctx.triggers:
+            raise Exception(f"Attempted to overwrite trigger with name {fn.__name__}.")
+        ctx.triggers[fn.__name__] = trigger
+
+        return partial(do_trigger, fn.__name__, validator)
+    return decorator
     
-__all__ = ["build", "library", "statedef", "create_statedef", "template"]
+__all__ = ["build", "library", "statedef", "create_statedef", "template", "trigger"]

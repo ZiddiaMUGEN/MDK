@@ -62,9 +62,18 @@ class TemplateDefinition:
     locals: list[ParameterDefinition]
 
 @dataclass
+class TriggerDefinition:
+    fn: Callable
+    library: Optional[str]
+    result: TypeSpecifier
+    params: dict[str, TypeSpecifier]
+    exprn: Optional[Expression] = None
+
+@dataclass
 class CompilerContext:
     statedefs: dict[str, StateDefinition]
     templates: dict[str, TemplateDefinition]
+    triggers: dict[str, TriggerDefinition]
     current_state: Optional[StateDefinition]
     current_template: Optional[TemplateDefinition]
     current_trigger: Optional[Expression]
@@ -74,6 +83,7 @@ class CompilerContext:
     def __init__(self):
         self.statedefs = {}
         self.templates = {}
+        self.triggers = {}
         self.current_state = None
         self.current_template = None
         self.current_trigger = None

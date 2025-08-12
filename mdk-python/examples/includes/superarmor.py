@@ -5,7 +5,7 @@ sys.path.append("c:\\Users\\ziddi\\MDK\\mdk-python")
 from typing import Optional
 
 ## This is a straight conversion of a CNS superarmor shared in https://mugenarchive.com/forums/showthread.php?126780-Help-with-super-armor-coding
-from mdk.compiler import library, template, statedef, build
+from mdk.compiler import library, template, statedef, trigger, build
 from mdk.types import Expression, IntType, PosType, FloatVar, HitType
 from mdk.stdlib import *
 

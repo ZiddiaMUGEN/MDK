@@ -7,7 +7,7 @@ helperID = int
 
 [State ]
 type = Helper
-trigger1 = NumHelper(helperID) = 0
+trigger1 = shadowNumHelper(helperID) = 0
 name = "SuperArmor Helper"
 id = helperID
 pos = 0, 0
@@ -37,4 +37,12 @@ type = NotHitBy
 trigger1 = NumHelper(helperID) != 0
 value2 = HitType.SCA
 
+
+[Define Trigger]
+name = shadowNumHelper
+type = int
+value = NumHelper(helperID)
+
+[Define Parameters]
+helperID = int
 
