@@ -266,7 +266,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         BUILTIN_STATE, BUILTIN_STATETYPE, BUILTIN_MOVETYPE, BUILTIN_PHYSICSTYPE
     ]:
         baseTriggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
-        baseTriggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), TriggerCategory.OPERATOR))
 
     return baseTriggers
 
