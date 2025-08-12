@@ -1,11 +1,16 @@
 from typing import Optional
 
 from mdk.types.specifier import TypeSpecifier
+from mdk.types.builtins import StringType, UStringType
 
 ## this is based on the MTL type conversion function in mtl.utils.compiler.
 def check_types_assignable(spec1: TypeSpecifier, spec2: TypeSpecifier) -> Optional[TypeSpecifier]:
     ## if types match, t1 return the type.
     if spec1 == spec2: return spec1
+
+    ## ustring and string are convertible to ustring.
+    if spec1 in [StringType, UStringType] and spec2 in [StringType, UStringType]:
+        return UStringType
 
     ## `int` is implicitly convertible to `float`
     if spec1.name == "int" and spec2.name == "float":

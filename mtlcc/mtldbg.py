@@ -2,6 +2,8 @@
 import argparse
 import time
 import struct
+# readline is required for command history. but it's not available on Windows.
+# the pyreadline3 library works as a replacement?
 import readline
 
 from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext
@@ -42,6 +44,11 @@ def runDebugger(target: str, mugen: str):
 
         request = processDebugCommand(input("> "))
         command = request.command_type
+
+        if command == DebuggerCommand.EXIT and debugger != None and debugger.subprocess != None:
+            print("Cannot exit debugger until the debug process is stopped (hint: run `stop` first).")
+            command = DebuggerCommand.NONE
+            continue
 
         if command == DebuggerCommand.LAUNCH:
             ## launch and attach MUGEN subprocess
@@ -210,13 +217,35 @@ def runDebugger(target: str, mugen: str):
                         lines = f.readlines()
                     ## we know the exact line the controller starts at.
                     lines = lines[location.line-1:]
-                    index = 1
-                    while index < len(lines):
-                        if lines[index].strip().startswith("["):
-                            count -= 1
-                        if count == 0: break
-                        index += 1
-                    lines = lines[:index]
+                    ## mtldbg needs to support both Python and CNS,
+                    ## since mdk-python delegates its debugger to this.
+                    ## so depending on file extension, we choose either Python or CNS controller identification.
+                    if location.filename.endswith(".py"):
+                        index = 0
+                        bracket_open = False
+                        bracket_count = 0
+                        while index < len(lines):
+                            for chara in lines[index]:
+                                if chara == "(": 
+                                    bracket_open = True
+                                    bracket_count += 1
+                                if chara == ")": bracket_count -= 1
+                                if bracket_open and bracket_count == 0: 
+                                    count -= 1
+                                    bracket_open = False
+                                    break
+                            if count == 0: break
+                            index += 1
+                        lines = lines[:index+1]
+                        lines[-1] = lines[-1].rstrip()
+                    else:
+                        index = 1
+                        while index < len(lines):
+                            if lines[index].strip().startswith("["):
+                                count -= 1
+                            if count == 0: break
+                            index += 1
+                        lines = lines[:index]
                     ## formatting
                     for index in range(len(lines)):
                         if lines[index].startswith("["): lines[index] = "\n" + lines[index]

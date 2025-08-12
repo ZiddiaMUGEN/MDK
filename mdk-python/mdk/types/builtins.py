@@ -7,6 +7,9 @@ BoolType = TypeSpecifier("bool", TypeCategory.BUILTIN)
 ShortType = TypeSpecifier("short", TypeCategory.BUILTIN)
 ByteType = TypeSpecifier("byte", TypeCategory.BUILTIN)
 CharType = TypeSpecifier("char", TypeCategory.BUILTIN)
+## this is a type for an unquoted string. it basically is still a string,
+## but instructs the compiler to not quote its output.
+UStringType = TypeSpecifier("string", TypeCategory.BUILTIN)
 StringType = TypeSpecifier("string", TypeCategory.BUILTIN)
 
 StateNoType = TypeSpecifier("stateno", TypeCategory.BUILTIN)
@@ -16,5 +19,5 @@ SpriteType = TypeSpecifier("sprite", TypeCategory.BUILTIN)
 
 __all__ = [
     "IntType", "FloatType", "BoolType", "ShortType", "ByteType", "CharType", "StringType",
-    "StateNoType", "AnimType", "SoundType", "SpriteType"
+    "StateNoType", "AnimType", "SoundType", "SpriteType", "UStringType"
 ]

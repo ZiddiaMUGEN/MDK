@@ -9,6 +9,7 @@ ShortType: TypeSpecifier
 ByteType: TypeSpecifier
 CharType: TypeSpecifier
 StringType: TypeSpecifier
+UStringType: TypeSpecifier
 StateNoType: TypeSpecifier
 AnimType: TypeSpecifier
 SoundType: TypeSpecifier

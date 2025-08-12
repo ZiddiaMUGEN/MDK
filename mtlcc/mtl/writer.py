@@ -41,6 +41,11 @@ def make_prop(prop: Any) -> str:
 
 def write_statedef_property(statedef: StateDefinition, prop: str, output: list[str]):
     if prop in statedef.parameters.__dict__ and statedef.parameters.__dict__[prop] != None:
+        ## special handling to allow type/movetype/physics their enum qualifies.
+        ## this is basically a hack, we should be handling this during parsing...
+        if prop in ["type", "movetype", "physics"] and "." in statedef.parameters.__dict__[prop] \
+           and statedef.parameters.__dict__[prop].split(".")[0].lower() in ["statetype", "movetype", "physicstype"]:
+            statedef.parameters.__dict__[prop] = statedef.parameters.__dict__[prop].split(".")[1]
         output.append(f"{prop} = {make_prop(statedef.parameters.__dict__[prop])}")
 
 def write_statedef(statedef: StateDefinition, ctx: TranslationContext) -> list[str]:

@@ -42,8 +42,10 @@ def set_stateno(ctrl: StateController, name: str, val: Optional[Union[Expression
             ctrl.params[name] = Expression(val, StateNoType)
         elif isinstance(val, int):
             ctrl.params[name] = Expression(str(val), StateNoType)
+        elif isinstance(val, Expression) and val.type == StringType:
+            ctrl.params[name] = Expression(val.exprn, StateNoType)
         else:
-            ctrl.params[name] = val
+            ctrl.params[name] = Expression(val.exprn, StateNoType)
 
 @controller(
     time = [IntType, None],
@@ -217,7 +219,7 @@ def ChangeAnim2(value: Expression, elem: Optional[ConvertibleExpression] = None,
 
     return result
 
-@controller(value = [StateNoType, IntType], ctrl = [None, BoolType], anim = [None, IntType])
+@controller(value = [StateNoType, IntType, StringType], ctrl = [None, BoolType], anim = [None, IntType])
 def ChangeState(value: Union[Expression, str, int, Callable], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
@@ -414,7 +416,7 @@ def Gravity(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: 
     pos = [FloatPairType, None],
     postype = [PosType, None],
     facing = [IntType, None],
-    stateno = [StateNoType, IntType, None],
+    stateno = [StateNoType, IntType, StringType, None],
     keyctrl = [BoolType, None],
     ownpal = [BoolType, None],
     supermovetime = [IntType, None],
@@ -548,8 +550,8 @@ def HitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpress
     p1facing = [IntType, None],
     p1getp2facing = [IntType, None],
     p2facing = [IntType, None],
-    p1stateno = [StateNoType, IntType, None],
-    p2stateno = [StateNoType, IntType, None],
+    p1stateno = [StateNoType, IntType, StringType, None],
+    p2stateno = [StateNoType, IntType, StringType, None],
     p2getp1state = [BoolType, None],
     forcestand = [BoolType, None],
     fall = [BoolType, None],
@@ -776,7 +778,7 @@ def HitFallVel(ignorehitpause: Optional[ConvertibleExpression] = None, persisten
 
 @controller(
     attr = [HitStringType],
-    stateno = [StateNoType, IntType, None],
+    stateno = [StateNoType, IntType, StringType, None],
     slot = [IntType, None],
     time = [IntType, None],
     forceair = [BoolType, None]
@@ -1251,7 +1253,7 @@ def ScreenBound(value: Optional[ConvertibleExpression] = None, movecamera: Optio
 
     return result
 
-@controller(value = [StateNoType, IntType], ctrl = [BoolType, None], anim = [IntType, None])
+@controller(value = [StateNoType, StringType, IntType], ctrl = [BoolType, None], anim = [IntType, None])
 def SelfState(value: Expression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
@@ -1380,7 +1382,7 @@ def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None
 
     return result
 
-@controller(value = [StateNoType, IntType], id = [IntType, None])
+@controller(value = [StateNoType, StringType, IntType], id = [IntType, None])
 def TargetState(value: Union[Expression, str, int, Callable], id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 

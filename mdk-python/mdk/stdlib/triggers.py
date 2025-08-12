@@ -1,7 +1,7 @@
 from typing import Callable
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.builtins import IntType, BoolType, FloatType, StringType
+from mdk.types.builtins import IntType, BoolType, FloatType, UStringType
 from mdk.types.defined import HitStringType
 import mdk.types.defined as defined
 
@@ -35,14 +35,14 @@ AnimExist = TriggerExpression("AnimExist", [IntType], BoolType)
 AnimTime = Expression("AnimTime", IntType)
 Asin = TriggerExpression("asin", [FloatType], FloatType)
 Atan = TriggerExpression("atan", [FloatType], FloatType)
-AuthorName = Expression("AuthorName", StringType)
+AuthorName = Expression("AuthorName", UStringType)
 BackEdgeBodyDist = Expression("BackEdgeBodyDist", FloatType)
 BackEdgeDist = Expression("BackEdgeDist", FloatType)
 CanRecover = Expression("CanRecover", BoolType)
 Ceil = TriggerExpression("ceil", [FloatType], IntType)
-Command = Expression("Command", StringType)
+Command = Expression("Command", UStringType)
 ## Cond
-Const = TriggerExpression("Const", [StringType], FloatType)
+Const = TriggerExpression("Const", [UStringType], FloatType)
 Const240p = TriggerExpression("Const240p", [FloatType], FloatType)
 Const480p = TriggerExpression("Const480p", [FloatType], FloatType)
 Const720p = TriggerExpression("Const720p", [FloatType], FloatType)
@@ -59,7 +59,7 @@ FrontEdgeDist = Expression("FrontEdgeDist", FloatType)
 GameHeight = Expression("GameHeight", FloatType)
 GameTime = Expression("GameTime", IntType)
 GameWidth = Expression("GameWidth", IntType)
-GetHitVar = TriggerExpression("GetHitVar", [StringType], FloatType)
+GetHitVar = TriggerExpression("GetHitVar", [UStringType], FloatType)
 HitCount = Expression("HitCount", IntType)
 HitDefAttr = Expression("HitDefAttr", HitStringType)
 HitFall = Expression("HitFall", BoolType)
@@ -84,7 +84,7 @@ MoveGuarded = Expression("MoveGuarded", IntType)
 MoveHit = Expression("MoveHit", IntType)
 MoveType = Expression("MoveType", defined.MoveType)
 MoveReversed = Expression("MoveReversed", IntType)
-Name = Expression("Name", StringType)
+Name = Expression("Name", UStringType)
 NumEnemy = Expression("NumEnemy", IntType)
 NumExplod = TriggerExpression("NumExplod", [IntType], IntType)
 NumHelper = TriggerExpression("NumHelper", [IntType], IntType)
@@ -92,16 +92,16 @@ NumPartner = Expression("NumPartner", IntType)
 NumProj = Expression("NumProj", IntType)
 NumProjID = TriggerExpression("NumProjID", [IntType], IntType)
 NumTarget = TriggerExpression("NumTarget", [IntType], IntType)
-P1Name = Expression("P1Name", StringType)
+P1Name = Expression("P1Name", UStringType)
 ## P2BodyDist
 ## P2Dist
 P2Life = Expression("P2Life", IntType)
 P2MoveType = Expression("P2MoveType", defined.MoveType)
 P2StateNo = Expression("P2StateNo", IntType)
 P2StateType = Expression("P2StateType", defined.StateType)
-P2Name = Expression("P2Name", StringType)
-P3Name = Expression("P3Name", StringType)
-P4Name = Expression("P4Name", StringType)
+P2Name = Expression("P2Name", UStringType)
+P3Name = Expression("P3Name", UStringType)
+P4Name = Expression("P4Name", UStringType)
 PalNo = Expression("PalNo", IntType)
 ## ParentDist
 Pi = Expression("pi", IntType)
@@ -124,7 +124,7 @@ SelfAnimExist = TriggerExpression("SelfAnimExist", [IntType], BoolType)
 Sin = TriggerExpression("sin", [FloatType], FloatType)
 StateNo = Expression("StateNo", IntType)
 StateType = Expression("StateType", defined.StateType)
-StageVar = TriggerExpression("StageVar", [StringType], StringType)
+StageVar = TriggerExpression("StageVar", [UStringType], UStringType)
 ## sysfvar
 ## sysvar
 Tan = TriggerExpression("tan", [FloatType], FloatType)

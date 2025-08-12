@@ -174,9 +174,9 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
         raise exc
 
 def statedef(
-    type: Expression = StateType.U,
-    movetype: Expression = MoveType.U,
-    physics: Expression = PhysicsType.U,
+    type: Optional[Expression] = None,
+    movetype: Optional[Expression] = None,
+    physics: Optional[Expression] = None,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -198,9 +198,9 @@ def statedef(
 ## but can also be used by character developers to create statedefs ad-hoc (e.g. in a loop).
 def create_statedef(
     fn: Callable[[], None],
-    type: Expression = StateType.U,
-    movetype: Expression = MoveType.U,
-    physics: Expression = PhysicsType.U,
+    type: Optional[Expression] = None,
+    movetype: Optional[Expression] = None,
+    physics: Optional[Expression] = None,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -221,9 +221,15 @@ def create_statedef(
 
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
-    statedef.params["type"] = type
-    statedef.params["movetype"] = movetype
-    statedef.params["physics"] = physics
+    if type != None:
+        if type.type == StateType: statedef.params["type"] = type
+        else: raise Exception(f"Expression type of statedef parameter `type` must be StateType, not {type.type.name}")
+    if movetype != None:
+        if movetype.type == MoveType: statedef.params["movetype"] = movetype
+        else: raise Exception(f"Expression type of statedef parameter `movetype` must be MoveType, not {movetype.type.name}")
+    if physics != None:
+        if physics.type == PhysicsType: statedef.params["physics"] = physics
+        else: raise Exception(f"Expression type of statedef parameter `type` must be PhysicsType, not {physics.type.name}")
     if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
     if velset != None: statedef.params["velset"] = convert_tuple(velset, FloatPairType)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)

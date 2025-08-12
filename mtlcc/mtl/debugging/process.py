@@ -228,7 +228,7 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
             if next_event.address == launch_info.database["SCTRL_PASSPOINT_ADDR"]:
                 ## early exit: if we have no breakpoints, nothing to worry about
                 if len(ctx.passpoints) == 0:
-                    results.put(DebugBreakResult())
+                    results.put(DebugBreakResult(step = next_event.step))
                     continue
 
                 # check p1 first, then check each Helper
@@ -243,7 +243,7 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
             elif next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
                 ## early exit: if we have no breakpoints, nothing to worry about
                 if len(ctx.breakpoints) == 0 and len(ctx.passpoints) == 0:
-                    results.put(DebugBreakResult())
+                    results.put(DebugBreakResult(step = next_event.step))
                     continue
 
                 ## always store ECX for passpoints
@@ -252,7 +252,7 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
 
                 ## early-exit again after storing ECX
                 if len(ctx.breakpoints) == 0:
-                    results.put(DebugBreakResult())
+                    results.put(DebugBreakResult(step = next_event.step))
                     continue
                 
                 # check p1 first, then check each Helper
@@ -267,7 +267,7 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                     results.put(DebugBreakResult())
             else:
                 ## just immediately tell the engine to continue in this case.
-                results.put(DebugBreakResult())
+                results.put(DebugBreakResult(step = next_event.step))
         except Empty as exc:
             ## this happens if the queue is empty and the read times out.
             continue

@@ -5,7 +5,7 @@ import traceback
 
 from mdk.types.context import StateController, CompilerContext
 from mdk.types.expressions import Expression, TupleExpression
-from mdk.types.builtins import IntType, StringType, FloatType, BoolType, StateNoType
+from mdk.types.builtins import IntType, StateNoType
 from mdk.types.defined import TupleType
 from mdk.types.specifier import TypeSpecifier
 
@@ -14,8 +14,8 @@ from mdk.utils.expressions import check_any_assignable
 
 # decorator which provides a wrapper around each controller.
 # this adds some extra debugging info, and also simplifies adding triggers to controllers and handling controller insertion into the active statedef.
-def controller(**typeinfo) -> Callable[[Callable[..., None]], Callable[..., StateController]]:
-    def wrapper(fn: Callable[..., None]) -> Callable[..., StateController]:
+def controller(**typeinfo) -> Callable[[Callable[..., StateController]], Callable[..., StateController]]:
+    def wrapper(fn: Callable[..., StateController]) -> Callable[..., StateController]:
         def decorated(*args, ignorehitpause: Optional[bool] = None, persistent: Optional[int] = None, **kwargs) -> StateController:
             return make_controller(fn, *args, typeinfo = typeinfo, ignorehitpause = ignorehitpause, persistent = persistent, **kwargs)
         return decorated

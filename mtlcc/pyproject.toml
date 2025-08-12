@@ -4,10 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mtl-mugen"
-version = "0.0.1"
+version = "0.1.1"
 dependencies = [
     "lark>=1.2.2",
-    "psutil>=6.1.1"
+    "psutil>=6.1.1",
+    "pyreadline3>=3.5.4"
 ]
 
 [tool.hatch.build.targets.wheel]
