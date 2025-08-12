@@ -2,6 +2,8 @@ from typing import Callable
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.builtins import IntType, BoolType, FloatType, StringType
+from mdk.types.defined import HitStringType
+import mdk.types.defined as defined
 
 from mdk.utils.shared import convert
 
@@ -59,7 +61,7 @@ GameTime = Expression("GameTime", IntType)
 GameWidth = Expression("GameWidth", IntType)
 GetHitVar = TriggerExpression("GetHitVar", [StringType], FloatType)
 HitCount = Expression("HitCount", IntType)
-## HitDefAttr
+HitDefAttr = Expression("HitDefAttr", HitStringType)
 HitFall = Expression("HitFall", BoolType)
 HitOver = Expression("HitOver", BoolType)
 HitPauseTime = Expression("HitPauseTime", IntType)
@@ -80,7 +82,7 @@ MatchOver = Expression("MatchOver", BoolType)
 MoveContact = Expression("MoveContact", IntType)
 MoveGuarded = Expression("MoveGuarded", IntType)
 MoveHit = Expression("MoveHit", IntType)
-## MoveType
+MoveType = Expression("MoveType", defined.MoveType)
 MoveReversed = Expression("MoveReversed", IntType)
 Name = Expression("Name", StringType)
 NumEnemy = Expression("NumEnemy", IntType)
@@ -94,9 +96,9 @@ P1Name = Expression("P1Name", StringType)
 ## P2BodyDist
 ## P2Dist
 P2Life = Expression("P2Life", IntType)
-## P2MoveType
+P2MoveType = Expression("P2MoveType", defined.MoveType)
 P2StateNo = Expression("P2StateNo", IntType)
-## P2StateType
+P2StateType = Expression("P2StateType", defined.StateType)
 P2Name = Expression("P2Name", StringType)
 P3Name = Expression("P3Name", StringType)
 P4Name = Expression("P4Name", StringType)
@@ -121,12 +123,12 @@ RoundState = Expression("RoundState", IntType)
 SelfAnimExist = TriggerExpression("SelfAnimExist", [IntType], BoolType)
 Sin = TriggerExpression("sin", [FloatType], FloatType)
 StateNo = Expression("StateNo", IntType)
-## StateType
+StateType = Expression("StateType", defined.StateType)
 StageVar = TriggerExpression("StageVar", [StringType], StringType)
 ## sysfvar
 ## sysvar
 Tan = TriggerExpression("tan", [FloatType], FloatType)
-## TeamMode
+TeamMode = Expression("TeamMode", defined.TeamModeType)
 TeamSide = Expression("TeamSide", IntType)
 TicksPerSecond = Expression("TicksPerSecond", IntType)
 Time = Expression("Time", IntType)
@@ -148,5 +150,6 @@ __all__ = [
     "MoveHit", "MoveReversed", "Name", "NumEnemy", "NumExplod", "NumHelper", "NumPartner", "NumProj", "NumProjID", "NumTarget",
     "P1Name", "P2Life", "P2StateNo", "P2Name", "P3Name", "P4Name", "PalNo", "Pi", "Power", "PowerMax", "PlayerIDExist",
     "ProjCancelTime", "ProjContactTime", "ProjGuardedTime", "ProjHitTime", "Random", "RoundNo", "RoundsExisted", "RoundState",
-    "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect"
+    "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect",
+    "HitDefAttr"
 ]

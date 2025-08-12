@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mdk-python"
+version = "0.0.1"
+dependencies = [
+    "mtl>=0.0.1"
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["mdk"]
+
+[tool.hatch.build.targets.sdist]
+include = ["mdk"]

@@ -17,15 +17,7 @@ def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget
     if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
     print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<12}\t{target_name:<24}\t{target_value}")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='mtldbg', description='Debugger for MTL and CNS characters compiled by MTL')
-    parser.add_argument('-d', '--database', help='Path to the mdbg file containing debugger definitions', required=True)
-    parser.add_argument('-m', '--executable', help='Path to the mugen.exe executable for the MUGEN installation to use', required=True)
-
-    args = parser.parse_args()
-
-    target = args.database
-    mugen = args.executable
+def runDebugger(target: str, mugen: str):
     debugger = None
 
     ctx = database.load(target)
@@ -253,3 +245,18 @@ if __name__ == "__main__":
             process.cont(debugger)
             ## set the process state so the other threads can exit
             if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+
+def debug():
+    parser = argparse.ArgumentParser(prog='mtldbg', description='Debugger for MTL and CNS characters compiled by MTL')
+    parser.add_argument('-d', '--database', help='Path to the mdbg file containing debugger definitions', required=True)
+    parser.add_argument('-m', '--executable', help='Path to the mugen.exe executable for the MUGEN installation to use', required=True)
+
+    args = parser.parse_args()
+
+    target = args.database
+    mugen = args.executable
+
+    runDebugger(target, mugen)
+
+if __name__ == "__main__":
+    debug()

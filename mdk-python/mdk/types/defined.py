@@ -71,6 +71,7 @@ HitAnimType = EnumType("HitAnimType", ["Light", "Medium", "Hard", "Back", "Up", 
 AttackType = EnumType("AttackType", ["High", "Low", "Trip", "None"])
 PriorityType = EnumType("PriorityType", ["Hit", "Miss", "Dodge"])
 PosType = EnumType("PosType", ["P1", "P2", "Front", "Back", "Left", "Right", "None"])
+TeamModeType = EnumType("TeamModeType", ["Single", "Simul", "Turns"])
 
 ## TODO: +/- won't work.
 HitFlagType = FlagType("HitFlagType", ["H", "L", "A", "M", "F", "D", "+", "-"])

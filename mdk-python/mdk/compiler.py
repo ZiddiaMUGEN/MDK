@@ -269,7 +269,7 @@ def do_trigger(name: str, validator: Optional[Callable], *args, **kwargs) -> Exp
     ## just trust the output type. the MTL side will do final type validation during trigger replacement.
     return Expression(f"{name}({param_string})", context.triggers[name].result)
 
-def template(inputs: list[TypeSpecifier], library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
+def template(inputs: list[TypeSpecifier] = [], library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
     def decorator(fn: Callable):
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
         # get params of decorated function

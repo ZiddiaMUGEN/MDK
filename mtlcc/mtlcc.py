@@ -10,16 +10,11 @@ from mtl.debugging import database
 
 from mtl.types.context import *
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='mtlcc', description='Translation tool from MTL templates into CNS character code')
-    parser.add_argument('input', help='Path to the DEF file containing the character to translate')
-    parser.add_argument('output', help='Path to the folder to write the resulting character to')
-
-    args = parser.parse_args()
+def runCompiler(input: str, output: str):
     ## note: the spec states that translation of included files should stop at step 3.
     ## this is guaranteed by having steps up to 3 in `loadFile`, and remaining steps handled in `translateContext`.
     try:
-        projectContext = project.loadDefinition(args.input)
+        projectContext = project.loadDefinition(input)
         ## we perform a load of each file sequentially and combine the loadContext,
         ## then pass it all to translation at once.
         ## this means imports should be done ONCE ONLY,
@@ -85,26 +80,26 @@ if __name__ == "__main__":
         loadContext.includes.insert(0, loader.get_libmtl())
         loader.processIncludes([], loadContext)
 
-        loadContext.filename = os.path.abspath(args.input)
+        loadContext.filename = os.path.abspath(input)
         translated = translator.translateContext(loadContext)
-        translated.filename = os.path.abspath(args.input)
+        translated.filename = os.path.abspath(input)
 
         ## create output directory
-        if not os.path.exists(args.output):
-            os.makedirs(args.output)
+        if not os.path.exists(output):
+            os.makedirs(output)
         ## identify target file
-        target_file = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".st")
+        target_file = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".st")
 
         with open(target_file, mode="w") as f:
             f.writelines(s + "\n" for s in translator.createOutput(translated))
 
         ## generate debugging info
-        debug_file = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".mdbg")
-        translated.debugging.filename = os.path.abspath(args.input)
+        debug_file = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".mdbg")
+        translated.debugging.filename = os.path.abspath(input)
         database.writeDatabase(debug_file, translated.debugging)
 
         ## emit CNS constants file
-        target_cns = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".constants")
+        target_cns = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".constants")
         with open(target_cns, mode="w") as f:
             for section in projectContext.constants:
                 if includes_insensitive(section.name, ["Data", "Size", "Velocity", "Movement", "Quotes"]):
@@ -116,7 +111,7 @@ if __name__ == "__main__":
                     f.write("\n")
 
         ## emit CMD file
-        target_cns = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".commands")
+        target_cns = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".commands")
         with open(target_cns, mode="w") as f:
             for section in projectContext.commands:
                 if includes_insensitive(section.name, ["Command", "Remap", "Defaults"]):
@@ -132,29 +127,29 @@ if __name__ == "__main__":
             f.write("[Statedef -111]\n[State -111]\ntype = Null\ntrigger1 = 1")
 
         ## emit DEF file
-        target_def = os.path.realpath(args.output) + "/" + os.path.basename(os.path.splitext(args.input)[0] + ".def")
+        target_def = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".def")
         with open(target_def, mode="w") as f:
             f.write("[Files]\n")
             ## since we always import a MTL-ready common1, we can use builtin here
             f.write("stcommon = common1.cns\n")
-            f.write(f"st = {os.path.basename(os.path.splitext(args.input)[0] + '.st')}\n")
-            f.write(f"cmd = {os.path.basename(os.path.splitext(args.input)[0] + '.commands')}\n")
-            f.write(f"cns = {os.path.basename(os.path.splitext(args.input)[0] + '.constants')}\n")
+            f.write(f"st = {os.path.basename(os.path.splitext(input)[0] + '.st')}\n")
+            f.write(f"cmd = {os.path.basename(os.path.splitext(input)[0] + '.commands')}\n")
+            f.write(f"cns = {os.path.basename(os.path.splitext(input)[0] + '.constants')}\n")
 
-            target_spr =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.spr_file)
+            target_spr =  os.path.realpath(output) + "/" + os.path.basename(projectContext.spr_file)
             shutil.copy(projectContext.spr_file, target_spr)
             f.write(f"sprite = {os.path.basename(projectContext.spr_file)}\n")
 
-            target_snd =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.snd_file)
+            target_snd =  os.path.realpath(output) + "/" + os.path.basename(projectContext.snd_file)
             shutil.copy(projectContext.snd_file, target_snd)
             f.write(f"sound = {os.path.basename(projectContext.snd_file)}\n")
 
-            target_air =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.anim_file)
+            target_air =  os.path.realpath(output) + "/" + os.path.basename(projectContext.anim_file)
             shutil.copy(projectContext.anim_file, target_air)
             f.write(f"anim = {os.path.basename(projectContext.anim_file)}\n")
 
             if projectContext.ai_file != None:
-                target_ai =  os.path.realpath(args.output) + "/" + os.path.basename(projectContext.ai_file)
+                target_ai =  os.path.realpath(output) + "/" + os.path.basename(projectContext.ai_file)
                 shutil.copy(projectContext.ai_file, target_ai)
                 f.write(f"ai = {os.path.basename(projectContext.ai_file)}\n")
             
@@ -176,3 +171,15 @@ if __name__ == "__main__":
         print("Translation terminated with an error.")
         print(f"\t{exc.message}")
         print(f"mtlcc exception source: {py_exc}")
+
+def compile():
+    parser = argparse.ArgumentParser(prog='mtlcc', description='Translation tool from MTL templates into CNS character code')
+    parser.add_argument('input', help='Path to the DEF file containing the character to translate')
+    parser.add_argument('output', help='Path to the folder to write the resulting character to')
+
+    args = parser.parse_args()
+
+    runCompiler(args.input, args.output)
+
+if __name__ == "__main__":
+    compile()

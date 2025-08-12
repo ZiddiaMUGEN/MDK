@@ -29,6 +29,7 @@ class RedirectTarget:
         self.FrontEdgeBodyDist = self._redirect_atom(triggers.FrontEdgeBodyDist)
         self.FrontEdgeDist = self._redirect_atom(triggers.FrontEdgeDist)
         self.HitCount = self._redirect_atom(triggers.HitCount)
+        self.HitDefAttr = self._redirect_atom(triggers.HitDefAttr)
         self.HitFall = self._redirect_atom(triggers.HitFall)
         self.HitOver = self._redirect_atom(triggers.HitOver)
         self.HitPauseTime = self._redirect_atom(triggers.HitPauseTime)
@@ -44,6 +45,7 @@ class RedirectTarget:
         self.MoveGuarded = self._redirect_atom(triggers.MoveGuarded)
         self.MoveHit = self._redirect_atom(triggers.MoveHit)
         self.MoveReversed = self._redirect_atom(triggers.MoveReversed)
+        self.MoveType = self._redirect_atom(triggers.MoveType)
         self.Name = self._redirect_atom(triggers.Name)
         self.NumEnemy = self._redirect_atom(triggers.NumEnemy)
         self.NumExplod: triggers.MaybeInt_Int = self._redirect_function(triggers.NumExplod) # type: ignore
@@ -54,8 +56,10 @@ class RedirectTarget:
         self.NumTarget: triggers.MaybeInt_Int = self._redirect_function(triggers.NumTarget) # type: ignore
         self.P1Name = self._redirect_atom(triggers.P1Name)
         self.P2Life = self._redirect_atom(triggers.P2Life)
+        self.P2MoveType = self._redirect_atom(triggers.P2MoveType)
         self.P2Name = self._redirect_atom(triggers.P2Name)
         self.P2StateNo = self._redirect_atom(triggers.P2StateNo)
+        self.P2StateType = self._redirect_atom(triggers.P2StateType)
         self.P3Name = self._redirect_atom(triggers.P3Name)
         self.P4Name = self._redirect_atom(triggers.P4Name)
         self.PalNo = self._redirect_atom(triggers.PalNo)
@@ -68,7 +72,9 @@ class RedirectTarget:
         self.ProjHitTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjHitTime)  # type: ignore
         self.SelfAnimExist: Callable[[Int], Bool] = self._redirect_function(triggers.SelfAnimExist)  # type: ignore
         self.StateNo = self._redirect_atom(triggers.StateNo)
+        self.StateType = self._redirect_atom(triggers.StateType)
         self.SelfAnimExist = self._redirect_function(triggers.StageVar)  # type: ignore
+        self.TeamMode = self._redirect_atom(triggers.TeamMode)
         self.TeamSide = self._redirect_atom(triggers.TeamSide)
         self.Time = self._redirect_atom(triggers.Time)
         self.Win = self._redirect_atom(triggers.Win)

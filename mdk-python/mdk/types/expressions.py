@@ -64,7 +64,7 @@ class Expression:
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
         return Expression(f"{self} < {other}", BoolType)
-    def __lte__(self, other):
+    def __le__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
@@ -76,7 +76,7 @@ class Expression:
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
         return Expression(f"{self} > {other}", BoolType)
-    def __gte__(self, other):
+    def __ge__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:

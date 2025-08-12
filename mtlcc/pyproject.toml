@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mtl"
+version = "0.0.1"
+dependencies = [
+    "lark>=1.2.2",
+    "psutil>=6.1.1"
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["mtl", "stdlib", "mtlcc.py", "mtldbg.py"]
+exclude = ["dist", "sample", "*.md", "*.toml"]
+
+[tool.hatch.build.targets.sdist]
+include = ["mtl", "stdlib", "mtlcc.py", "mtldbg.py"]
+exclude = ["dist", "sample", "*.md", "*.toml", ".gitignore"]
+
+[project.scripts]
+mtlcc = "mtlcc:compile"
+mtldbg = "mtldbg:debug"

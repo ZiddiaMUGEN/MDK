@@ -410,7 +410,7 @@ def Gravity():
     pos = [FloatPairType, None],
     postype = [PosType, None],
     facing = [IntType, None],
-    stateno = [StateNoType, None],
+    stateno = [StateNoType, IntType, None],
     keyctrl = [BoolType, None],
     ownpal = [BoolType, None],
     supermovetime = [IntType, None],
@@ -542,8 +542,8 @@ def HitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpress
     p1facing = [IntType, None],
     p1getp2facing = [IntType, None],
     p2facing = [IntType, None],
-    p1stateno = [StateNoType, None],
-    p2stateno = [StateNoType, None],
+    p1stateno = [StateNoType, IntType, None],
+    p2stateno = [StateNoType, IntType, None],
     p2getp1state = [BoolType, None],
     forcestand = [BoolType, None],
     fall = [BoolType, None],
@@ -768,7 +768,7 @@ def HitFallVel():
 
 @controller(
     attr = [HitStringType],
-    stateno = [StateNoType, None],
+    stateno = [StateNoType, IntType, None],
     slot = [IntType, None],
     time = [IntType, None],
     forceair = [BoolType, None]
@@ -947,23 +947,21 @@ def PalFX(
 
     return result
 
-@controller(v = [IntType, None], fv = [IntType, None], value = [FloatType, None])
-def ParentVarAdd(v: Optional[ConvertibleExpression] = None, fv: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None):
+@controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
+def ParentVarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None):
     result = StateController()
 
-    set_if(result, "v", v)
-    set_if(result, "fv", fv)
-    set_if(result, "value", value)
+    if var != None:
+        set_if(result, var.exprn, value)
 
     return result
 
-@controller(v = [IntType, None], fv = [IntType, None], value = [FloatType, None])
-def ParentVarSet(v: Optional[ConvertibleExpression] = None, fv: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None):
+@controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
+def ParentVarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None):
     result = StateController()
 
-    set_if(result, "v", v)
-    set_if(result, "fv", fv)
-    set_if(result, "value", value)
+    if var != None:
+        set_if(result, var.exprn, value)
 
     return result
 
@@ -1235,7 +1233,7 @@ def ScreenBound(value: Optional[ConvertibleExpression] = None, movecamera: Optio
 
     return result
 
-@controller(value = [StateNoType], ctrl = [BoolType, None], anim = [IntType, None])
+@controller(value = [StateNoType, IntType], ctrl = [BoolType, None], anim = [IntType, None])
 def SelfState(value: Expression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None):
     result = StateController()
 
@@ -1362,7 +1360,7 @@ def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None
 
     return result
 
-@controller(value = [StateNoType], id = [IntType, None])
+@controller(value = [StateNoType, IntType], id = [IntType, None])
 def TargetState(value: Union[Expression, str, int, Callable], id: Optional[ConvertibleExpression] = None):
     result = StateController()
 
@@ -1405,23 +1403,21 @@ def Turn():
     result = StateController()
     return result
 
-@controller(v = [IntType, None], fv = [IntType, None], value = [FloatType, None])
-def VarAdd(v: Optional[ConvertibleExpression] = None, fv: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None):
+@controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
+def VarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None):
     result = StateController()
 
-    set_if(result, "v", v)
-    set_if(result, "fv", fv)
-    set_if(result, "value", value)
+    if var != None:
+        set_if(result, var.exprn, value)
 
     return result
 
-@controller(v = [IntType, None], fv = [IntType, None], value = [FloatType, None])
-def VarSet(v: Optional[ConvertibleExpression] = None, fv: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None):
+@controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
+def VarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None):
     result = StateController()
 
-    set_if(result, "v", v)
-    set_if(result, "fv", fv)
-    set_if(result, "value", value)
+    if var != None:
+        set_if(result, var.exprn, value)
 
     return result
 
