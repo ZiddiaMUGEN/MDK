@@ -10,7 +10,7 @@ import mtlcc
 
 from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.errors import TriggerException, CompilationException
+from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType
 from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType
@@ -75,8 +75,6 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             project = mtl.project.loadDefinition(def_file)
             project.source_files.append(output)
             mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), "mdk-out"), project)
-    except TriggerException as exc:
-        print(exc.get_message())
     except CompilationException as exc:
         create_compiler_error(exc)
     except Exception as exc:
@@ -164,9 +162,6 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
                         for param in definition.params:
                             f.write(f"{param} = {definition.params[param].name}\n")
                         f.write("\n")
-
-    except TriggerException as exc:
-        print(exc.get_message())
     except CompilationException as exc:
         create_compiler_error(exc)
     except Exception as exc:

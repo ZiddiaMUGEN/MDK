@@ -1,7 +1,7 @@
 from typing import Callable
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.builtins import IntType, BoolType, FloatType, UStringType
+from mdk.types.builtins import IntType, BoolType, FloatType, UStringType, StringType
 from mdk.types.defined import HitStringType
 import mdk.types.defined as defined
 
@@ -17,11 +17,24 @@ def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecif
             next_arg = convert(args[index])
             if not isinstance(next_arg, Expression):
                 raise Exception(f"Inputs to trigger expressions should always be Expressions, not {type(args[index])}.")
-            if next_arg.type != inputs[index]:
+            if next_arg.type in [UStringType, StringType] and inputs[index] in [UStringType, StringType]:
+                ## UString and String are considered matching.
+                next_arg.type = UStringType
+            elif next_arg.type != inputs[index]:
                 raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {next_arg.type.name}")
             conv_args.append(next_arg)
         return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
     return _callable
+
+## this is used for built-in position/velocity structures (e.g. Vel, Pos)
+## it avoids the need for custom structure types, which are still not
+## fully implemented either here or in MTL.
+class PositionExpression:
+    x: Expression
+    y: Expression
+    def __init__(self, name: str, type: TypeSpecifier):
+        self.x = Expression(f"{name} X", type)
+        self.y = Expression(f"{name} Y", type)
 
 Abs = TriggerExpression("abs", [FloatType], FloatType)
 Acos = TriggerExpression("acos", [FloatType], FloatType)
@@ -66,7 +79,7 @@ HitFall = Expression("HitFall", BoolType)
 HitOver = Expression("HitOver", BoolType)
 HitPauseTime = Expression("HitPauseTime", IntType)
 HitShakeOver = Expression("HitShakeOver", BoolType)
-## HitVel
+HitVel = PositionExpression("HitVel", FloatType)
 ID = Expression("ID", IntType)
 ## ifelse
 InGuardDist = Expression("InGuardDist", BoolType)
@@ -93,8 +106,8 @@ NumProj = Expression("NumProj", IntType)
 NumProjID = TriggerExpression("NumProjID", [IntType], IntType)
 NumTarget = TriggerExpression("NumTarget", [IntType], IntType)
 P1Name = Expression("P1Name", UStringType)
-## P2BodyDist
-## P2Dist
+P2BodyDist = PositionExpression("P2BodyDist", FloatType)
+P2Dist = PositionExpression("P2Dist", FloatType)
 P2Life = Expression("P2Life", IntType)
 P2MoveType = Expression("P2MoveType", defined.MoveType)
 P2StateNo = Expression("P2StateNo", IntType)
@@ -103,9 +116,9 @@ P2Name = Expression("P2Name", UStringType)
 P3Name = Expression("P3Name", UStringType)
 P4Name = Expression("P4Name", UStringType)
 PalNo = Expression("PalNo", IntType)
-## ParentDist
+ParentDist = PositionExpression("ParentDist", FloatType)
 Pi = Expression("pi", IntType)
-## Pos
+Pos = PositionExpression("Pos", FloatType)
 Power = Expression("Power", IntType)
 PowerMax = Expression("PowerMax", IntType)
 PlayerIDExist = TriggerExpression("PlayerIDExist", [IntType], IntType)
@@ -115,11 +128,11 @@ ProjContactTime = TriggerExpression("ProjContactTime", [IntType], IntType)
 ProjGuardedTime = TriggerExpression("ProjGuardedTime", [IntType], IntType)
 ProjHitTime = TriggerExpression("ProjHitTime", [IntType], IntType)
 Random = Expression("Random", IntType)
-## RootDist
+RootDist = PositionExpression("RootDist", FloatType)
 RoundNo = Expression("RoundNo", IntType)
 RoundsExisted = Expression("RoundsExisted", IntType)
 RoundState = Expression("RoundState", IntType)
-## ScreenPos
+ScreenPos = PositionExpression("ScreenPos", FloatType)
 SelfAnimExist = TriggerExpression("SelfAnimExist", [IntType], BoolType)
 Sin = TriggerExpression("sin", [FloatType], FloatType)
 StateNo = Expression("StateNo", IntType)
@@ -135,7 +148,7 @@ Time = Expression("Time", IntType)
 ## TimeMod
 ## UniqHitCount
 ## var
-## Vel
+Vel = PositionExpression("Vel", FloatType)
 Win = Expression("Win", BoolType)
 WinKO = Expression("WinKO", BoolType)
 WinTime = Expression("WinTime", BoolType)
@@ -151,5 +164,6 @@ __all__ = [
     "P1Name", "P2Life", "P2StateNo", "P2Name", "P3Name", "P4Name", "PalNo", "Pi", "Power", "PowerMax", "PlayerIDExist",
     "ProjCancelTime", "ProjContactTime", "ProjGuardedTime", "ProjHitTime", "Random", "RoundNo", "RoundsExisted", "RoundState",
     "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect",
-    "HitDefAttr"
+    "HitDefAttr", "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType",
+    "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel"
 ]

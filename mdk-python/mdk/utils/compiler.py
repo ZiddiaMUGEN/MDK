@@ -32,7 +32,7 @@ def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     # parse AST from the decorated function
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators(location, line_number).visit(old_ast)
+    new_ast = ReplaceLogicalOperators().visit(old_ast)
     ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
@@ -56,10 +56,6 @@ def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     return new_fn
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
-    def __init__(self, location: Optional[str], line: int):
-        self.location = location
-        self.line = line
-
     def visit_BoolOp(self, node: ast.BoolOp):
         # inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
@@ -70,20 +66,6 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             target = 'mdk.impl.TriggerOr'
         else:
             return node
-        
-        # add location information as an argument
-        node.values.insert(len(node.values), ast.Constant(
-                value=self.location,
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            )
-        )
-        node.values.insert(len(node.values), ast.Constant(
-                value=self.line+node.lineno,
-                lineno=node.lineno,
-                col_offset=node.col_offset
-            )
-        )
         
         # then, replace the BoolOp directly with a Call to the appropriate override,
         # with arguments provided from the inner values.
@@ -109,17 +91,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         return ast.Call(
             func=ast.Name(id=target, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
             args=[
-                node.operand, 
-                ast.Constant(
-                    value=self.location,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                ast.Constant(
-                    value=self.line+node.lineno,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                )
+                node.operand
             ],
             keywords=[],
             lineno=node.lineno,
@@ -135,17 +107,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             func=ast.Name(id="mdk.impl.TriggerAssign", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
             args=[
                 ast.Name(id=node.target.id, ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                node.value,
-                ast.Constant(
-                    value=self.location,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                ),
-                ast.Constant(
-                    value=self.line+node.lineno,
-                    lineno=node.lineno,
-                    col_offset=node.col_offset
-                )
+                node.value
             ],
             keywords=[],
             lineno=node.lineno,
@@ -162,18 +124,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         node.body.insert(0, ast.Expr(
             value=ast.Call(
                 func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[
-                    ast.Constant(
-                        value=self.location,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    ),
-                    ast.Constant(
-                        value=self.line+node.lineno,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    )
-                ],
+                args=[],
                 keywords=[],
                 lineno=node.lineno,
                 col_offset=node.col_offset
@@ -184,18 +135,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         node.body.insert(len(node.body), ast.Expr(
             value=ast.Call(
                 func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[
-                    ast.Constant(
-                        value=self.location,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    ),
-                    ast.Constant(
-                        value=self.line+node.lineno,
-                        lineno=node.lineno,
-                        col_offset=node.col_offset
-                    )
-                ],
+                args=[],
                 keywords=[],
                 lineno=node.lineno,
                 col_offset=node.col_offset
@@ -219,17 +159,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
                 test=ast.Call(
                     func=ast.Name(id='mdk.impl.TriggerNot', ctx=ast.Load(), lineno=node.lineno, col_offset=0),
                     args=[
-                        node.test,
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
+                        node.test
                     ],
                     keywords=[],
                     lineno=node.lineno,
@@ -243,18 +173,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             new_node.body.insert(0, ast.Expr(
                 value=ast.Call(
                     func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
-                    ],
+                    args=[],
                     keywords=[],
                     lineno=node.lineno,
                     col_offset=node.col_offset
@@ -265,18 +184,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             new_node.body.insert(len(new_node.body), ast.Expr(
                 value=ast.Call(
                     func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[
-                        ast.Constant(
-                            value=self.location,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        ),
-                        ast.Constant(
-                            value=self.line+node.lineno,
-                            lineno=node.lineno,
-                            col_offset=node.col_offset
-                        )
-                    ],
+                    args=[],
                     keywords=[],
                     lineno=node.lineno,
                     col_offset=node.col_offset
