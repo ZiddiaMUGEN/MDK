@@ -10,11 +10,12 @@ from mtl.debugging import database
 
 from mtl.types.context import *
 
-def runCompiler(input: str, output: str):
+## this is exported to a separate file so the mdk-python compiler can launch with
+## an explicitly-passed and modified ProjectContext.
+def runCompilerFromDef(input: str, output: str, projectContext: ProjectContext):
     ## note: the spec states that translation of included files should stop at step 3.
     ## this is guaranteed by having steps up to 3 in `loadFile`, and remaining steps handled in `translateContext`.
     try:
-        projectContext = project.loadDefinition(input)
         ## we perform a load of each file sequentially and combine the loadContext,
         ## then pass it all to translation at once.
         ## this means imports should be done ONCE ONLY,
@@ -172,6 +173,10 @@ def runCompiler(input: str, output: str):
         print(f"\t{exc.message}")
         print(f"mtlcc exception source: {py_exc}")
 
+def runCompiler(input: str, output: str):
+    projectContext = project.loadDefinition(input)
+    runCompilerFromDef(input, output, projectContext)
+
 def compile():
     parser = argparse.ArgumentParser(prog='mtlcc', description='Translation tool from MTL templates into CNS character code')
     parser.add_argument('input', help='Path to the DEF file containing the character to translate')
@@ -183,3 +188,5 @@ def compile():
 
 if __name__ == "__main__":
     compile()
+
+__all__ = ["runCompiler", "runCompilerFromDef"]

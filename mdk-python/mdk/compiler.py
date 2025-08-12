@@ -3,6 +3,10 @@ from functools import partial
 import inspect
 import copy
 import traceback
+import os
+
+import mtl.project
+import mtlcc
 
 from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition
 from mdk.types.specifier import TypeSpecifier
@@ -16,9 +20,11 @@ from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
 
-def build(output: str, skip_templates: bool = False):
+def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False) -> None:
     context = CompilerContext.instance()
     try:
+        output_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), output)
+        print(f"Will build state definitions to output path {output_path}.")
         ## builds the character from the input data.
         for state in context.statedefs:
             definition = context.statedefs[state]
@@ -31,13 +37,13 @@ def build(output: str, skip_templates: bool = False):
 
         template_groups = set()
         if not skip_templates and len(context.templates) != 0:
-            templates: list[Callable] = []
+            templates: list[Callable[..., None]] = []
             for t in context.templates:
                 templates.append(context.templates[t].fn)
                 if context.templates[t].library == None:
                     context.templates[t].library = output + ".inc"
                 template_groups.add(context.templates[t].library)
-            library(templates)
+            library(templates, dirname = os.path.abspath(os.path.dirname(def_file)))
         
         with open(output, mode="w") as f:
             if not skip_templates and len(context.templates) != 0:
@@ -61,6 +67,14 @@ def build(output: str, skip_templates: bool = False):
                     write_controller(controller, f)
                     f.write("\n")
                 f.write("\n")
+
+        ## read the DEF file (using MTL) and add the output to the statefile list,
+        ## then re-export the DEF file.
+        if run_mtl:
+            print(f"Preparing to run MTL compiler for input project {def_file}.")
+            project = mtl.project.loadDefinition(def_file)
+            project.source_files.append(output)
+            mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), "mdk-out"), project)
     except TriggerException as exc:
         print(exc.get_message())
     except CompilationException as exc:
@@ -69,7 +83,7 @@ def build(output: str, skip_templates: bool = False):
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
 
-def library(inputs: list[Callable], output: Optional[str] = None):
+def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None) -> None:
     if len(inputs) == 0:
         raise Exception("Please specify some templates and/or triggers to be built.")
     context = CompilerContext.instance()
@@ -112,8 +126,9 @@ def library(inputs: list[Callable], output: Optional[str] = None):
             per_file[definition.library].append(definition) # type: ignore
 
         for group in per_file:
-            print(f"Creating output include file {group}.")
-            with open(group, mode="w") as f:
+            group_path = os.path.join(dirname, group)
+            print(f"Creating output include file at path {group_path}.")
+            with open(group_path, mode="w") as f:
                 for definition in per_file[group]:
                     if isinstance(definition, TemplateDefinition):
                         f.write("[Define Template]\n")
@@ -174,15 +189,15 @@ def statedef(
     sprpriority: Optional[int] = None,
     stateno: Optional[int] = None,
     scope: Optional[StateScope] = None
-) -> Callable:
-    def decorator(fn: Callable) -> Callable:
+) -> Callable[[Callable[[], None]], Callable[..., StateController]]:
+    def decorator(fn: Callable[[], None]) -> Callable[..., StateController]:
         return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno, scope)
     return decorator
 
 ## used by the @statedef decorator to create new statedefs,
 ## but can also be used by character developers to create statedefs ad-hoc (e.g. in a loop).
 def create_statedef(
-    fn: Callable,
+    fn: Callable[[], None],
     type: Expression = StateType.U,
     movetype: Expression = MoveType.U,
     physics: Expression = PhysicsType.U,
@@ -198,7 +213,7 @@ def create_statedef(
     sprpriority: Optional[int] = None,
     stateno: Optional[int] = None,
     scope: Optional[StateScope] = None
-) -> Callable:
+) -> Callable[..., StateController]:
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
     new_fn = rewrite_function(fn)
@@ -228,8 +243,8 @@ def create_statedef(
 
     return partial(ChangeState, value = fn.__name__)
 
-def do_template(name: str, validator: Optional[Callable], *args, **kwargs) -> StateController:
-    def generic_template(*args, **kwargs):
+def do_template(name: str, validator: Optional[Callable[..., dict[str, Expression]]], *args, **kwargs) -> StateController:
+    def generic_template(*args, **kwargs) -> StateController:
         if len(args) != 0:
             raise Exception("Templates cannot be called with positional arguments, only keyword arguments.")
         ## if a validator was provided, we give the template author a chance to validate and even modify input arguments.
@@ -258,7 +273,7 @@ def do_template(name: str, validator: Optional[Callable], *args, **kwargs) -> St
         context.current_template.controllers.append(ctrl)
     return ctrl
 
-def do_trigger(name: str, validator: Optional[Callable], *args, **kwargs) -> Expression:
+def do_trigger(name: str, validator: Optional[Callable[..., dict[str, Expression]]], *args, **kwargs) -> Expression:
     if len(kwargs) != 0:
         raise Exception("Triggers cannot be called with keyword arguments, only positional arguments.")
     ## if a validator was provided, we give the trigger author a chance to validate and even modify input arguments.
@@ -269,8 +284,8 @@ def do_trigger(name: str, validator: Optional[Callable], *args, **kwargs) -> Exp
     ## just trust the output type. the MTL side will do final type validation during trigger replacement.
     return Expression(f"{name}({param_string})", context.triggers[name].result)
 
-def template(inputs: list[TypeSpecifier] = [], library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
-    def decorator(fn: Callable):
+def template(inputs: list[TypeSpecifier] = [], library: Optional[str] = None, validator: Optional[Callable[..., dict[str, Expression]]] = None) -> Callable[[Callable[..., None]], Callable[..., StateController]]:
+    def decorator(fn: Callable[..., None]) -> Callable[..., StateController]:
         print(f"Discovered a new Template named {fn.__name__}. Will process and load this Template.")
         # get params of decorated function
         signature = inspect.signature(fn)
@@ -298,8 +313,8 @@ def template(inputs: list[TypeSpecifier] = [], library: Optional[str] = None, va
         return partial(do_template, fn.__name__, validator)
     return decorator
 
-def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable:
-    def decorator(fn: Callable):
+def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable[[Callable[..., None]], Callable[..., Expression]]:
+    def decorator(fn: Callable[..., None]) -> Callable[..., Expression]:
         print(f"Discovered a new Trigger named {fn.__name__}. Will process and load this Trigger.")
         # get params of decorated function
         signature = inspect.signature(fn)

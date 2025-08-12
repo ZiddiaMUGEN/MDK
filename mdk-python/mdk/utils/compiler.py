@@ -21,7 +21,7 @@ def write_controller(ctrl: StateController, f: io.TextIOWrapper):
         f.write(f"mtl.location.file = {ctrl.location[0]}\n")
         f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 
-def rewrite_function(fn: Callable) -> Callable:
+def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     # get effective source code of the decorated function
     source, line_number = inspect.getsourcelines(fn)
     location = inspect.getsourcefile(fn)

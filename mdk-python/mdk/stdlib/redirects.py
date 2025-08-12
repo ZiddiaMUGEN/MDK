@@ -13,16 +13,16 @@ class RedirectTarget:
         self.AiLevel = self._redirect_atom(triggers.AiLevel)
         self.Alive = self._redirect_atom(triggers.Alive)
         self.Anim = self._redirect_atom(triggers.Anim)
-        self.AnimElemNo: Callable[[Int], Int] = self._redirect_function(triggers.AnimElemNo)  # type: ignore
-        self.AnimElemTime: Callable[[Int], Int] = self._redirect_function(triggers.AnimElemTime)  # type: ignore
-        self.AnimExist: Callable[[Int], Bool] = self._redirect_function(triggers.AnimExist)  # type: ignore
+        self.AnimElemNo: Callable[..., Expression] = self._redirect_function(triggers.AnimElemNo)  # type: ignore
+        self.AnimElemTime: Callable[..., Expression] = self._redirect_function(triggers.AnimElemTime)  # type: ignore
+        self.AnimExist: Callable[..., Expression] = self._redirect_function(triggers.AnimExist)  # type: ignore
         self.AnimTime = self._redirect_atom(triggers.AnimTime)
         self.AuthorName = self._redirect_atom(triggers.AuthorName)
         self.BackEdgeBodyDist = self._redirect_atom(triggers.BackEdgeBodyDist)
         self.BackEdgeDist = self._redirect_atom(triggers.BackEdgeDist)
         self.CanRecover = self._redirect_atom(triggers.CanRecover)
         self.Command = self._redirect_atom(triggers.Command)
-        self.Const: Callable[[String], Float] = self._redirect_function(triggers.Const)  # type: ignore
+        self.Const: Callable[..., Expression] = self._redirect_function(triggers.Const)  # type: ignore
         self.Ctrl = self._redirect_atom(triggers.Ctrl)
         self.DrawGame = self._redirect_atom(triggers.DrawGame)
         self.Facing = self._redirect_atom(triggers.Facing)
@@ -36,7 +36,7 @@ class RedirectTarget:
         self.HitShakeOver = self._redirect_atom(triggers.HitShakeOver)
         self.ID = self._redirect_atom(triggers.ID)
         self.InGuardDist = self._redirect_atom(triggers.InGuardDist)
-        self.IsHelper: triggers.MaybeInt_Bool = self._redirect_function(triggers.IsHelper) # type: ignore
+        self.IsHelper: Callable[..., Expression] = self._redirect_function(triggers.IsHelper) # type: ignore
         self.IsHomeTeam = self._redirect_atom(triggers.IsHomeTeam)
         self.Life = self._redirect_atom(triggers.Life)
         self.LifeMax = self._redirect_atom(triggers.LifeMax)
@@ -48,12 +48,12 @@ class RedirectTarget:
         self.MoveType = self._redirect_atom(triggers.MoveType)
         self.Name = self._redirect_atom(triggers.Name)
         self.NumEnemy = self._redirect_atom(triggers.NumEnemy)
-        self.NumExplod: triggers.MaybeInt_Int = self._redirect_function(triggers.NumExplod) # type: ignore
-        self.NumHelper: triggers.MaybeInt_Int = self._redirect_function(triggers.NumHelper) # type: ignore
+        self.NumExplod: Callable[..., Expression] = self._redirect_function(triggers.NumExplod) # type: ignore
+        self.NumHelper: Callable[..., Expression] = self._redirect_function(triggers.NumHelper) # type: ignore
         self.NumPartner = self._redirect_atom(triggers.NumPartner)
         self.NumProj = self._redirect_atom(triggers.NumProj)
-        self.NumProjID: Callable[[Int], Int] = self._redirect_function(triggers.NumProjID)  # type: ignore
-        self.NumTarget: triggers.MaybeInt_Int = self._redirect_function(triggers.NumTarget) # type: ignore
+        self.NumProjID: Callable[..., Expression] = self._redirect_function(triggers.NumProjID)  # type: ignore
+        self.NumTarget: Callable[..., Expression] = self._redirect_function(triggers.NumTarget) # type: ignore
         self.P1Name = self._redirect_atom(triggers.P1Name)
         self.P2Life = self._redirect_atom(triggers.P2Life)
         self.P2MoveType = self._redirect_atom(triggers.P2MoveType)
@@ -66,11 +66,11 @@ class RedirectTarget:
         self.Power = self._redirect_atom(triggers.Power)
         self.PowerMax = self._redirect_atom(triggers.PowerMax)
         self.PrevStateNo = self._redirect_atom(triggers.PrevStateNo)
-        self.ProjCancelTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjCancelTime)  # type: ignore
-        self.ProjContactTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjContactTime)  # type: ignore
-        self.ProjGuardedTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjGuardedTime)  # type: ignore
-        self.ProjHitTime: Callable[[Int], Int] = self._redirect_function(triggers.ProjHitTime)  # type: ignore
-        self.SelfAnimExist: Callable[[Int], Bool] = self._redirect_function(triggers.SelfAnimExist)  # type: ignore
+        self.ProjCancelTime: Callable[..., Expression] = self._redirect_function(triggers.ProjCancelTime)  # type: ignore
+        self.ProjContactTime: Callable[..., Expression] = self._redirect_function(triggers.ProjContactTime)  # type: ignore
+        self.ProjGuardedTime: Callable[..., Expression] = self._redirect_function(triggers.ProjGuardedTime)  # type: ignore
+        self.ProjHitTime: Callable[..., Expression] = self._redirect_function(triggers.ProjHitTime)  # type: ignore
+        self.SelfAnimExist: Callable[..., Expression] = self._redirect_function(triggers.SelfAnimExist)  # type: ignore
         self.StateNo = self._redirect_atom(triggers.StateNo)
         self.StateType = self._redirect_atom(triggers.StateType)
         self.SelfAnimExist = self._redirect_function(triggers.StageVar)  # type: ignore
@@ -96,15 +96,10 @@ class RedirectTarget:
             return f"{self.target}({self.expr})"
         return self.target
 
-class RedirectID(Protocol):
-    def __call__(self, x: Expression = ..., /) -> RedirectTarget:
-        ...
-
-def RedirectTargetBuilder(target: str) -> RedirectID:
+def RedirectTargetBuilder(target: str) -> Callable[[Optional[Expression]], RedirectTarget]:
     def _redirect(id: Optional[Expression] = None) -> RedirectTarget:
         return RedirectTarget(target, id)
     return _redirect
-        
 
 parent = RedirectTarget("parent")
 root = RedirectTarget("root")

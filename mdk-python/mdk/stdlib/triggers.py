@@ -8,7 +8,7 @@ import mdk.types.defined as defined
 from mdk.utils.shared import convert
 
 ## helper function to take 1 argument and the types involved and produce an output.
-def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable:
+def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable[..., Expression]:
     def _callable(*args) -> Expression:
         if len(args) != len(inputs):
             raise Exception(f"Trigger expression {name} expected {len(inputs)} inputs, but got {len(args)} instead.")

@@ -79,6 +79,7 @@ def addGlobalsToDatabase(ctx: TranslationContext):
 def addStateDefinitionsToDatabase(ctx: TranslationContext):
     for statedef in ctx.statedefs:
         addStringToDatabase(statedef.name, ctx)
+        addPathToDatabase(statedef.location.filename, ctx)
         state_id = statedef.parameters.id if statedef.parameters.id != None else -4
         info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [])
         for local in statedef.locals:

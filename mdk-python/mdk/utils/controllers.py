@@ -14,9 +14,9 @@ from mdk.utils.expressions import check_any_assignable
 
 # decorator which provides a wrapper around each controller.
 # this adds some extra debugging info, and also simplifies adding triggers to controllers and handling controller insertion into the active statedef.
-def controller(**typeinfo) -> Callable:
-    def wrapper(fn: Callable) -> Callable:
-        def decorated(*args, ignorehitpause: Optional[bool] = None, persistent: Optional[int] = None, **kwargs):
+def controller(**typeinfo) -> Callable[[Callable[..., None]], Callable[..., StateController]]:
+    def wrapper(fn: Callable[..., None]) -> Callable[..., StateController]:
+        def decorated(*args, ignorehitpause: Optional[bool] = None, persistent: Optional[int] = None, **kwargs) -> StateController:
             return make_controller(fn, *args, typeinfo = typeinfo, ignorehitpause = ignorehitpause, persistent = persistent, **kwargs)
         return decorated
     return wrapper

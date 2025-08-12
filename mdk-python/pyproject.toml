@@ -10,7 +10,13 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-include = ["mdk"]
+include = ["mdk", "mdk-stubs"]
+
+[tool.hatch.build.targets.wheel.sources]
+"mdk-stubs" = "mdk"
 
 [tool.hatch.build.targets.sdist]
-include = ["mdk"]
+include = ["mdk", "mdk-stubs"]
+
+[tool.hatch.build.targets.sdist.sources]
+"mdk-stubs" = "mdk"

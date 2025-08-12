@@ -18,6 +18,12 @@ exclude = ["dist", "sample", "*.md", "*.toml"]
 include = ["mtl", "stdlib", "mtlcc.py", "mtldbg.py"]
 exclude = ["dist", "sample", "*.md", "*.toml", ".gitignore"]
 
+[tool.hatch.build.targets.wheel.sources]
+"stdlib" = "mtl/stdlib"
+
+[tool.hatch.build.targets.sdist.sources]
+"stdlib" = "mtl/stdlib"
+
 [project.scripts]
 mtlcc = "mtlcc:compile"
 mtldbg = "mtldbg:debug"

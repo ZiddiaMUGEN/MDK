@@ -180,7 +180,7 @@ class Expression:
     
     def __bool__(self):
         ctx = CompilerContext.instance()
-        ctx.current_trigger = self
+        ctx.current_trigger = Expression(self.exprn, self.type)
         return True
     
 ## these are helpers for specifying expressions for commonly-used built-in types.
@@ -190,4 +190,4 @@ IntExpression = functools.partial(Expression, type = IntType)
 type ConvertibleExpression = Union[Expression, str, int, float, bool]
 type TupleExpression = tuple[ConvertibleExpression, ...]
 
-__all__ = ["Expression", "IntExpression", "TupleExpression"]
+__all__ = ["Expression", "IntExpression", "ConvertibleExpression", "TupleExpression"]

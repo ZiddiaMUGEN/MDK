@@ -50,14 +50,14 @@ class ParameterDefinition:
 
 @dataclass
 class StateDefinition:
-    fn: Callable
+    fn: Callable[[], None]
     params: dict[str, Expression]
     controllers: list[StateController]
     locals: list[ParameterDefinition]
 
 @dataclass
 class TemplateDefinition:
-    fn: Callable
+    fn: Callable[..., None]
     library: Optional[str]
     params: dict[str, TypeSpecifier]
     controllers: list[StateController]
@@ -65,7 +65,7 @@ class TemplateDefinition:
 
 @dataclass
 class TriggerDefinition:
-    fn: Callable
+    fn: Callable[..., None]
     library: Optional[str]
     result: TypeSpecifier
     params: dict[str, TypeSpecifier]

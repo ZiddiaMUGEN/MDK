@@ -96,5 +96,5 @@ __all__ = [
     "WaveType", "HelperType", "HitFlagType", "GuardFlagType", "TeamType", "HitAnimType",
     "AttackType", "PriorityType", "PosType", "FloatPosType", "IntPairType",
     "WaveTupleType", "HitType", "HitAttr", "HitStringType", "PriorityPairType",
-    "SoundPairType", "PeriodicColorType", "BoolPairType"
+    "SoundPairType", "PeriodicColorType", "BoolPairType", "TeamModeType"
 ]

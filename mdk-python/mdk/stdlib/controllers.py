@@ -74,7 +74,7 @@ def AfterImage(
     trans: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -95,7 +95,7 @@ def AfterImage(
     return result
 
 @controller(time = [IntType])
-def AfterImageTime(time: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AfterImageTime(time: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -103,7 +103,7 @@ def AfterImageTime(time: Expression, ignorehitpause: Optional[ConvertibleExpress
     return result
 
 @controller(value = [FloatType])
-def AngleAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AngleAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -111,7 +111,7 @@ def AngleAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] 
     return result
 
 @controller(value = [FloatType, None], scale = [FloatPairType, None])
-def AngleDraw(value: Optional[ConvertibleExpression] = None, scale: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AngleDraw(value: Optional[ConvertibleExpression] = None, scale: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -120,7 +120,7 @@ def AngleDraw(value: Optional[ConvertibleExpression] = None, scale: Optional[Tup
     return result
 
 @controller(value = [FloatType])
-def AngleMul(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AngleMul(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -128,7 +128,7 @@ def AngleMul(value: Expression, ignorehitpause: Optional[ConvertibleExpression] 
     return result
 
 @controller(value = [FloatType])
-def AngleSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AngleSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -137,14 +137,14 @@ def AngleSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] 
 
 """
 @controller(text = [StringType], params = [AnyType, None])
-def AppendToClipboard(text: Expression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AppendToClipboard(text: Expression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     return result
 """
 
 @controller(flag = [AssertType], flag2 = [AssertType, None], flag3 = [AssertType, None])
-def AssertSpecial(flag: Expression, flag2: Optional[ConvertibleExpression] = None, flag3: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AssertSpecial(flag: Expression, flag2: Optional[ConvertibleExpression] = None, flag3: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "flag", flag)
@@ -154,7 +154,7 @@ def AssertSpecial(flag: Expression, flag2: Optional[ConvertibleExpression] = Non
     return result
 
 @controller(value = [IntType])
-def AttackDist(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AttackDist(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -162,7 +162,7 @@ def AttackDist(value: Expression, ignorehitpause: Optional[ConvertibleExpression
     return result
 
 @controller(value = [FloatType])
-def AttackMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def AttackMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -170,7 +170,7 @@ def AttackMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpressi
     return result
 
 @controller(time = [IntType, None], facing = [IntType, None], pos = [FloatPairType, None])
-def BindToParent(time: Optional[ConvertibleExpression] = None, facing: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def BindToParent(time: Optional[ConvertibleExpression] = None, facing: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -180,7 +180,7 @@ def BindToParent(time: Optional[ConvertibleExpression] = None, facing: Optional[
     return result
 
 @controller(time = [IntType, None], facing = [IntType, None], pos = [FloatPairType, None])
-def BindToRoot(time: Optional[ConvertibleExpression] = None, facing: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def BindToRoot(time: Optional[ConvertibleExpression] = None, facing: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -190,7 +190,7 @@ def BindToRoot(time: Optional[ConvertibleExpression] = None, facing: Optional[Co
     return result
 
 @controller(time = [IntType, None], id = [IntType, None], pos = [FloatPosType, None])
-def BindToTarget(time: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def BindToTarget(time: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -200,7 +200,7 @@ def BindToTarget(time: Optional[ConvertibleExpression] = None, id: Optional[Conv
     return result
 
 @controller(value = [IntType], elem = [IntType, None])
-def ChangeAnim(value: Expression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ChangeAnim(value: Expression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -209,7 +209,7 @@ def ChangeAnim(value: Expression, elem: Optional[ConvertibleExpression] = None, 
     return result
 
 @controller(value = [IntType], elem = [IntType, None])
-def ChangeAnim2(value: Expression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ChangeAnim2(value: Expression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -229,12 +229,12 @@ def ChangeState(value: Union[Expression, str, int, Callable], ctrl: Optional[Con
     return result
 
 @controller()
-def ClearClipboard(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ClearClipboard(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(ctrl = [BoolType, None], value = [BoolType, None])
-def CtrlSet(ctrl: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def CtrlSet(ctrl: Optional[ConvertibleExpression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "ctrl", ctrl)
@@ -243,7 +243,7 @@ def CtrlSet(ctrl: Optional[ConvertibleExpression] = None, value: Optional[Conver
     return result
 
 @controller(value = [FloatType])
-def DefenceMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def DefenceMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -251,20 +251,20 @@ def DefenceMulSet(value: Expression, ignorehitpause: Optional[ConvertibleExpress
     return result
 
 @controller()
-def DestroySelf(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def DestroySelf(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 """
 @controller(text = [StringType], params = [AnyType, None])
-def DisplayToClipboard(text: Expression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def DisplayToClipboard(text: Expression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     return result
 """
 
 @controller(value = [ColorType, None], time = [IntType, None], under = [BoolType, None])
-def EnvColor(value: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, under: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def EnvColor(value: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, under: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "value", value, ColorType)
@@ -274,7 +274,7 @@ def EnvColor(value: Optional[TupleExpression] = None, time: Optional[Convertible
     return result
 
 @controller(time = [IntType], freq = [FloatType, None], ampl = [IntType, None], phase = [FloatType, None])
-def EnvShake(time: Expression, freq: Optional[ConvertibleExpression] = None, ampl: Optional[ConvertibleExpression] = None, phase: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def EnvShake(time: Expression, freq: Optional[ConvertibleExpression] = None, ampl: Optional[ConvertibleExpression] = None, phase: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -332,7 +332,7 @@ def Explod(
     trans: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "anim", anim)
@@ -360,7 +360,7 @@ def Explod(
     return result
 
 @controller(id = [IntType, None], time = [IntType, None])
-def ExplodBindTime(id: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ExplodBindTime(id: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "id", id)
@@ -375,7 +375,7 @@ def ExplodBindTime(id: Optional[ConvertibleExpression] = None, time: Optional[Co
     ampl = [WaveTupleType, None],
     self = [BoolType, None]
 )
-def ForceFeedback(waveform: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, freq: Optional[TupleExpression] = None, ampl: Optional[TupleExpression] = None, self: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ForceFeedback(waveform: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, freq: Optional[TupleExpression] = None, ampl: Optional[TupleExpression] = None, self: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "waveform", waveform)
@@ -387,12 +387,12 @@ def ForceFeedback(waveform: Optional[ConvertibleExpression] = None, time: Option
     return result
 
 @controller()
-def FallEnvShake(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def FallEnvShake(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(value = [IntType, None], under = [BoolType, None], pos = [FloatPairType, None], random = [IntType, None])
-def GameMakeAnim(value: Optional[ConvertibleExpression] = None, under: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, random: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def GameMakeAnim(value: Optional[ConvertibleExpression] = None, under: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, random: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -403,7 +403,7 @@ def GameMakeAnim(value: Optional[ConvertibleExpression] = None, under: Optional[
     return result
 
 @controller()
-def Gravity(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Gravity(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
@@ -456,7 +456,7 @@ def Helper(
     size_shadowoffset: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "helpertype", helpertype)
@@ -485,7 +485,7 @@ def Helper(
     return result
 
 @controller(value = [IntType])
-def HitAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -493,7 +493,7 @@ def HitAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = 
     return result
 
 @controller(value = [HitStringType, None], value2 = [HitStringType, None], time = [IntType, None])
-def HitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "value", value, HitStringType)
@@ -668,7 +668,7 @@ def HitDef(
     fall_envshake_phase: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "attr", attr, HitStringType)
@@ -755,12 +755,12 @@ def HitDef(
     return result
 
 @controller()
-def HitFallDamage(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitFallDamage(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(value = [IntType, None], xvel = [FloatType, None], yvel = [FloatType, None])
-def HitFallSet(value: Optional[ConvertibleExpression] = None, xvel: Optional[ConvertibleExpression] = None, yvel: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitFallSet(value: Optional[ConvertibleExpression] = None, xvel: Optional[ConvertibleExpression] = None, yvel: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -770,7 +770,7 @@ def HitFallSet(value: Optional[ConvertibleExpression] = None, xvel: Optional[Con
     return result
 
 @controller()
-def HitFallVel(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitFallVel(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
@@ -781,7 +781,7 @@ def HitFallVel(ignorehitpause: Optional[ConvertibleExpression] = None, persisten
     time = [IntType, None],
     forceair = [BoolType, None]
 )
-def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, int, Callable]] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, int, Callable]] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "attr", attr, HitStringType)
@@ -793,7 +793,7 @@ def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, 
     return result
 
 @controller(x = [BoolType, None], y = [BoolType, None])
-def HitVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def HitVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -802,7 +802,7 @@ def HitVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[Convertible
     return result
 
 @controller(value = [IntType], kill = [BoolType, None], absolute = [BoolType, None])
-def LifeAdd(value: Expression, kill: Optional[ConvertibleExpression] = None, absolute: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def LifeAdd(value: Expression, kill: Optional[ConvertibleExpression] = None, absolute: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -812,7 +812,7 @@ def LifeAdd(value: Expression, kill: Optional[ConvertibleExpression] = None, abs
     return result
 
 @controller(value = [IntType])
-def LifeSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def LifeSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -820,7 +820,7 @@ def LifeSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] =
     return result
 
 @controller(pos = [IntPairType, None], pos2 = [FloatPairType, None], spacing = [IntType, None])
-def MakeDust(pos: Optional[TupleExpression] = None, pos2: Optional[TupleExpression] = None, spacing: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def MakeDust(pos: Optional[TupleExpression] = None, pos2: Optional[TupleExpression] = None, spacing: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "pos", pos, IntPairType)
@@ -875,7 +875,7 @@ def ModifyExplod(
     trans: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "id", id)
@@ -902,12 +902,12 @@ def ModifyExplod(
     return result
 
 @controller()
-def MoveHitReset(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def MoveHitReset(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(value = [HitStringType, None], value2 = [HitStringType, None], time = [IntType, None])
-def NotHitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def NotHitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "value", value, HitStringType)
@@ -917,12 +917,12 @@ def NotHitBy(value: Optional[TupleExpression] = None, value2: Optional[TupleExpr
     return result
 
 @controller()
-def Null(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Null(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def Offset(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Offset(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -947,7 +947,7 @@ def PalFX(
     color: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -960,7 +960,7 @@ def PalFX(
     return result
 
 @controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
-def ParentVarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ParentVarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     if var != None:
@@ -969,7 +969,7 @@ def ParentVarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleEx
     return result
 
 @controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
-def ParentVarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ParentVarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     if var != None:
@@ -978,7 +978,7 @@ def ParentVarSet(var: Optional[Expression] = None, value: Optional[ConvertibleEx
     return result
 
 @controller(time = [IntType], endcmdbuftime = [IntType, None], movetime = [IntType, None], pausebg = [BoolType, None])
-def Pause(time: Expression, endcmdbuftime: Optional[ConvertibleExpression] = None, movetime: Optional[ConvertibleExpression] = None, pausebg: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Pause(time: Expression, endcmdbuftime: Optional[ConvertibleExpression] = None, movetime: Optional[ConvertibleExpression] = None, pausebg: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -989,7 +989,7 @@ def Pause(time: Expression, endcmdbuftime: Optional[ConvertibleExpression] = Non
     return result
 
 @controller(value = [BoolType])
-def PlayerPush(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PlayerPush(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1017,7 +1017,7 @@ def PlaySnd(
     abspan: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "value", value, SoundPairType)
@@ -1032,7 +1032,7 @@ def PlaySnd(
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def PosAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PosAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1041,7 +1041,7 @@ def PosAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExp
     return result
 
 @controller(value = [BoolType, None])
-def PosFreeze(value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PosFreeze(value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1049,7 +1049,7 @@ def PosFreeze(value: Optional[ConvertibleExpression] = None, ignorehitpause: Opt
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def PosSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PosSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1058,7 +1058,7 @@ def PosSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExp
     return result
 
 @controller(value = [IntType])
-def PowerAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PowerAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1066,7 +1066,7 @@ def PowerAdd(value: Expression, ignorehitpause: Optional[ConvertibleExpression] 
     return result
 
 @controller(value = [IntType])
-def PowerSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def PowerSet(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1147,7 +1147,7 @@ def Projectile(
     afterimage_trans: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "projid", projid)
@@ -1188,7 +1188,7 @@ def Projectile(
     return result
 
 @controller(source = [IntPairType], dest = [IntPairType])
-def RemapPal(source: TupleExpression, dest: TupleExpression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def RemapPal(source: TupleExpression, dest: TupleExpression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "source", source, IntPairType)
@@ -1197,7 +1197,7 @@ def RemapPal(source: TupleExpression, dest: TupleExpression, ignorehitpause: Opt
     return result
 
 @controller(id = [IntType, None])
-def RemoveExplod(id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def RemoveExplod(id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "id", id)
@@ -1227,7 +1227,7 @@ def ReversalDef(
     sparkxy: Optional[TupleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "reversal.attr", reversal_attr, HitStringType)
@@ -1243,7 +1243,7 @@ def ReversalDef(
     return result
 
 @controller(value = [BoolType, None], movecamera = [BoolPairType, None])
-def ScreenBound(value: Optional[ConvertibleExpression] = None, movecamera: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def ScreenBound(value: Optional[ConvertibleExpression] = None, movecamera: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1252,7 +1252,7 @@ def ScreenBound(value: Optional[ConvertibleExpression] = None, movecamera: Optio
     return result
 
 @controller(value = [StateNoType, IntType], ctrl = [BoolType, None], anim = [IntType, None])
-def SelfState(value: Expression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def SelfState(value: Expression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1262,7 +1262,7 @@ def SelfState(value: Expression, ctrl: Optional[ConvertibleExpression] = None, a
     return result
 
 @controller(value = [IntType])
-def SprPriority(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def SprPriority(value: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1270,7 +1270,7 @@ def SprPriority(value: Expression, ignorehitpause: Optional[ConvertibleExpressio
     return result
 
 @controller(statetype = [StateType, None], movetype = [MoveType, None], physics = [PhysicsType, None])
-def StateTypeSet(statetype: Optional[ConvertibleExpression] = None, movetype: Optional[ConvertibleExpression] = None, physics: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def StateTypeSet(statetype: Optional[ConvertibleExpression] = None, movetype: Optional[ConvertibleExpression] = None, physics: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "statetype", statetype)
@@ -1280,7 +1280,7 @@ def StateTypeSet(statetype: Optional[ConvertibleExpression] = None, movetype: Op
     return result
 
 @controller(channel = [IntType], pan = [IntType], abspan = [IntType])
-def SndPan(channel: Expression, pan: Expression, abspan: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def SndPan(channel: Expression, pan: Expression, abspan: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "channel", channel)
@@ -1290,7 +1290,7 @@ def SndPan(channel: Expression, pan: Expression, abspan: Expression, ignorehitpa
     return result
 
 @controller(channel = [IntType])
-def StopSnd(channel: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def StopSnd(channel: Expression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "channel", channel)
@@ -1318,7 +1318,7 @@ def SuperPause(
     unhittable: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
-):
+) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -1333,7 +1333,7 @@ def SuperPause(
     return result
 
 @controller(time = [IntType, None], id = [IntType, None], pos = [FloatPairType, None])
-def TargetBind(time: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetBind(time: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, pos: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "time", time)
@@ -1343,7 +1343,7 @@ def TargetBind(time: Optional[ConvertibleExpression] = None, id: Optional[Conver
     return result
 
 @controller(excludeid = [IntType, None], keepone = [BoolType, None])
-def TargetDrop(excludeid: Optional[ConvertibleExpression] = None, keepone: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetDrop(excludeid: Optional[ConvertibleExpression] = None, keepone: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "excludeid", excludeid)
@@ -1352,7 +1352,7 @@ def TargetDrop(excludeid: Optional[ConvertibleExpression] = None, keepone: Optio
     return result
 
 @controller(value = [IntType], id = [IntType, None])
-def TargetFacing(value: Expression, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetFacing(value: Expression, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1361,7 +1361,7 @@ def TargetFacing(value: Expression, id: Optional[ConvertibleExpression] = None, 
     return result
 
 @controller(value = [IntType], id = [IntType, None], kill = [BoolType, None], absolute = [BoolType, None])
-def TargetLifeAdd(value: Expression, id: Optional[ConvertibleExpression] = None, kill: Optional[ConvertibleExpression] = None, absolute: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetLifeAdd(value: Expression, id: Optional[ConvertibleExpression] = None, kill: Optional[ConvertibleExpression] = None, absolute: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1372,7 +1372,7 @@ def TargetLifeAdd(value: Expression, id: Optional[ConvertibleExpression] = None,
     return result
 
 @controller(value = [IntType], id = [IntType, None])
-def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1381,7 +1381,7 @@ def TargetPowerAdd(value: Expression, id: Optional[ConvertibleExpression] = None
     return result
 
 @controller(value = [StateNoType, IntType], id = [IntType, None])
-def TargetState(value: Union[Expression, str, int, Callable], id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetState(value: Union[Expression, str, int, Callable], id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_stateno(result, "value", value)
@@ -1390,7 +1390,7 @@ def TargetState(value: Union[Expression, str, int, Callable], id: Optional[Conve
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None], id = [IntType, None])
-def TargetVelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetVelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1400,7 +1400,7 @@ def TargetVelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[Converti
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None], id = [IntType, None])
-def TargetVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def TargetVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1410,7 +1410,7 @@ def TargetVelSet(x: Optional[ConvertibleExpression] = None, y: Optional[Converti
     return result
 
 @controller(trans = [TransType], alpha = [IntPairType, None])
-def Trans(trans: Expression, alpha: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Trans(trans: Expression, alpha: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "trans", trans)
@@ -1419,12 +1419,12 @@ def Trans(trans: Expression, alpha: Optional[ConvertibleExpression] = None, igno
     return result
 
 @controller()
-def Turn(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Turn(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
     return result
 
 @controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
-def VarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     if var != None:
@@ -1433,7 +1433,7 @@ def VarAdd(var: Optional[Expression] = None, value: Optional[ConvertibleExpressi
     return result
 
 @controller(var = [IntType, FloatType, None], value = [IntType, FloatType, None])
-def VarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     if var != None:
@@ -1442,7 +1442,7 @@ def VarSet(var: Optional[Expression] = None, value: Optional[ConvertibleExpressi
     return result
 
 @controller(v = [IntType], range = [IntPairType, None])
-def VarRandom(v: Expression, range: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VarRandom(v: Expression, range: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "v", v)
@@ -1451,7 +1451,7 @@ def VarRandom(v: Expression, range: Optional[ConvertibleExpression] = None, igno
     return result
 
 @controller(value = [IntType], fvalue = [FloatType], first = [IntType, None], last = [IntType, None])
-def VarRangeSet(value: Expression, fvalue: Expression, first: Optional[ConvertibleExpression] = None, last: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VarRangeSet(value: Expression, fvalue: Expression, first: Optional[ConvertibleExpression] = None, last: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1462,7 +1462,7 @@ def VarRangeSet(value: Expression, fvalue: Expression, first: Optional[Convertib
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def VelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1471,7 +1471,7 @@ def VelAdd(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExp
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def VelMul(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VelMul(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1480,7 +1480,7 @@ def VelMul(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExp
     return result
 
 @controller(x = [FloatType, None], y = [FloatType, None])
-def VelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "x", x)
@@ -1489,7 +1489,7 @@ def VelSet(x: Optional[ConvertibleExpression] = None, y: Optional[ConvertibleExp
     return result
 
 @controller(value = [IntType, None])
-def VictoryQuote(value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def VictoryQuote(value: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if(result, "value", value)
@@ -1497,7 +1497,7 @@ def VictoryQuote(value: Optional[ConvertibleExpression] = None, ignorehitpause: 
     return result
 
 @controller(edge = [IntPairType, None], player = [IntPairType, None], value = [IntPairType, None])
-def Width(edge: Optional[TupleExpression] = None, player: Optional[TupleExpression] = None, value: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None):
+def Width(edge: Optional[TupleExpression] = None, player: Optional[TupleExpression] = None, value: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "edge", edge, IntPairType)
