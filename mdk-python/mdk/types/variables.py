@@ -69,6 +69,9 @@ class VariableExpression(Expression):
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
         else:
             new_controller.triggers = [format_bool(True)]
+        ## i believe this should always be right, since it flows from <callsite> -> .set
+        callsite = traceback.extract_stack()[-2]
+        new_controller.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
         if context.current_state != None:
             context.current_state.controllers.append(new_controller)
         elif context.current_template != None:
@@ -85,6 +88,9 @@ class VariableExpression(Expression):
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
         else:
             new_controller.triggers = [format_bool(True)]
+        ## i believe this should always be right, since it flows from <callsite> -> .set
+        callsite = traceback.extract_stack()[-2]
+        new_controller.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
         if context.current_state != None:
             context.current_state.controllers.append(new_controller)
         elif context.current_template != None:

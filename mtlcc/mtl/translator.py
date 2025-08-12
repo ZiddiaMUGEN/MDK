@@ -283,7 +283,7 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
                 for param in template.params:
                     if len(target_exprn := find_property(param.name, controller)) != 1 and param.required:
                         raise TranslationError(f"No expression was provided for parameter with name {param.name} on template or controller {controller.name}.", controller.location)
-                    if target_exprn != None:
+                    if target_exprn != None and len(target_exprn) == 1:
                         exprn_map.append(copy.deepcopy(target_exprn[0]))
                 for new_controller in new_controllers:
                     for exprn in exprn_map:

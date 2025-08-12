@@ -2,6 +2,7 @@ from typing import Optional, Callable, Union
 from functools import partial
 import inspect
 import copy
+import traceback
 
 from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition
 from mdk.types.specifier import TypeSpecifier
@@ -51,6 +52,10 @@ def build(output: str, skip_templates: bool = False):
                     f.write(f"{param} = {statedef.params[param]}\n")
                 for local in statedef.locals:
                     f.write(f"local = {local.name} = {local.type.name}\n")
+                file_path = inspect.getsourcefile(statedef.fn)
+                _, line_number = inspect.getsourcelines(statedef.fn)
+                f.write(f"mtl.location.file = {file_path}\n")
+                f.write(f"mtl.location.line = {line_number}\n")
                 f.write("\n")
                 for controller in statedef.controllers:
                     write_controller(controller, f)
@@ -115,6 +120,10 @@ def library(inputs: list[Callable], output: Optional[str] = None):
                         f.write(f"name = {definition.fn.__name__}\n")
                         for local in definition.locals:
                             f.write(f"local = {local.name} = {local.type.name}\n")
+                        file_path = inspect.getsourcefile(definition.fn)
+                        _, line_number = inspect.getsourcelines(definition.fn)
+                        f.write(f"mtl.location.file = {file_path}\n")
+                        f.write(f"mtl.location.line = {line_number}\n")
                         f.write("\n")
                         f.write("[Define Parameters]\n")
                         for param in definition.params:
@@ -131,6 +140,10 @@ def library(inputs: list[Callable], output: Optional[str] = None):
                         if not isinstance(definition.exprn, Expression):
                             raise Exception(f"Trigger definition {definition.fn.__name__} returned {type(definition.exprn)}, but must return Expression instead.")
                         f.write(f"value = {definition.exprn.exprn}\n")
+                        file_path = inspect.getsourcefile(definition.fn)
+                        _, line_number = inspect.getsourcelines(definition.fn)
+                        f.write(f"mtl.location.file = {file_path}\n")
+                        f.write(f"mtl.location.line = {line_number}\n")
                         f.write("\n")
                         f.write("[Define Parameters]\n")
                         for param in definition.params:
@@ -232,6 +245,9 @@ def do_template(name: str, validator: Optional[Callable], *args, **kwargs) -> St
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
         else:
             new_controller.triggers = [format_bool(True)]
+        ## i believe this should always be right, since it flows from <callsite> -> do_template -> generic_template
+        callsite = traceback.extract_stack()[-3]
+        new_controller.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
         return new_controller
     ctrl = generic_template(*args, **kwargs)
     ctrl.type = name

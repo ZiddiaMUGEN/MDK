@@ -1,6 +1,7 @@
 from typing import Callable, Optional, Union
 import copy
 import functools
+import traceback
 
 from mdk.types.context import StateController, CompilerContext
 from mdk.types.expressions import Expression, TupleExpression
@@ -65,6 +66,10 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
     
     ctrl.triggers = copy.deepcopy(ctx.trigger_stack)
     ctx.current_trigger = None
+
+    ## i believe this should always be right, since it flows from <callsite> -> decorated -> make_controller
+    callsite = traceback.extract_stack()[-3]
+    ctrl.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
     
     if ctx.current_state != None:
         ctx.current_state.controllers.append(ctrl)

@@ -2,6 +2,7 @@ import os
 
 from mtl.utils.func import find, compiler_internal, search_file, includes_insensitive
 from mtl.types.shared import TranslationError
+from mtl.types.trigger import TriggerTreeNode
 from mtl.types.context import LoadContext, TranslationMode, CompilerConfiguration
 from mtl.types.ini import *
 from mtl.parser import ini, trigger
@@ -43,9 +44,28 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
             while index + 1 < len(sections) and sections[index + 1].name.lower().startswith("state "):
                 properties: list[StateControllerProperty] = []
                 for property in sections[index + 1].properties:
-                    properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
-                statedef.states.append(StateControllerSection(properties, sections[index + 1].location))
+                    if property.key.lower().startswith("mtl."):
+                        properties.append(StateControllerProperty(property.key, TriggerTree(TriggerTreeNode.ATOM, property.value, [], property.location), property.location))
+                    else:
+                        properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
+
+                target_location = sections[index + 1].location
+                if (filename := find(properties, lambda k: k.key.lower() == "mtl.location.file")) != None and \
+                   (lineno := find(properties, lambda k: k.key.lower() == "mtl.location.line")) != None:
+                    target_location = Location(filename.value.operator, int(lineno.value.operator))
+
+                # omit all properties which are MTL configurations
+                properties = list(filter(lambda k: not k.key.lower().startswith("mtl."), properties))
+
+                statedef.states.append(StateControllerSection(properties, target_location))
                 index += 1
+
+            if (filename := find(statedef.props, lambda k: k.key.lower() == "mtl.location.file")) != None and \
+               (lineno := find(statedef.props, lambda k: k.key.lower() == "mtl.location.line")) != None:
+                statedef.location = Location(filename.value, int(lineno.value))
+
+            # omit all properties which are MTL configurations
+            statedef.props = list(filter(lambda k: not k.key.lower().startswith("mtl."), statedef.props))
         elif section.name.lower().startswith("include"):
             if mode == TranslationMode.CNS_MODE:
                 raise TranslationError("A CNS file cannot contain MTL Include sections.", section.location)
@@ -68,7 +88,15 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
             if (prop := find(section.properties, lambda k: k.key.lower() == "name")) == None:
                 raise TranslationError("Define Template section must provide a name property.", section.location)
             
-            template = TemplateSection(prop.value, section.location)
+            target_location = section.location
+            if (filename := find(section.properties, lambda k: k.key.lower() == "mtl.location.file")) != None and \
+               (lineno := find(section.properties, lambda k: k.key.lower() == "mtl.location.line")) != None:
+                target_location = Location(filename.value, int(lineno.value))
+
+            # omit all properties which are MTL configurations
+            section.properties = list(filter(lambda k: not k.key.lower().startswith("mtl."), section.properties))
+            
+            template = TemplateSection(prop.value, target_location)
             ctx.templates.append(template)
 
             ## read any local definitions from the define template block
@@ -82,8 +110,20 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
                 if sections[index + 1].name.lower().startswith("state "):
                     properties: list[StateControllerProperty] = []
                     for property in sections[index + 1].properties:
-                        properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
-                    template.states.append(StateControllerSection(properties, sections[index + 1].location))
+                        if property.key.lower().startswith("mtl."):
+                            properties.append(StateControllerProperty(property.key, TriggerTree(TriggerTreeNode.ATOM, property.value, [], property.location), property.location))
+                        else:
+                            properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
+
+                    target_location = sections[index + 1].location
+                    if (filename := find(properties, lambda k: k.key.lower() == "mtl.location.file")) != None and \
+                       (lineno := find(properties, lambda k: k.key.lower() == "mtl.location.line")) != None:
+                        target_location = Location(filename.value.operator, int(lineno.value.operator))
+
+                    # omit all properties which are MTL configurations
+                    properties = list(filter(lambda k: not k.key.lower().startswith("mtl."), properties))
+
+                    template.states.append(StateControllerSection(properties, target_location))
                 elif sections[index + 1].name.lower().startswith("define parameters"):
                     if template.params != None:
                         raise TranslationError("A Define Template section may only contain 1 Define Parameters subsection.", sections[index + 1].location)
@@ -102,8 +142,16 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
                 raise TranslationError("Define Trigger section must provide a type property.", section.location)
             if (value := find(section.properties, lambda k: k.key.lower() == "value")) == None:
                 raise TranslationError("Define Trigger section must provide a value property.", section.location)
+            
+            target_location = section.location
+            if (filename := find(section.properties, lambda k: k.key.lower() == "mtl.location.file")) != None and \
+               (lineno := find(section.properties, lambda k: k.key.lower() == "mtl.location.line")) != None:
+                target_location = Location(filename.value, int(lineno.value))
 
-            trigger_section = TriggerSection(name.value, type.value, trigger.parseTrigger(value.value, value.location), section.location)
+            # omit all properties which are MTL configurations
+            section.properties = list(filter(lambda k: not k.key.lower().startswith("mtl."), section.properties))
+
+            trigger_section = TriggerSection(name.value, type.value, trigger.parseTrigger(value.value, value.location), target_location)
             ctx.triggers.append(trigger_section)
             if index + 1 < len(sections) and sections[index + 1].name.lower().startswith("define parameters"):
                 trigger_section.params = sections[index + 1]

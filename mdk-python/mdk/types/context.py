@@ -26,11 +26,13 @@ class StateController:
     type: str
     params: dict[str, Expression]
     triggers: list[Expression]
+    location: tuple[str, int]
 
     def __init__(self):
         self.type = ""
         self.params = {}
         self.triggers = []
+        self.location = ("<?>", 0)
 
     def __repr__(self):
         result = "[State ]"

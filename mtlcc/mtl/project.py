@@ -52,12 +52,15 @@ def loadDefinition(file: str) -> ProjectContext:
             all_loaded.append(target)
             ctx.source_files.append(target)
 
-    for i in range(10):
+    ## support up to 1000 state files
+    for i in range(1, 1000):
         if (st_next := find(section.properties, lambda k: equals_insensitive(k.key, f"st{i}"))) != None:
             target = search_file(st_next.value, file)
             if target not in all_loaded:
                 all_loaded.append(target)
                 ctx.source_files.append(target)
+        else:
+            break
 
     ## non-code files
     if (anim := find(section.properties, lambda k: equals_insensitive(k.key, "anim"))) != None:

@@ -17,6 +17,9 @@ def write_controller(ctrl: StateController, f: io.TextIOWrapper):
         f.write(f"trigger1 = {trigger}\n")
     for param in ctrl.params:
         f.write(f"{param} = {ctrl.params[param]}\n")
+    if ctrl.location[0] != "<?>" and ctrl.location[1] != 0:
+        f.write(f"mtl.location.file = {ctrl.location[0]}\n")
+        f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 
 def rewrite_function(fn: Callable) -> Callable:
     # get effective source code of the decorated function

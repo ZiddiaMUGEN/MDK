@@ -6,10 +6,14 @@ id = -2
 type = StateType.U
 movetype = MoveType.U
 physics = PhysicsType.U
+mtl.location.file = C:\Users\ziddi\MDK\mdk-python\examples\includes\superarmor.py
+mtl.location.line = 56
 
 [State ]
 type = CreateArmor
 trigger1 = true
 helperID = 11777
+mtl.location.file = C:\Users\ziddi\MDK\mdk-python\examples\includes\superarmor.py
+mtl.location.line = 57
 
 

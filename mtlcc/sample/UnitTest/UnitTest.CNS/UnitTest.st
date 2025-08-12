@@ -1538,7 +1538,7 @@ value = 5110;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:158
 [State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1585
 type = Explod
 trigger1 = Time = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1587
-anim = F((60 + (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const720p(56))), 1, 0))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1588
+anim = F(((60 + cond(((var(1)) > (Const720p(20))), 1, 0)) + cond(((var(1)) > (Const720p(56))), 1, 0)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1588
 postype = none;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1589
 pos = (Pos x + CameraPos x), 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1590
 facing = Facing;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1591
@@ -1678,7 +1678,7 @@ value = F7, (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const7
 type = Explod
 trigger1 = Time = 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1726
 trigger1 = !((var(0) & 256) / 255);!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1727
-anim = F((60 + (cond(((var(1)) > (Const720p(20))), 1, 0) + cond(((var(1)) > (Const720p(56))), 1, 0))));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1728
+anim = F(((60 + cond(((var(1)) > (Const720p(20))), 1, 0)) + cond(((var(1)) > (Const720p(56))), 1, 0)));!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1728
 postype = none;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1729
 pos = (Pos x + CameraPos x), 0;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1730
 facing = Facing;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\stdlib\common1.mtl:1731
