@@ -502,8 +502,11 @@ def applyPersist(ctx: TranslationContext):
                             TriggerTreeNode.BINARY_OP,
                             "||",
                             [
-                                new_trigger,
-                                TriggerTree(TriggerTreeNode.ATOM, "true", [], persisted.location)
+                                TriggerTree(TriggerTreeNode.FUNCTION_CALL, "cast", [
+                                    new_trigger,
+                                    TriggerTree(TriggerTreeNode.ATOM, "bool", [], persisted.location)
+                                ], persisted.location),
+                                TriggerTree(TriggerTreeNode.ATOM, "true", [], persisted.location),
                             ],
                             persisted.location
                         ))

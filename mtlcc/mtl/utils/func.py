@@ -108,7 +108,7 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
     result += f" & {mask.value}"
 
     if offset != 0:
-        result = f"({result}) / {c_int32(start_pow2 - 1).value}"
+        result = f"floor(({result}) / {c_int32(start_pow2 - 1).value})"
 
     return result
 

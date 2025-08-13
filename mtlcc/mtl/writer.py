@@ -210,7 +210,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             return Expression(result[0].type, tree.operator)
         elif "." in tree.operator and (enum_type := match_enum_parts(tree.operator, ctx)) != None:
             enum_result = enum_type[0].type
-            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.ATOM, tree.operator[len(enum_result.name)+1:], [], tree.location), table, ctx, expected, scope)
+            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.ATOM, tree.operator[len(enum_result.name)+1:], [], tree.location), table, ctx, [TypeSpecifier(enum_result)], scope)
         elif (state := find_statedef(tree.operator, ctx)) != None:
             ## if a statedef name matches, we emit a BUILTIN_STATE with the statedef number as the expression.
             return Expression(BUILTIN_STATE, str(state.parameters.id))
@@ -220,12 +220,13 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
         ## this needs to evaluate down to either a static expression (e.g. `Vel y`) or a variable access for user-defined structs.
-        if (struct_type := get_struct_type(tree.operator, table, ctx)) == None:
+        if (struct_type := get_struct_type(tree, table, ctx)) == None:
             raise TranslationError(f"Could not determine the type of the struct given by {tree.operator}.", tree.location)
         if struct_type.category == TypeCategory.BUILTIN_STRUCTURE:
-            if (member_type := get_struct_target(tree.operator, table, ctx)) == None:
+            if (member_type := get_struct_target(tree, table, ctx)) == None:
                 raise TranslationError(f"Could not determine the type of the struct member given by {tree.operator}.", tree.location)
-            return Expression(member_type, tree.operator)
+            ## TODO: this needs to be done recursively for struct->struct->struct->...
+            return Expression(member_type, f"{tree.children[0].operator} {tree.children[1].operator}")
         else:
             ## TODO: this needs to determine the VariableExpression represented by the struct access.
             raise TranslationError("I was too lazy to finish struct implementation!", tree.location)

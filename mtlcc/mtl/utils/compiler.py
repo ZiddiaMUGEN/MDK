@@ -44,6 +44,7 @@ def find_property(property: str, controller: StateController) -> list[StateContr
 def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location, scope: Optional[StateDefinitionScope] = None) -> list[TriggerDefinition]:
     results: list[TriggerDefinition] = []
     all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    
     for match in all_matches:
         is_match = True
         ## the input type count should exactly match.
@@ -54,6 +55,7 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
         for index in range(len(params)):
             ## this is to help handle automatic enum matching.
             next_expected = [TypeSpecifier(match.params[index].type)]
+            type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope)
             ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
             try:
                 if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope)) == None:
@@ -353,33 +355,36 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], scope: StateDef
         for child in tree.children:
             result += find_globals(child, locals, scope, ctx)
         return result
-    
-def get_struct_type(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
+
+def get_struct_type(input: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
     ## find the type of this struct, from either triggers or locals
-    struct_name = input.split(" ")[0].strip()
+    struct_name = input.children[0]
     struct_type: Optional[TypeDefinition] = None
-    if (match := find_trigger(struct_name, [], ctx, compiler_internal())) != None:
+    if (match := find_trigger(struct_name.operator, [], ctx, compiler_internal())) != None:
         struct_type = match.type
-    elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name))) != None:
+    elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name.operator))) != None:
         struct_type = var.type
     return struct_type
 
-def get_struct_target(input: str, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
+def get_struct_target(input: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
     ## first find the target at the top level
-    components = input.split(" ")
-
     if (struct_type := get_struct_type(input, table, ctx)) == None:
         return None
     if struct_type.category not in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE]: return None
     ## now determine the type of the field being accessed
-    if (target := find(struct_type.members, lambda k: equals_insensitive(k.split(":")[0], components[1]))) == None:
+    if input.children[1].node == TriggerTreeNode.ATOM:
+        target_name = input.children[1].operator
+    elif input.children[1].node == TriggerTreeNode.STRUCT_ACCESS:
+        target_name = input.children[1].children[0].operator
+    else:
+        raise TranslationError(f"Can't determine target of struct access for target with node {input.children[1].node}.", input.location)
+    if (target := find(struct_type.members, lambda k: equals_insensitive(k.split(":")[0], target_name))) == None:
         return None
     if (target_type := find_type(target.split(":")[1], ctx)) == None:
         return None
     ## if the target type is also a struct, and we have a secondary access, create a 'virtual local' for the target and recurse.
-    if target_type.category in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE] and len(components) > 2:
-        new_struct_string = "_target " + " ".join(components[2:])
-        return get_struct_target(new_struct_string, [TypeParameter("_target", target_type)], ctx)
+    if target_type.category in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE] and input.children[1].node == TriggerTreeNode.STRUCT_ACCESS:
+        return get_struct_target(input.children[1], [TypeParameter(input.children[1].children[0].operator, target_type)], ctx)
     ## return the identified target type
     return target_type
 
@@ -527,7 +532,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
             return [TypeSpecifier(matches[0].type)]
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
-        if (struct_type := get_struct_target(tree.operator, table, ctx)) == None:
+        if (struct_type := get_struct_target(tree, table, ctx)) == None:
             raise TranslationError(f"Could not determine the type of the struct member access given by {tree.operator}.", tree.location)
         return [TypeSpecifier(struct_type)]
     elif tree.node == TriggerTreeNode.REDIRECT:

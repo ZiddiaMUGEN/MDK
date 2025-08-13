@@ -20,6 +20,7 @@ class TriggerTree:
     operator: str
     children: list['TriggerTree']
     location: Location
+    precedence: bool = False
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, TriggerTree):
@@ -63,6 +64,12 @@ class TriggerTree:
             result += "\n" + "\t" * indent + ")"
         elif self.node == TriggerTreeNode.ATOM:
             result += " " + self.operator
+        elif self.node == TriggerTreeNode.STRUCT_ACCESS:
+            result += f" {self.operator} (\n"
+            result += self.children[0]._string(indent + 1)
+            for child in self.children[1:]:
+                result += " -> " + child._string(indent)
+            result += ")"
         elif self.node == TriggerTreeNode.REDIRECT:
             result += f" {self.operator} (\n"
             for child in self.children:
