@@ -12,7 +12,7 @@ from mdk.types.context import StateDefinition, TemplateDefinition, StateControll
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
-from mdk.types.builtins import IntType
+from mdk.types.builtins import IntType, StateNoType
 from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType
 
 from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
@@ -261,11 +261,22 @@ def do_template(name: str, validator: Optional[Callable[..., dict[str, Expressio
         if validator != None and (kwargs := validator(**kwargs)) == None:
             raise Exception(f"Could not place call to template with name {name}, template validation check failed.")
         context = CompilerContext.instance()
+
+        ## need to check for any StateNoType inputs
+        target_template = context.templates[name]
+
         new_controller = StateController()
         new_controller.type = name
         new_controller.params = {}
         for arg in kwargs:
-            new_controller.params[arg] = kwargs[arg]
+            target_type = target_template.params[arg]
+            next_arg = kwargs[arg]
+            if target_type == StateNoType and isinstance(next_arg, partial):
+                new_controller.params[arg] = Expression(next_arg.keywords["value"], StateNoType)
+            elif target_type == StateNoType and isinstance(next_arg, Callable):
+                new_controller.params[arg] = Expression(next_arg.__name__, StateNoType)
+            else:
+                new_controller.params[arg] = kwargs[arg]
         if len(context.trigger_stack) != 0:
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
         else:
