@@ -20,7 +20,7 @@ from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
 
-def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False) -> None:
+def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False, preserve_ir: bool = False, target_folder: str = "mdk-out") -> None:
     context = CompilerContext.instance()
     try:
         output_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), output)
@@ -75,14 +75,20 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             print(f"Preparing to run MTL compiler for input project {def_file}.")
             project = mtl.project.loadDefinition(def_file)
             project.source_files.append(output)
-            mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), "mdk-out"), project)
+            mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), target_folder), project)
+
+        ## delete the output file if we're not preserving IR
+        if not preserve_ir: 
+            os.remove(output)
+            for name in template_groups:
+                os.remove(name)
     except CompilationException as exc:
         create_compiler_error(exc)
     except Exception as exc:
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
 
-def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None, locations: bool = True) -> None:
+def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None, locations: bool = True, preserve_ir: bool = False) -> None:
     if len(inputs) == 0:
         raise Exception("Please specify some templates and/or triggers to be built.")
     context = CompilerContext.instance()

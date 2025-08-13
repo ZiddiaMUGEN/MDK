@@ -254,12 +254,14 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         exprn = emit_trigger_recursive(tree.children[1], target_table, ctx, scope = target_scope)
         if target.value.startswith("(") and target.value.endswith(")"):
             target.value = target.value[1:-1]
-        ## need to wrap with brackets if the result expression is a variable access
-        ## (since the result may be masked)
-        ## but we can just wrap everything, it should be safe...
         if exprn.value.startswith("(") and exprn.value.endswith(")"):
             exprn.value = exprn.value[1:-1]
-        return Expression(exprn.type, f"({target.value},{exprn.value})")
+        ## need to wrap with brackets if the result expression is a variable access
+        ## (since the result may be masked)
+        ## unfortunately it's not safe to just wrap everything so we have to actually detect it.
+        if exprn.value.strip().startswith("var(") or exprn.value.strip().startswith("fvar("):
+            return Expression(exprn.type, f"({target.value},{exprn.value})")
+        return Expression(exprn.type, f"{target.value},{exprn.value}")
 
     raise TranslationError(f"Failed to emit a single trigger value.", tree.location)
 

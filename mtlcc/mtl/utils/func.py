@@ -235,7 +235,8 @@ def search_file(source: str, includer: str, extra: list[str] = []) -> str:
         f"{os.path.dirname(os.path.realpath(__file__))}/{source}", 
         f"{os.path.realpath(source)}",
         f"{os.path.dirname(os.path.realpath(__file__))}/stdlib/{source}", 
-        f"{os.path.dirname(os.path.realpath(__file__))}/../stdlib/{source}"
+        f"{os.path.dirname(os.path.realpath(__file__))}/../stdlib/{source}",
+        f"{os.path.dirname(os.path.realpath(__file__))}/../{source}"
     ]
     search += extra
     for path in search:
