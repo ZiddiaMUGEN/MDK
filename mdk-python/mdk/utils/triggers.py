@@ -21,7 +21,7 @@ def TriggerAnd(*exprs_: Expression | bool):
             raise Exception(f"Expected input to AND statement to be an Expression with type `bool`, not {expr.type.name}.")
         
     expr_string = " && ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
-    return Expression(expr_string, BoolType)
+    return Expression(f"({expr_string})", BoolType)
 
 def TriggerOr(*exprs_: Expression | bool):
     ## auto-convert bools to BoolExpression.
@@ -38,7 +38,7 @@ def TriggerOr(*exprs_: Expression | bool):
             raise Exception(f"Expected input to OR statement to be an Expression with type `bool`, not {expr.type.name}.")
         
     expr_string = " || ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
-    return Expression(expr_string, BoolType)
+    return Expression(f"({expr_string})", BoolType)
 
 def TriggerNot(expr: Expression):
     ## auto-convert bools to BoolExpression.
@@ -61,7 +61,7 @@ def TriggerAssign(expr1: Expression, expr2: Expression):
     if check_types_assignable(expr1.type, expr2.type) == None:
         raise Exception(f"Inputs to assignment expression must have assignable types, not {expr1.type.name} and {expr2.type.name}.")
 
-    return expr1.make_expression(f"{expr1.exprn} := {expr2.exprn}")
+    return expr1.make_expression(f"({expr1.exprn} := {expr2.exprn})")
 
 def TriggerPush():
     ctx = CompilerContext.instance()

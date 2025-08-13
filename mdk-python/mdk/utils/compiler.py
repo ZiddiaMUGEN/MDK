@@ -9,7 +9,7 @@ from mdk.types.context import StateController
 from mdk.utils.shared import format_bool
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
 
-def write_controller(ctrl: StateController, f: io.TextIOWrapper):
+def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool):
     f.write("[State ]\n")
     f.write(f"type = {ctrl.type}\n")
     if len(ctrl.triggers) == 0: ctrl.triggers.append(format_bool(True))
@@ -17,7 +17,7 @@ def write_controller(ctrl: StateController, f: io.TextIOWrapper):
         f.write(f"trigger1 = {trigger}\n")
     for param in ctrl.params:
         f.write(f"{param} = {ctrl.params[param]}\n")
-    if ctrl.location[0] != "<?>" and ctrl.location[1] != 0:
+    if ctrl.location[0] != "<?>" and ctrl.location[1] != 0 and locations:
         f.write(f"mtl.location.file = {ctrl.location[0]}\n")
         f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 

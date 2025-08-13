@@ -20,7 +20,7 @@ from mdk.utils.compiler import write_controller, rewrite_function
 
 from mdk.stdlib.controllers import ChangeState
 
-def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False) -> None:
+def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False) -> None:
     context = CompilerContext.instance()
     try:
         output_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), output)
@@ -43,14 +43,14 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 if context.templates[t].library == None:
                     context.templates[t].library = output + ".inc"
                 template_groups.add(context.templates[t].library)
-            library(templates, dirname = os.path.abspath(os.path.dirname(def_file)))
+            library(templates, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
         
         with open(output, mode="w") as f:
             if not skip_templates and len(context.templates) != 0:
                 for group in template_groups:
                     f.write("[Include]\n")
                     f.write(f"source = {group}\n")
-            f.write("\n")
+            if not compress: f.write("\n")
             for name in context.statedefs:
                 statedef = context.statedefs[name]
                 f.write(f"[Statedef {name}]\n")
@@ -60,13 +60,14 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                     f.write(f"local = {local.name} = {local.type.name}\n")
                 file_path = inspect.getsourcefile(statedef.fn)
                 _, line_number = inspect.getsourcelines(statedef.fn)
-                f.write(f"mtl.location.file = {file_path}\n")
-                f.write(f"mtl.location.line = {line_number}\n")
-                f.write("\n")
+                if locations:
+                    f.write(f"mtl.location.file = {file_path}\n")
+                    f.write(f"mtl.location.line = {line_number}\n")
+                if not compress: f.write("\n")
                 for controller in statedef.controllers:
-                    write_controller(controller, f)
-                    f.write("\n")
-                f.write("\n")
+                    write_controller(controller, f, locations)
+                    if not compress: f.write("\n")
+                if not compress: f.write("\n")
 
         ## read the DEF file (using MTL) and add the output to the statefile list,
         ## then re-export the DEF file.
@@ -81,7 +82,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
 
-def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None) -> None:
+def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None, locations: bool = True) -> None:
     if len(inputs) == 0:
         raise Exception("Please specify some templates and/or triggers to be built.")
     context = CompilerContext.instance()
@@ -135,15 +136,16 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
                             f.write(f"local = {local.name} = {local.type.name}\n")
                         file_path = inspect.getsourcefile(definition.fn)
                         _, line_number = inspect.getsourcelines(definition.fn)
-                        f.write(f"mtl.location.file = {file_path}\n")
-                        f.write(f"mtl.location.line = {line_number}\n")
+                        if locations:
+                            f.write(f"mtl.location.file = {file_path}\n")
+                            f.write(f"mtl.location.line = {line_number}\n")
                         f.write("\n")
                         f.write("[Define Parameters]\n")
                         for param in definition.params:
                             f.write(f"{param} = {definition.params[param].name}\n")
                         f.write("\n")
                         for controller in definition.controllers:
-                            write_controller(controller, f)
+                            write_controller(controller, f, locations)
                             f.write("\n")
                         f.write("\n")
                     elif isinstance(definition, TriggerDefinition):
@@ -155,8 +157,9 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
                         f.write(f"value = {definition.exprn.exprn}\n")
                         file_path = inspect.getsourcefile(definition.fn)
                         _, line_number = inspect.getsourcelines(definition.fn)
-                        f.write(f"mtl.location.file = {file_path}\n")
-                        f.write(f"mtl.location.line = {line_number}\n")
+                        if locations:
+                            f.write(f"mtl.location.file = {file_path}\n")
+                            f.write(f"mtl.location.line = {line_number}\n")
                         f.write("\n")
                         f.write("[Define Parameters]\n")
                         for param in definition.params:

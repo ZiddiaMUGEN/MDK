@@ -220,7 +220,7 @@ def ChangeAnim2(value: Expression, elem: Optional[ConvertibleExpression] = None,
     return result
 
 @controller(value = [StateNoType, IntType, StringType], ctrl = [None, BoolType], anim = [None, IntType])
-def ChangeState(value: Union[Expression, str, int, Callable[..., None]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None) -> StateController:
+def ChangeState(value: Union[Expression, str, int, Callable[..., None]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_stateno(result, "value", value)

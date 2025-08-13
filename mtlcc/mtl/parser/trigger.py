@@ -85,7 +85,7 @@ trigger_grammar = Lark(
     RBRACKET: ")"
     COMMA: ","
     TOKEN: (CNAME) (CNAME|" "|".")*
-    STRING: QUOTE (CNAME|" "|"."|"%")+ QUOTE
+    STRING: QUOTE (CNAME|" "|"."|"%"|"-")+ QUOTE
 
     QUOTE: "\\"" | "'"
     

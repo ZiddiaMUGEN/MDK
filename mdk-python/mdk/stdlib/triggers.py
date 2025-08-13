@@ -26,6 +26,27 @@ def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecif
         return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
     return _callable
 
+## helper function to take an optional argument and the types involved and produce an output.
+def TriggerExpressionWithOptional(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable[..., Expression]:
+    def _callable(*args) -> Expression:
+        if len(args) == 0:
+            return Expression(f"{name}", output)
+        if len(args) != len(inputs):
+            raise Exception(f"Trigger expression {name} expected {len(inputs)} or 0 inputs, but got {len(args)} instead.")
+        conv_args: list[Expression] = []
+        for index in range(len(args)):
+            next_arg = convert(args[index])
+            if not isinstance(next_arg, Expression):
+                raise Exception(f"Inputs to trigger expressions should always be Expressions, not {type(args[index])}.")
+            if next_arg.type in [UStringType, StringType] and inputs[index] in [UStringType, StringType]:
+                ## UString and String are considered matching.
+                next_arg.type = UStringType
+            elif next_arg.type != inputs[index]:
+                raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {next_arg.type.name}")
+            conv_args.append(next_arg)
+        return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
+    return _callable
+
 ## this is used for built-in position/velocity structures (e.g. Vel, Pos)
 ## it avoids the need for custom structure types, which are still not
 ## fully implemented either here or in MTL.
@@ -83,7 +104,7 @@ HitVel = PositionExpression("HitVel", FloatType)
 ID = Expression("ID", IntType)
 ## ifelse
 InGuardDist = Expression("InGuardDist", BoolType)
-IsHelper = TriggerExpression("IsHelper", [IntType], BoolType)
+IsHelper = TriggerExpressionWithOptional("IsHelper", [IntType], BoolType)
 IsHomeTeam = Expression("IsHomeTeam", BoolType)
 Life = Expression("Life", IntType)
 LifeMax = Expression("LifeMax", IntType)
@@ -99,12 +120,12 @@ MoveType = Expression("MoveType", defined.MoveType)
 MoveReversed = Expression("MoveReversed", IntType)
 Name = Expression("Name", UStringType)
 NumEnemy = Expression("NumEnemy", IntType)
-NumExplod = TriggerExpression("NumExplod", [IntType], IntType)
-NumHelper = TriggerExpression("NumHelper", [IntType], IntType)
+NumExplod = TriggerExpressionWithOptional("NumExplod", [IntType], IntType)
+NumHelper = TriggerExpressionWithOptional("NumHelper", [IntType], IntType)
 NumPartner = Expression("NumPartner", IntType)
 NumProj = Expression("NumProj", IntType)
 NumProjID = TriggerExpression("NumProjID", [IntType], IntType)
-NumTarget = TriggerExpression("NumTarget", [IntType], IntType)
+NumTarget = TriggerExpressionWithOptional("NumTarget", [IntType], IntType)
 P1Name = Expression("P1Name", UStringType)
 P2BodyDist = PositionExpression("P2BodyDist", FloatType)
 P2Dist = PositionExpression("P2Dist", FloatType)
