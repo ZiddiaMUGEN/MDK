@@ -245,7 +245,7 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
     replaced = False
 
     if iterations > 20:
-        raise TranslationError("Template replacement failed to complete after 20 iterations.", compiler_internal())
+        raise TranslationError("Template replacement failed to complete after 20 iterations.", compiler_internal(ctx.compiler_flags))
     
     ## process each statedef and each controller within the statedefs
     ## if a controller's `type` property references a non-builtin template, remove
@@ -415,7 +415,7 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
     replaced = False
 
     if iterations > 20:
-        raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal())
+        raise TranslationError("Trigger replacement failed to complete after 20 iterations.", compiler_internal(ctx.compiler_flags))
     
     ## monstrous, but i do not know if it is avoidable.
     for statedef in ctx.statedefs:
@@ -502,8 +502,11 @@ def applyPersist(ctx: TranslationContext):
                             TriggerTreeNode.BINARY_OP,
                             "||",
                             [
-                                new_trigger,
-                                TriggerTree(TriggerTreeNode.ATOM, "true", [], persisted.location)
+                                TriggerTree(TriggerTreeNode.FUNCTION_CALL, "cast", [
+                                    new_trigger,
+                                    TriggerTree(TriggerTreeNode.ATOM, "bool", [], persisted.location)
+                                ], persisted.location),
+                                TriggerTree(TriggerTreeNode.ATOM, "true", [], persisted.location),
                             ],
                             persisted.location
                         ))
@@ -520,7 +523,9 @@ def applyStateNumbers(ctx: TranslationContext):
     ## now assign state numbers sequentially to states missing them.
     for statedef in ctx.statedefs:
         if statedef.parameters.id == None:
-            statedef.parameters.id = min(set(range(max(all_stateno) + 2)) - all_stateno)
+            statedef.parameters.id = 0
+            if len(all_stateno) == 1: statedef.parameters.id = max(all_stateno) + 1
+            if len(all_stateno) > 1: statedef.parameters.id = min(set(range(max(all_stateno) + 2)) - all_stateno)
             all_stateno.add(statedef.parameters.id)
 
 def checkScopes(ctx: TranslationContext):
@@ -720,7 +725,7 @@ def createOutput(ctx: TranslationContext) -> list[str]:
     ## the debuginfo documents the MTL version in use and the variable table state.
     ## it also documents a list of types, templates, and triggers used during compilation.
     ## this info is not for human consumption, it's used for debugging.
-    output += debuginfo(DebugCategory.VERSION_HEADER, MTL_VERSION)
+    output += debuginfo(DebugCategory.VERSION_HEADER, MTL_VERSION, ctx.compiler_flags)
     output.append("")
 
     output += write_type_table(ctx)

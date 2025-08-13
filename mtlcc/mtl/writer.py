@@ -10,7 +10,7 @@ def write_type_table(ctx: TranslationContext) -> list[str]:
     output: list[str] = []
     for type in ctx.types:
         if type.category not in [TypeCategory.BUILTIN, TypeCategory.BUILTIN_DENY, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG]:
-            output += debuginfo(DebugCategory.TYPE_DEFINITION, type)
+            output += debuginfo(DebugCategory.TYPE_DEFINITION, type, ctx.compiler_flags)
     output.append("")
     return output
 
@@ -18,15 +18,15 @@ def write_variable_table(ctx: TranslationContext) -> list[str]:
     ## handle each scoped table.
     output: list[str] = []
     for scope in ctx.allocations:
-        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][0] })
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][0] }, ctx.compiler_flags)
         for global_variable in ctx.globals:
             if global_variable.scope == scope and global_variable.type != BUILTIN_FLOAT:
-                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
+                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable, ctx.compiler_flags)
 
-        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][1] })
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][1] }, ctx.compiler_flags)
         for global_variable in ctx.globals:
             if global_variable.scope == scope and global_variable.type == BUILTIN_FLOAT:
-                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable)
+                output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable, ctx.compiler_flags)
     
     output.append("")
     return output
@@ -51,10 +51,12 @@ def write_statedef_property(statedef: StateDefinition, prop: str, output: list[s
 def write_statedef(statedef: StateDefinition, ctx: TranslationContext) -> list[str]:
     output: list[str] = []
 
-    output += debuginfo(DebugCategory.STATEDEF, statedef)
-    output.append(f"[Statedef {statedef.parameters.id}]{debuginfo(DebugCategory.LOCATION, statedef.location)[0]}")
+    output += debuginfo(DebugCategory.STATEDEF, statedef, ctx.compiler_flags)
+    debug = debuginfo(DebugCategory.LOCATION, statedef.location, ctx.compiler_flags)
+    debug = debug[0] if len(debug) > 0 else ""
+    output.append(f"[Statedef {statedef.parameters.id}]{debug}")
     for local_variable in statedef.locals:
-        output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, local_variable)
+        output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, local_variable, ctx.compiler_flags)
 
     for prop in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset"]:
         write_statedef_property(statedef, prop, output)
@@ -82,7 +84,7 @@ def emit_enum(input: str, type: TypeDefinition) -> str:
                 result += 2 ** index
         return str(result)
     
-    raise TranslationError(f"Could not emit an enumeration value for input {input} and type {type.name}.", compiler_internal())
+    raise TranslationError(f"Could not emit an enumeration value for input {input} and type {type.name}.", compiler_internal(None))
 
 ## this function handles converting trees to Expressions.
 ## it also handles type-checking, the types in the Expressions are concrete.
@@ -210,7 +212,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             return Expression(result[0].type, tree.operator)
         elif "." in tree.operator and (enum_type := match_enum_parts(tree.operator, ctx)) != None:
             enum_result = enum_type[0].type
-            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.ATOM, tree.operator[len(enum_result.name)+1:], [], tree.location), table, ctx, expected, scope)
+            return emit_trigger_recursive(TriggerTree(TriggerTreeNode.ATOM, tree.operator[len(enum_result.name)+1:], [], tree.location), table, ctx, [TypeSpecifier(enum_result)], scope)
         elif (state := find_statedef(tree.operator, ctx)) != None:
             ## if a statedef name matches, we emit a BUILTIN_STATE with the statedef number as the expression.
             return Expression(BUILTIN_STATE, str(state.parameters.id))
@@ -220,12 +222,13 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
         ## this needs to evaluate down to either a static expression (e.g. `Vel y`) or a variable access for user-defined structs.
-        if (struct_type := get_struct_type(tree.operator, table, ctx)) == None:
+        if (struct_type := get_struct_type(tree, table, ctx)) == None:
             raise TranslationError(f"Could not determine the type of the struct given by {tree.operator}.", tree.location)
         if struct_type.category == TypeCategory.BUILTIN_STRUCTURE:
-            if (member_type := get_struct_target(tree.operator, table, ctx)) == None:
+            if (member_type := get_struct_target(tree, table, ctx)) == None:
                 raise TranslationError(f"Could not determine the type of the struct member given by {tree.operator}.", tree.location)
-            return Expression(member_type, tree.operator)
+            ## TODO: this needs to be done recursively for struct->struct->struct->...
+            return Expression(member_type, f"{tree.children[0].operator} {tree.children[1].operator}")
         else:
             ## TODO: this needs to determine the VariableExpression represented by the struct access.
             raise TranslationError("I was too lazy to finish struct implementation!", tree.location)
@@ -261,7 +264,8 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
     raise TranslationError(f"Failed to emit a single trigger value.", tree.location)
 
 def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> str:
-    debug = debuginfo(DebugCategory.LOCATION, tree.location)[0]
+    debug = debuginfo(DebugCategory.LOCATION, tree.location, ctx.compiler_flags)
+    debug = debug[0] if len(debug) > 0 else ""
     output = emit_trigger_recursive(tree, table, ctx, expected, scope)
     ## BUILTIN_ANY is used in multivalue, don't strip those.
     if output.value.startswith("(") and output.value.endswith(")") and (expected == None or len(expected) == 1):
@@ -271,7 +275,9 @@ def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: Translation
 def write_state_controller(controller: StateController, table: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[str]:
     output: list[str] = []
 
-    output.append(f"[State ]{debuginfo(DebugCategory.LOCATION, controller.location)[0]}")
+    debug = debuginfo(DebugCategory.LOCATION, controller.location, ctx.compiler_flags)
+    debug = debug[0] if len(debug) > 0 else ""
+    output.append(f"[State ]{debug}")
 
     ## identify template/builtin for this controller
     if (template := find_template(controller.name, ctx)) == None:

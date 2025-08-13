@@ -7,8 +7,8 @@ from mtl.types.context import LoadContext, TranslationMode, CompilerConfiguratio
 from mtl.types.ini import *
 from mtl.parser import ini, trigger
 
-def get_libmtl() -> INISection:
-    return INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal())], compiler_internal())
+def get_libmtl(cc: CompilerConfiguration) -> INISection:
+    return INISection("Include", "", [INIProperty("source", "stdlib/libmtl.inc", compiler_internal(cc))], compiler_internal(cc))
 
 def loadFile(file: str, cc: CompilerConfiguration, cycle: list[str]) -> LoadContext:
     cycle_detection = find(cycle, lambda k: os.path.realpath(file) == os.path.realpath(k))
@@ -19,7 +19,7 @@ def loadFile(file: str, cc: CompilerConfiguration, cycle: list[str]) -> LoadCont
         while index >= 0:
             print(f"\t-> {os.path.realpath(cycle[index])}")
             index -= 1
-        raise TranslationError("A cycle was detected during include processing.", compiler_internal())
+        raise TranslationError("A cycle was detected during include processing.", compiler_internal(cc))
 
     ctx = LoadContext(file, cc)
 

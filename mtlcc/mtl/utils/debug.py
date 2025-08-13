@@ -3,7 +3,7 @@ from typing import Any, Optional
 from mtl.types.shared import Location, DebugCategory
 from mtl.types.translation import AllocationTable, TypeParameter, TypeDefinition, TriggerDefinition, TemplateDefinition, StateDefinition
 from mtl.types.builtins import BUILTIN_FLOAT
-from mtl.types.context import DebuggingContext, DebugStateInfo
+from mtl.types.context import DebuggingContext, DebugStateInfo, CompilerConfiguration
 
 from mtl.utils.func import mask_variable, get_all
 
@@ -17,7 +17,8 @@ def get_state_by_id(id: int, ctx: DebuggingContext) -> Optional[DebugStateInfo]:
         return matches[0]
     return next(filter(lambda k: not k.is_common, matches), None)
 
-def debuginfo(cat: DebugCategory, data: Any) -> list[str]:
+def debuginfo(cat: DebugCategory, data: Any, cc: CompilerConfiguration) -> list[str]:
+    if cc.no_compiler_internal: return []
     if cat == DebugCategory.VERSION_HEADER:
         return debuginfo_header(data)
     elif cat == DebugCategory.VARIABLE_TABLE:

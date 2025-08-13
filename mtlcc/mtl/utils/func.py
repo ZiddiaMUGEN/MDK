@@ -24,7 +24,8 @@ def tryparse(input: str, fn: Callable[[str], T]) -> Optional[T]:
     except:
         return None
 
-def compiler_internal() -> Location:
+def compiler_internal(cc: Optional[CompilerConfiguration]) -> Location:
+    if cc != None and cc.no_compiler_internal: return Location("<?>", 0)
     caller = getframeinfo(stack()[1][0])
     return Location(caller.filename, caller.lineno)
 
@@ -108,7 +109,7 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
     result += f" & {mask.value}"
 
     if offset != 0:
-        result = f"({result}) / {c_int32(start_pow2 - 1).value}"
+        result = f"floor(({result}) / {c_int32(start_pow2 - 1).value})"
 
     return result
 
@@ -240,4 +241,4 @@ def search_file(source: str, includer: str, extra: list[str] = []) -> str:
     for path in search:
         if os.path.exists(path):
             return path
-    raise TranslationError(f"Could not find the source file specified by {source} for inclusion.", compiler_internal())
+    raise TranslationError(f"Could not find the source file specified by {source} for inclusion.", compiler_internal(None))
