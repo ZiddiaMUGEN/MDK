@@ -13,7 +13,7 @@ def loadDefinition(file: str) -> ProjectContext:
         ctx.contents = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
 
     if (section := find(ctx.contents, lambda k: equals_insensitive(k.name, "Files"))) == None:
-        raise TranslationError("Input definition file must contain a [Files] section.", compiler_internal())
+        raise TranslationError("Input definition file must contain a [Files] section.", compiler_internal(ctx.compiler_flags))
     
     if (common := find(section.properties, lambda k: equals_insensitive(k.key, "stcommon"))) == None:
         raise TranslationError("Input definition file must specify common state file via `stcommon` key.", section.location)

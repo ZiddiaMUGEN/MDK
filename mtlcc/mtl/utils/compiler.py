@@ -360,7 +360,7 @@ def get_struct_type(input: TriggerTree, table: list[TypeParameter], ctx: Transla
     ## find the type of this struct, from either triggers or locals
     struct_name = input.children[0]
     struct_type: Optional[TypeDefinition] = None
-    if (match := find_trigger(struct_name.operator, [], ctx, compiler_internal())) != None:
+    if (match := find_trigger(struct_name.operator, [], ctx, compiler_internal(ctx.compiler_flags))) != None:
         struct_type = match.type
     elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name.operator))) != None:
         struct_type = var.type

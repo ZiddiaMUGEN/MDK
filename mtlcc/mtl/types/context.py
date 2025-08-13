@@ -22,6 +22,8 @@ class CompilerConfiguration:
     no_implicit_enum: bool = False
     ## if enabled, the typechecker will not allow expressions to be used as the target of ChangeState and ChangeState-like properties.
     no_changestate_expression: bool = False
+    ## if enabled, the debugger will not emit debuginfo string or compiler-internal locations (improves compilation speed)
+    no_compiler_internal: bool = False
 
 @dataclass
 class LoadContext:

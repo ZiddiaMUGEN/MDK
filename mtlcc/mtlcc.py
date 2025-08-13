@@ -78,7 +78,7 @@ def runCompilerFromDef(input: str, output: str, projectContext: ProjectContext):
         ## so the processIncludes call has to be moved out to here.
         # create a virtual include for libmtl.inc.
         # libmtl.inc has several required types for the builtins to function.
-        loadContext.includes.insert(0, loader.get_libmtl())
+        loadContext.includes.insert(0, loader.get_libmtl(loadContext.compiler_flags))
         loader.processIncludes([], loadContext)
 
         loadContext.filename = os.path.abspath(input)

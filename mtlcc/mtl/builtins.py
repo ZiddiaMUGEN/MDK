@@ -271,7 +271,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
     return baseTriggers
 
 def builtin_cond(exprs: list[Expression], ctx: TranslationContext) -> Expression:
-    if (widest := get_widest_match(exprs[1].type, exprs[2].type, ctx, compiler_internal())) == None:
+    if (widest := get_widest_match(exprs[1].type, exprs[2].type, ctx, compiler_internal(ctx.compiler_flags))) == None:
         raise TranslationError(f"Conditional expression (cond and ifelse) must provide 2 expressions with compatible types.", Location("mtl/builtins.py", line_number()))
     return Expression(widest, f"cond({exprs[0].value}, {exprs[1].value}, {exprs[2].value})")
 
@@ -322,12 +322,12 @@ def builtin_bitnot(exprs: list[Expression], ctx: TranslationContext) -> Expressi
     return Expression(exprs[0].type, f"(~{exprs[0].value})")
 
 def builtin_binary(exprs: list[Expression], ctx: TranslationContext, op: str) -> Expression:
-    if (result := get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal())) != None:
+    if (result := get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal(ctx.compiler_flags))) != None:
         return Expression(result, f"({exprs[0].value} {op} {exprs[1].value})")
     raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
 
 def builtin_compare(exprs: list[Expression], ctx: TranslationContext, op: str) -> Expression:
-    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal()) != None:
+    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal(ctx.compiler_flags)) != None:
         return Expression(BUILTIN_BOOL, f"({exprs[0].value} {op} {exprs[1].value})")
     raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for operator {op}.", Location("mtl/builtins.py", line_number()))
 
