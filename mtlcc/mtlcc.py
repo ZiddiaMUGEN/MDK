@@ -91,13 +91,17 @@ def runCompilerFromDef(input: str, output: str, projectContext: ProjectContext):
         ## identify target file
         target_file = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".st")
 
+        print(f"Start writing output states to state file {target_file}.")
         with open(target_file, mode="w") as f:
             f.writelines(s + "\n" for s in translator.createOutput(translated))
+        print("Done writing state data.")
 
         ## generate debugging info
         debug_file = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".mdbg")
         translated.debugging.filename = os.path.abspath(input)
+        print(f"Start writing debugging database to file {debug_file}.")
         database.writeDatabase(debug_file, translated.debugging)
+        print("Done writing debugging data.")
 
         ## emit CNS constants file
         target_cns = os.path.realpath(output) + "/" + os.path.basename(os.path.splitext(input)[0] + ".constants")

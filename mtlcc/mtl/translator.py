@@ -135,7 +135,7 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
         if get_type_match(result_type[0].type, trigger_type, ctx, trigger_definition.location) == None:
             raise TranslationError(f"Could not match type {result_type[0].type.name} to expected type {trigger_type.name} on trigger {trigger_name}.", trigger_definition.location)
 
-        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type, None, param_defs, trigger_definition.value, trigger_definition.location))
+        ctx.triggers.append(TriggerDefinition(trigger_name, trigger_type, None, param_defs, trigger_definition.value, trigger_definition.location, trigger_name.lower()))
     print(f"Successfully resolved {len(ctx.triggers)} trigger function definitions")
 
 def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
@@ -310,6 +310,7 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
     if iterations == 0: print("Successfully completed template replacement.")
 
 def createGlobalsTable(ctx: TranslationContext):
+    print("Start global variable identification and assignment...")
     ## initialize the scopes list in ctx based on the scopes of each statedef.
     ## the SHARED, PLAYER, HELPER, and TARGET scopes will all exist even if not used.
     ## the HELPER(xx) scopes are created only if they are used.
@@ -386,8 +387,10 @@ def createGlobalsTable(ctx: TranslationContext):
         result_scoped.append(g)
 
     ctx.globals = result_scoped
+    print("Finish global variable identification.")
 
 def fullPassTypeCheck(ctx: TranslationContext):
+    print("Waiting for initial type check to complete...")
     for statedef in ctx.statedefs:
         table = statedef.locals + list(filter(lambda k: scopes_compatible(statedef.scope, k.scope), ctx.globals))
         for controller in statedef.states:
@@ -670,6 +673,12 @@ def checkScopes(ctx: TranslationContext):
                         if not scopes_compatible(statedef.scope, target_statedef.scope):
                             raise TranslationError(f"Target state {target_node.operator} for HitOverride from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
                     
+def checkStateLength(ctx: TranslationContext):
+    print("Start state length check...")
+    for statedef in ctx.statedefs:
+        if len(statedef.states) > 512:
+            raise TranslationError(f"State definition for state {statedef.name} has more than 512 state controllers after template resolution. Reduce the size of this state definition or its templates.", statedef.location)
+    print("Finished state length check.")
 
 def translateContext(load_ctx: LoadContext) -> TranslationContext:
     ctx = TranslationContext(load_ctx.filename, load_ctx.compiler_flags)
@@ -700,9 +709,7 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     translateStateDefinitions(load_ctx, ctx)
     replaceTemplates(ctx)
 
-    for statedef in ctx.statedefs:
-        if len(statedef.states) > 512:
-            raise TranslationError(f"State definition for state {statedef.name} has more than 512 state controllers after template resolution. Reduce the size of this state definition or its templates.", statedef.location)
+    checkStateLength(ctx)
         
     createGlobalsTable(ctx)
     fullPassTypeCheck(ctx)
@@ -733,7 +740,8 @@ def createOutput(ctx: TranslationContext) -> list[str]:
 
     ## now iterate each statedef and produce output, attaching variable debuginfo as needed.
     for statedef in ctx.statedefs:
-        matches = get_all(ctx.statedefs, lambda k: k.parameters.id == statedef.parameters.id and k.location != statedef.location)
+        matches = [sd for sd in ctx.statedefs if sd.parameters.id == statedef.parameters.id and sd.location != statedef.location]
+        #matches = get_all(ctx.statedefs, lambda k: k.parameters.id == statedef.parameters.id and k.location != statedef.location)
 
         if len(matches) == 0:
             output += write_statedef(statedef, ctx)

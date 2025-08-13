@@ -23,7 +23,7 @@ def find_statedef(state_name: str, ctx: TranslationContext) -> Optional[StateDef
 def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext, loc: Location) -> Optional[TriggerDefinition]:
     #all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     trigger_lower = trigger_name.lower()
-    all_matches = [trig for trig in ctx.triggers if trig.name.lower() == trigger_lower]
+    all_matches = [trig for trig in ctx.triggers if trig._lower == trigger_lower]
     ## there may be multiple candidate matches, we need to check if the types provided as input match the types of the candidate.
     for match in all_matches:
         ## the input type count should exactly match.
@@ -47,7 +47,7 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
     results: list[TriggerDefinition] = []
     #all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     trigger_lower = trigger_name.lower()
-    all_matches = [trig for trig in ctx.triggers if trig.name.lower() == trigger_lower]
+    all_matches = [trig for trig in ctx.triggers if trig._lower == trigger_lower]
     
     for match in all_matches:
         is_match = True

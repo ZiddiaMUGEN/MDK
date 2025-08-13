@@ -73,6 +73,7 @@ class TriggerDefinition:
     params: list[TypeParameter]
     exprn: Optional[TriggerTree]
     location: Location
+    _lower: str
     category: TriggerCategory = TriggerCategory.SIMPLE
 
 class TemplateCategory(Enum):
