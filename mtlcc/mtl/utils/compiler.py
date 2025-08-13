@@ -21,7 +21,9 @@ def find_statedef(state_name: str, ctx: TranslationContext) -> Optional[StateDef
     return find(ctx.statedefs, lambda k: equals_insensitive(k.name, state_name) or str(k.parameters.id) == state_name)
 
 def find_trigger(trigger_name: str, param_types: list[TypeDefinition], ctx: TranslationContext, loc: Location) -> Optional[TriggerDefinition]:
-    all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    #all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    trigger_lower = trigger_name.lower()
+    all_matches = [trig for trig in ctx.triggers if trig.name.lower() == trigger_lower]
     ## there may be multiple candidate matches, we need to check if the types provided as input match the types of the candidate.
     for match in all_matches:
         ## the input type count should exactly match.
@@ -43,7 +45,9 @@ def find_property(property: str, controller: StateController) -> list[StateContr
 ## this checks EACH possible match and identifies which can potentially match the input trigger.
 def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location, scope: Optional[StateDefinitionScope] = None) -> list[TriggerDefinition]:
     results: list[TriggerDefinition] = []
-    all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    #all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
+    trigger_lower = trigger_name.lower()
+    all_matches = [trig for trig in ctx.triggers if trig.name.lower() == trigger_lower]
     
     for match in all_matches:
         is_match = True
