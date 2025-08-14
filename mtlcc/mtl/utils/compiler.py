@@ -251,6 +251,12 @@ def parse_controller(state: StateControllerSection, ctx: TranslationContext) -> 
     return StateController(name, triggers, properties, state.location)
 
 def replace_recursive(tree: TriggerTree, old: TriggerTree, new: TriggerTree):
+    ## make sure to replace THIS tree if it exactly matches the old one.
+    if tree == old:
+        tree.node = new.node
+        tree.children = copy.deepcopy(new.children)
+        tree.operator = new.operator
+        return
     ## this iterates its children.
     for subindex in range(len(tree.children)):
         if tree.children[subindex] == old:
