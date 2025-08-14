@@ -77,6 +77,8 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             print(f"Preparing to run MTL compiler for input project {def_file}.")
             project = mtl.project.loadDefinition(def_file)
             project.source_files.append(output)
+            for global_variable in context.globals:
+                project.global_forwards[global_variable.name] = global_variable.type.name
             mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), target_folder), project)
 
         ## delete the output file if we're not preserving IR
