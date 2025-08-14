@@ -84,4 +84,11 @@ def loadDefinition(file: str) -> ProjectContext:
             if property.key.lower() in LEGAL_COMPILER_FLAGS:
                 ctx.compiler_flags.__dict__[property.key.lower()] = property.value.lower() == "true"
 
+    ## pre-defined globals
+    if (section := find(ctx.contents, lambda k: equals_insensitive(k.name, "Globals"))) != None:
+        for property in section.properties:
+            if property.key in ctx.global_forwards:
+                raise TranslationError(f"Global variable forward declaration with name {property.key} already exists!", property.location)
+            ctx.global_forwards[property.key] = property.value
+
     return ctx

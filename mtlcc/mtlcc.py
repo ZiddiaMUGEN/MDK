@@ -81,6 +81,8 @@ def runCompilerFromDef(input: str, output: str, projectContext: ProjectContext):
         loadContext.includes.insert(0, loader.get_libmtl(loadContext.compiler_flags))
         loader.processIncludes([], loadContext)
 
+        loadContext.global_forwards = projectContext.global_forwards
+
         loadContext.filename = os.path.abspath(input)
         translated = translator.translateContext(loadContext)
         translated.filename = os.path.abspath(input)

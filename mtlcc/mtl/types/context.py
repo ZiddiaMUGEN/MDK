@@ -23,7 +23,9 @@ class CompilerConfiguration:
     ## if enabled, the typechecker will not allow expressions to be used as the target of ChangeState and ChangeState-like properties.
     no_changestate_expression: bool = False
     ## if enabled, the debugger will not emit debuginfo string or compiler-internal locations (improves compilation speed)
-    no_compiler_internal: bool = False
+    no_compiler_internal: bool = True
+    ## if enabled, scope checking will permit a state change from any state to a TARGET state.
+    allow_changestate_target: bool = False
 
 @dataclass
 class LoadContext:
@@ -36,6 +38,7 @@ class LoadContext:
     struct_definitions: list[StructureDefinitionSection]
     includes: list[INISection]
     mode: TranslationMode
+    global_forwards: dict[str, str]
     compiler_flags: CompilerConfiguration
 
     def __init__(self, fn: str, cc: CompilerConfiguration):
@@ -47,6 +50,7 @@ class LoadContext:
         self.type_definitions = []
         self.struct_definitions = []
         self.includes = []
+        self.global_forwards = {}
         self.compiler_flags = cc
 
 @dataclass
@@ -85,6 +89,7 @@ class ProjectContext:
     constants: list[INISection]
     commands: list[INISection]
     contents: list[INISection]
+    global_forwards: dict[str, str]
     compiler_flags: CompilerConfiguration
 
     def __init__(self, filename: str):
@@ -98,4 +103,5 @@ class ProjectContext:
         self.ai_file = None
         self.constants = []
         self.commands = []
+        self.global_forwards = {}
         self.compiler_flags = CompilerConfiguration()

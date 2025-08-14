@@ -270,6 +270,18 @@ local = attackType = int(0)
 
 MTL will ensure the variable `attackType` is initialized to 0 at Time=0. If the state is recursive or re-entered, the variable WILL be re-initialized.
 
+#### Global Variable Forward Declarations
+
+There are scenarios where global variable types might not be easily discernable to the compiler. In these cases, you can pre-define your globals in the DEF file, which can then allow them to be skipped during global identification.
+
+Add a `[Globals]` section to your DEF, and add a line for each global being defined with its type. For example:
+
+```
+[Globals]
+myGlobal = int
+myFGlobal = float
+```
+
 ### 9. State Definition Scope
 
 To specify the scope of a state definition, use the `scope` state definition parameter:

@@ -309,7 +309,8 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
             text_split = property_text.split(";")
             prop_key = f"var({allocation.allocations[0][0]})"
             if allocation.type == BUILTIN_FLOAT: prop_key = f"f{prop_key}"
-            property_text = mask_write(allocation.allocations[0][0], text_split[0], allocation.allocations[0][1], allocation.type.size, allocation.type == BUILTIN_FLOAT) + ";" + text_split[1]
+            property_text = mask_write(allocation.allocations[0][0], text_split[0], allocation.allocations[0][1], allocation.type.size, allocation.type == BUILTIN_FLOAT)
+            if len(text_split) > 1: property_text += ";" + text_split[1]
 
         output.append(f"{prop_key} = {property_text}")
     

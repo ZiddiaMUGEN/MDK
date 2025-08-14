@@ -143,13 +143,17 @@ def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -
 
     return exprn
 
-def scopes_compatible(s1: StateDefinitionScope, s2: StateDefinitionScope) -> bool:
+def scopes_compatible(s1: StateDefinitionScope, s2: StateDefinitionScope, ctx: TranslationContext) -> bool:
     ## matching
     if s1 == s2:
         return True
     
     ## allow player->shared and helper->shared, but not the reverse
     if s1.type in [StateScopeType.PLAYER, StateScopeType.HELPER] and s2.type == StateScopeType.SHARED:
+        return True
+    
+    ## allow any->target if flagged (this is important for use cases like DEK)
+    if s2.type == StateScopeType.TARGET and ctx.compiler_flags.allow_changestate_target:
         return True
     
     return False
