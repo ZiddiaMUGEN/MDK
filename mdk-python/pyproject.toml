@@ -4,9 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mdk-mugen"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
-    "mtl-mugen>=0.1.1"
+    "mtl-mugen>=0.1.2"
 ]
 
 [tool.hatch.build.targets.wheel]

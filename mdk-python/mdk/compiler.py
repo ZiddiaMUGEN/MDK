@@ -58,6 +58,8 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                     f.write(f"{param} = {statedef.params[param]}\n")
                 for local in statedef.locals:
                     f.write(f"local = {local.name} = {local.type.name}\n")
+                if statedef.scope != None:
+                    f.write(f"scope = {statedef.scope}\n")
                 file_path = inspect.getsourcefile(statedef.fn)
                 _, line_number = inspect.getsourcelines(statedef.fn)
                 if locations:
@@ -221,7 +223,7 @@ def create_statedef(
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
     new_fn = rewrite_function(fn)
-    statedef = StateDefinition(new_fn, {}, [], [])
+    statedef = StateDefinition(new_fn, {}, [], [], scope)
 
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)

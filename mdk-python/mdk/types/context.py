@@ -19,7 +19,22 @@ class StateScopeType(Enum):
 @dataclass
 class StateScope:
     scope: StateScopeType
-    target: int
+    target: Optional[int] = None
+    def __str__(self) -> str:
+        if self.scope == StateScopeType.SHARED:
+            return "shared"
+        elif self.scope == StateScopeType.PLAYER:
+            return "player"
+        elif self.scope == StateScopeType.TARGET:
+            return "target"
+        elif self.scope == StateScopeType.HELPER:
+            if self.target == None: return "helper"
+            return f"helper({self.target})"
+        return "<?>"
+    
+SCOPE_TARGET = StateScope(StateScopeType.TARGET)
+SCOPE_PLAYER = StateScope(StateScopeType.PLAYER)
+SCOPE_HELPER: Callable[[Optional[int]], StateScope] = lambda id: StateScope(StateScopeType.HELPER, id)
 
 @dataclass
 class StateController:
@@ -54,6 +69,7 @@ class StateDefinition:
     params: dict[str, Expression]
     controllers: list[StateController]
     locals: list[ParameterDefinition]
+    scope: Optional[StateScope]
 
 @dataclass
 class TemplateDefinition:

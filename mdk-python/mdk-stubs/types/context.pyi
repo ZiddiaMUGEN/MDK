@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from mdk.types.expressions import Expression as Expression
 from mdk.types.specifier import TypeSpecifier as TypeSpecifier
-from typing import Callable
+from typing import Callable, Optional
 
 class StateScopeType(Enum):
     SHARED = 0
@@ -13,7 +13,11 @@ class StateScopeType(Enum):
 @dataclass
 class StateScope:
     scope: StateScopeType
-    target: int
+    target: Optional[int] = None
+
+SCOPE_TARGET: StateScope
+SCOPE_PLAYER: StateScope
+SCOPE_HELPER: Callable[[Optional[int]], StateScope]
 
 @dataclass
 class StateController:
