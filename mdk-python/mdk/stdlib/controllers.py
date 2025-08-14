@@ -27,7 +27,7 @@ def set_if_tuple(ctrl: StateController, name: str, val: Optional[TupleExpression
         exprn_string = ", ".join([t.exprn for t in converted])
         ctrl.params[name] = Expression(exprn_string, type)
 
-def set_stateno(ctrl: StateController, name: str, val: Optional[Union[Expression, Callable[..., None], str, int]]):
+def set_stateno(ctrl: StateController, name: str, val: Optional[Union[Expression, Callable[..., None | StateController], str, int]]):
     if val != None:
         if isinstance(val, partial):
             if "value" in val.keywords:
@@ -220,7 +220,7 @@ def ChangeAnim2(value: ConvertibleExpression, elem: Optional[ConvertibleExpressi
     return result
 
 @controller(value = [StateNoType, IntType, StringType], ctrl = [None, BoolType], anim = [None, IntType])
-def ChangeState(value: Union[Expression, str, int, Callable[..., None]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def ChangeState(value: Union[Expression, str, int, Callable[..., None | StateController]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_stateno(result, "value", value)
@@ -440,7 +440,7 @@ def Helper(
     pos: Optional[TupleExpression] = None, 
     postype: Optional[ConvertibleExpression] = None, 
     facing: Optional[ConvertibleExpression] = None,
-    stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None, 
+    stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, 
     keyctrl: Optional[ConvertibleExpression] = None, 
     ownpal: Optional[ConvertibleExpression] = None, 
     supermovetime: Optional[ConvertibleExpression] = None, 
@@ -633,8 +633,8 @@ def HitDef(
     p1facing: Optional[ConvertibleExpression] = None,
     p1getp2facing: Optional[ConvertibleExpression] = None,
     p2facing: Optional[ConvertibleExpression] = None,
-    p1stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None,
-    p2stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None,
+    p1stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None,
+    p2stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None,
     p2getp1state: Optional[ConvertibleExpression] = None,
     forcestand: Optional[ConvertibleExpression] = None,
     fall: Optional[ConvertibleExpression] = None,
@@ -783,7 +783,7 @@ def HitFallVel(ignorehitpause: Optional[ConvertibleExpression] = None, persisten
     time = [IntType, None],
     forceair = [BoolType, None]
 )
-def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def HitOverride(attr: TupleExpression, stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, slot: Optional[ConvertibleExpression] = None, time: Optional[ConvertibleExpression] = None, forceair: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_if_tuple(result, "attr", attr, HitStringType)
@@ -1222,8 +1222,8 @@ def ReversalDef(
     pausetime: Optional[TupleExpression] = None, 
     sparkno: Optional[ConvertibleExpression] = None, 
     hitsound: Optional[TupleExpression] = None, 
-    p1stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None, 
-    p2stateno: Optional[Union[Expression, str, int, Callable[..., None]]] = None, 
+    p1stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, 
+    p2stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, 
     p1sprpriority: Optional[ConvertibleExpression] = None, 
     p2sprpriority: Optional[ConvertibleExpression] = None, 
     sparkxy: Optional[TupleExpression] = None, 
@@ -1383,7 +1383,7 @@ def TargetPowerAdd(value: ConvertibleExpression, id: Optional[ConvertibleExpress
     return result
 
 @controller(value = [StateNoType, StringType, IntType], id = [IntType, None])
-def TargetState(value: Union[Expression, str, int, Callable[..., None]], id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def TargetState(value: Union[Expression, str, int, Callable[..., None | StateController]], id: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
     set_stateno(result, "value", value)
