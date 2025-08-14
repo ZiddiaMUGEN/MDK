@@ -178,6 +178,12 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
     except Exception as exc:
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
+    
+## very simple decorator to ensure a function called from a statedef
+## can also have triggers applied correctly.
+def statefunc(fn: Callable[..., None]) -> Callable[..., None]:
+    new_fn = rewrite_function(fn)
+    return new_fn
 
 def statedef(
     type: Optional[Expression] = None,
