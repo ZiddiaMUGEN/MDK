@@ -2,19 +2,288 @@ mdk-python is an implementation of the MDK spec in Python, allowing MUGEN charac
 
 mdk-python targets MTL for compilation, which is an existing language which implements the MDK spec. This is done to reduce the amount of effort required to implement the MDK spec.
 
-## Usage
+This document provides an overview of how to use mdk-python to start developing a character. It assumes a little bit of familiarity with how to create characters using CNS.
 
-### Building
+## Compilation
 
-When you have created your character file, run `mdk.compiler.build()` to build to a MTL source file.
+mdk-python compilation is a 2-step process. It first compiles your Python code to MTL, which is an extension to the CNS language. Then the MTL compiler translates the code to CNS which can be used to run a character.
 
-If you are building a MTL library instead, run `mdk.compiler.library()` to create a MTL include file. You must also specify which templates and types to add to the include library.
+## Package Overview
 
-### Type Definitions
+The `mdk.compiler` package contains functions you will need to build your character, such as the `statedef`, `template`, `trigger`, and `statefunc` decorators, as well as the `build` function.
 
-MDK support type definitions using the `mdk.types.TypeSpecifier` type. To create a new type definition, you should use one of the type specifier factories provided in this module.
+The `mdk.types` package contains type data you may need to build your character, as well as built-in variable types.
 
-### State Definitions
+The `mdk.stdlib` package contains all of the state controllers, triggers, and redirects provided by CNS.
 
-A Python function can be annotated with `@statedef` to specify the function creates a state definition. The @statedef annotation accepts a variety of parameters to set values for the statedef, such as the state ID.
+## Creating States
 
+To create a state definition for your character, you need to use the `mdk.compiler.statedef` decorator. This decorator will register your state definition with the compiler. The compiler will process each state controller, template, or function you use in your state definition, and also interprets Python if statements into triggers.
+
+A simple example of a state definition would look something like this:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+
+@statedef()
+def myCustomState():
+    Null()
+```
+
+The `statedef` decorator accepts several optional parameters which would normally be applied to the Statedef block in CNS (see https://www.elecbyte.com/mugendocs/cns.html#details-on-statedef). For example, to set the movetype for your state definition:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+from mdk.types import MoveType
+
+@statedef(movetype = MoveType.A)
+def myCustomState():
+    Null()
+```
+
+This decorator also accepts two additional parameters, which are used to modify how the state will be compiled. 
+
+- By default, the state will be assigned the next unused state number for your character. You can use the `stateno` parameter to specify a state number instead. This is useful if, for example, you want to override a common state and so you need to create a state with a specific ID.
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+
+@statedef(stateno = 0)
+def myOverrideState():
+    Null()
+```
+
+- The `scope` parameter is used to assign a scope to the state definition, which is a MTL/MDK concept. The scope of a state definition informs the compiler of what type of actor might be entering that state (e.g. player, helper, helper(id), or enemy/target). The compiler can then do optimizations related to variable usage, and also check your states for correctness based on what transitions are possible.
+
+To use scopes, you can either specify a scope using the `mdk.types.StateScope` class, or use the built-in scopes `SCOPE_TARGET`, `SCOPE_PLAYER`, and `SCOPE_HELPER` from the same package.
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+from mdk.types import SCOPE_HELPER
+
+my_helper_id = 1000
+
+@statedef(scope = SCOPE_HELPER(my_helper_id))
+def myHelperState():
+    Null()
+```
+
+All of the built-in CNS triggers and state controllers are exposed in the `mdk.stdlib` package.
+
+## Creating Variables
+
+In mdk-python, there is no need to use the `var` or `fvar` triggers or to remember variable indices. Instead you use the built-in variable classes to create variables. When MTL is compiling the output of your code, it assigns free variable indices to each variable you created.
+
+In MUGEN, each actor (player/helper) gets its own set of variables, so if you use a global variable in two states (one run by a player, and one run by a helper) the variable value is not shared between the two.
+
+mdk-python and MTL create a distinction between global and local variables. If you need to use a variable across several state definitions, it's smart to declare it in a global scope (i.e. outside of any state definition).
+
+To create a global variable, simply declare it like this:
+
+```
+from mdk.types import IntVar
+
+myVariable = IntVar()
+```
+
+Or use the VariableExpression form if you need more control over the variable type:
+
+```
+from mdk.types import ByteType, VariableExpression
+
+myByteVariable = VariableExpression(ByteType)
+```
+
+To declare a local variable, use either of these forms from inside a state definition:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+from mdk.types import IntVar
+
+@statedef()
+def myCustomState():
+    myVar = IntVar()
+
+    Null()
+```
+
+To update the value of a variable, you can use the `VarAdd`/`VarSet` controllers, or use the `add`/`set` functions on the variable itself:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null
+from mdk.types import IntVar
+
+@statedef()
+def myCustomState():
+    myVar = IntVar()
+
+    if Time == 0: myVar.set(0)
+
+    Null()
+
+    VarAdd(var = myVar, value = 1)
+```
+
+## Using Redirects
+
+Redirecting triggers is enabled by the redirect forms provided in the `mdk.stdlib` package. Each redirect is set up for you to access redirected triggers as a property. For example, to access `Time` on the `root` redirect:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null, root
+from mdk.types import IntVar, SCOPE_HELPER
+
+@statedef(scope = SCOPE_HELPER(1))
+def myCustomState():
+    myVar = IntVar()
+    myVar.set(root.Time)
+```
+
+In CNS, certain redirects are set up to allow a free-standing form or a function form (for example, `enemy` and `enemy(0)`). In mdk-python, these have separate accessors; if you need to use the function form, add the `ID` suffix:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null, enemy, enemyID
+from mdk.types import IntVar, SCOPE_HELPER
+
+@statedef(scope = SCOPE_HELPER(1))
+def myCustomState():
+    myVar = IntVar()
+
+    myVar.set(enemy.Time)
+
+    myVar.set(enemyID(0).Time)
+```
+
+## Using Python Functions
+
+It is possible to separate your logic into Python functions, for readability or reuse.
+
+During compilation, mdk-python reads all of your functions marked with `@statedef` and interprets both the controllers and the triggers (if-statements) involved.
+
+If you make a call to a bare Python function from a `statedef` function, the controllers you use in that function will still work, but your triggers will not be interpreted correctly. So for example, the below Python code:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import Null, Time
+
+def separatedLogic():
+    if Time == 0: Null()
+
+@statedef()
+def myCustomState():
+    separatedLogic()
+```
+
+Would compile to this:
+
+```
+[Statedef 1]
+
+[State ]
+type = Null
+trigger1 = 1
+```
+
+Note that the controller has `trigger1 = 1` instead of `trigger1 = Time == 0`.
+
+To ensure your triggers in Python functions are parsed properly, you must use the `mdk.compiler.statefunc` decorator to register your function with the compiler:
+
+```
+from mdk.compiler import statedef, statefunc
+from mdk.stdlib import Null, Time
+
+@statefunc
+def separatedLogic():
+    if Time == 0: Null()
+
+@statedef()
+def myCustomState():
+    separatedLogic()
+```
+
+## Building States
+
+To run a build, use the `mdk.compiler.build` function:
+
+```
+from mdk.compiler import statedef, build
+from mdk.stdlib import Null
+
+@statedef()
+def myCustomState():
+    Null()
+
+if __name__ == "__main__":
+    build("Character.def", "Character.mtl")
+```
+
+You must pass the location of the `.def` file for your character, as well as the name of the file to write the intermediate MTL code to.
+
+The `build` function also accepts optional keyword arguments:
+
+- run_mtl: default True. if set to False, the compiler will not run the MTL compiler, and will only output your MTL intermediate file.
+- skip_templates: default False. if set to True, the compiler will not build any templates.
+- locations: default True. if set to False, the compiler will not include location debugging info (reduces file size).
+- compress: default False. if set to True, the compiler will minimize the MTL intermediate file size.
+- preserve_ir: default False. if set to True, the compiler will not delete the MTL intermediate file after running the MTL compiler.
+- target_folder: default "mdk-out". specifies where to write the output of the MTL compilation.
+
+## Using Templates
+
+Templates are a MTL feature for creating reusable logic (similar to `@statefunc` functions above). Because mdk-python uses MTL as an intermediate step, you can also create templates in mdk-python.
+
+The main purpose for this is if you want to create a library which can be used both by MTL developers and mdk-python developers.
+
+To create a template, use the `mdk.compiler.template` decorator:
+
+```
+from mdk.compiler import template
+from mdk.types import IntType, Expression
+
+@template(inputs = [IntType], library = "libtest.inc")
+def myTemplate(myInput: Expression):
+    ...
+```
+
+The `@template` decorator accepts several optional parameters. If your template takes some inputs, they should have `Expression` type in your function definition, and you will declare the real type of the input in the `inputs` parameter to the decorator.
+
+To specify the output library name, pass the `library` parameter. This can allow you to split your templates between multiple output files so they can be included separately.
+
+You can also pass a function through the `validator` parameter. This parameter allows you to inspect and modify arguments passed to your template at build time. This can be useful for specifying default values for arguments. For example:
+
+```
+from mdk.compiler import template
+from mdk.types import IntType, Expression
+
+@template(inputs = [IntType], library = "libtest.inc", validator = myValidator)
+def myTemplate(myInput: Expression):
+    ...
+
+def myValidator(myInput):
+    if not isinstance(myInput, Expression) and myInput == None:
+        return { "myInput": Expression(0, IntType) }
+    return { "myInput": myInput }
+```
+
+## Building Templates
+
+To build templates, use the `mdk.compiler.library` function. This function accepts a list of templates you want to compile, and outputs one or more include files which can then be used for MTL.
+
+```
+from mdk.compiler import template, library
+from mdk.types import IntType, Expression
+
+@template(inputs = [IntType], library = "libtest.inc")
+def myTemplate(myInput: Expression):
+    ...
+
+if __name__ == "__main__":
+    library([myTemplate], dirname="templates")
+```
