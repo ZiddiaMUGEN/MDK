@@ -215,7 +215,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("playerID", BUILTIN_TARGET, None, [TypeParameter("id", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
 
         ## builtin operator functions
-        TriggerDefinition("operator%", BUILTIN_INT, builtin_div, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR),
+        TriggerDefinition("operator%", BUILTIN_INT, builtin_mod, [TypeParameter("expr1", BUILTIN_INT), TypeParameter("expr2", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR),
         TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR),
         TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", BUILTIN_STRING), TypeParameter("expr2", BUILTIN_STRING)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR),
 
@@ -258,6 +258,12 @@ def getBaseTriggers() -> list[TriggerDefinition]:
             baseTriggers.append(TriggerDefinition("operator&", typedef, builtin_bitand, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
             baseTriggers.append(TriggerDefinition("operator|", typedef, builtin_bitor, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
             baseTriggers.append(TriggerDefinition("operator^", typedef, builtin_bitxor, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
+
+    ## add generic equality/assignment operators for int-equivalent types (stateno, anim)
+    for typedef in [BUILTIN_STATE, BUILTIN_ANIM]:
+        baseTriggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtin_eq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtin_neq, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
+        baseTriggers.append(TriggerDefinition("operator:=", typedef, builtin_assign, [TypeParameter("expr1", typedef), TypeParameter("expr2", typedef)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.OPERATOR))
 
     ## add generic equality operators for the Enum and Flag builtin types which have triggers
     ## TODO: should this be done automatically for all user-defined enum/flag types also?

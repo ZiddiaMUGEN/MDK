@@ -184,7 +184,8 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
                 return widened
             
     ## it's permitted to convert integer types directly to bool for CNS compatibility.
-    if not ctx.compiler_flags.no_implicit_bool and t1.name in ["byte", "short", "int"] and t2.name == "bool":
+    ## here `state` counts as an integer type.
+    if not ctx.compiler_flags.no_implicit_bool and t1.name in ["byte", "short", "int", "state"] and t2.name == "bool":
         return t2
 
     ## could not convert.

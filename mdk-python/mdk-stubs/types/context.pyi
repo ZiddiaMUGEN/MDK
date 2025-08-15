@@ -50,7 +50,7 @@ class TemplateDefinition:
 
 @dataclass
 class TriggerDefinition:
-    fn: Callable[..., None]
+    fn: Callable[..., Expression]
     library: str | None
     result: TypeSpecifier
     params: dict[str, TypeSpecifier]

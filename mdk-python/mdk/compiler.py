@@ -36,19 +36,26 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 raise CompilationException(exc)
             context.current_state = None
 
-        template_groups = set()
+        lib_groups = set()
+        lib_targets: list[Callable] = []
         if not skip_templates and len(context.templates) != 0:
-            templates: list[Callable[..., None]] = []
             for t in context.templates:
-                templates.append(context.templates[t].fn)
+                lib_targets.append(context.templates[t].fn)
                 if context.templates[t].library == None:
                     context.templates[t].library = output + ".inc"
-                template_groups.add(context.templates[t].library)
-            library(templates, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
+                lib_groups.add(context.templates[t].library)
+        if not skip_templates and len(context.triggers) != 0:
+            for t in context.triggers:
+                lib_targets.append(context.triggers[t].fn)
+                if context.triggers[t].library == None:
+                    context.triggers[t].library = output + ".inc"
+                lib_groups.add(context.triggers[t].library)
+            
+        library(lib_targets, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
         
         with open(output, mode="w") as f:
-            if not skip_templates and len(context.templates) != 0:
-                for group in template_groups:
+            if not skip_templates and len(lib_groups) != 0:
+                for group in lib_groups:
                     f.write("[Include]\n")
                     f.write(f"source = {group}\n")
             if not compress: f.write("\n")
@@ -93,7 +100,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         ## delete the output file if we're not preserving IR
         if not preserve_ir: 
             os.remove(output)
-            for name in template_groups:
+            for name in lib_groups:
                 os.remove(name)
     except CompilationException as exc:
         create_compiler_error(exc)
@@ -353,8 +360,8 @@ def template(inputs: list[TypeSpecifier] = [], library: Optional[str] = None, va
         return partial(do_template, fn.__name__, validator)
     return decorator
 
-def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optional[str] = None, validator: Optional[Callable] = None) -> Callable[[Callable[..., None]], Callable[..., Expression]]:
-    def decorator(fn: Callable[..., None]) -> Callable[..., Expression]:
+def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optional[str] = None, validator: Optional[Callable[..., dict[str, Expression]]] = None) -> Callable[[Callable[..., Expression]], Callable[..., Expression]]:
+    def decorator(fn: Callable[..., Expression]) -> Callable[..., Expression]:
         print(f"Discovered a new Trigger named {fn.__name__}. Will process and load this Trigger.")
         # get params of decorated function
         signature = inspect.signature(fn)
