@@ -30,7 +30,7 @@ def getVariable(index: int, offset: int, size: int, is_float: bool, target: Debu
     
     if is_float:
         variable_value = get_uncached(ctx.current_owner + target.launch_info.database["fvar"] + index * 4, process_handle)
-        return struct.unpack('<f', variable_value.to_bytes(4, byteorder = 'little'))[0]
+        return round(struct.unpack('<f', variable_value.to_bytes(4, byteorder = 'little'))[0], 3)
     else:
         variable_value = get_uncached(ctx.current_owner + target.launch_info.database["var"] + index * 4, process_handle)
         start_pow2 = 2 ** offset

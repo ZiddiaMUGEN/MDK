@@ -11,7 +11,7 @@ from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerT
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
 from mtl.utils.func import match_filenames, mask_variable, search_file
-from mtl.utils.debug import get_state_by_id
+from mtl.utils.debug import get_state_by_id, get_state_by_name
 
 def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget, ctx: DebuggingContext):
     alloc = var.allocations[0]
@@ -71,7 +71,7 @@ def runDebugger(target: str, mugen: str):
                     continue
                 process.cont(debugger)
             elif command == DebuggerCommand.BREAK or command == DebuggerCommand.BREAKP:
-                ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index>
+                ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index> or <state name> <ctrl index>
                 if len(request.params) == 1:
                     # file:line
                     params = request.params[0].split(":")
@@ -113,20 +113,32 @@ def runDebugger(target: str, mugen: str):
                             ctx.passpoints.append(match)
                 elif len(request.params) == 2:
                     # stateno index, just set it directly...
-                    stateno = int(request.params[0])
-                    index = int(request.params[1])
-                    if (state := get_state_by_id(stateno, ctx)) == None:
-                        print(f"Could not find any state with ID {stateno} for breakpoint.")
+                    stateno = request.params[0]
+                    try:
+                        stateno = int(stateno)
+                    except:
+                        pass
+                    state = None
+                    if type(stateno) == int and (state := get_state_by_id(stateno, ctx)) == None:
+                        print(f"Could not find any state with ID or name {stateno} for breakpoint.")
                         continue
+                    elif type(stateno) == str and (state := get_state_by_name(stateno, ctx)) == None:
+                        print(f"Could not find any state with ID or name {stateno} for breakpoint.")
+                        continue
+
+                    if state == None:
+                        print(f"Could not find any state with ID or name {stateno} for breakpoint.")
+                        continue
+                    index = int(request.params[1])
                     if index >= len(state.states):
                         print(f"State with ID {stateno} only has {len(state.states)} controllers (controller indices are 0-indexed).")
                         continue
                     if command == DebuggerCommand.BREAK:
                         print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.breakpoints.append((stateno, index))
+                        ctx.breakpoints.append((state.id, index))
                     elif command == DebuggerCommand.BREAKP:
                         print(f"Created passpoint {len(ctx.passpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.passpoints.append((stateno, index))
+                        ctx.passpoints.append((state.id, index))
                 else:
                     print("Format of arguments to `break` command should either be <file>:<line> or <stateno> <ctrl index>.")
                     continue

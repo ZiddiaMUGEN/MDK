@@ -17,6 +17,16 @@ def get_state_by_id(id: int, ctx: DebuggingContext) -> Optional[DebugStateInfo]:
         return matches[0]
     return next(filter(lambda k: not k.is_common, matches), None)
 
+def get_state_by_name(name: str, ctx: DebuggingContext) -> Optional[DebugStateInfo]:
+    matches = get_all(ctx.states, lambda k: k.name.lower() == name.lower())
+    if len(matches) == 0:
+        return None
+    if len(matches) > 2:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    return next(filter(lambda k: not k.is_common, matches), None)
+
 def debuginfo(cat: DebugCategory, data: Any, cc: CompilerConfiguration) -> list[str]:
     if cc.no_compiler_internal: return []
     if cat == DebugCategory.VERSION_HEADER:

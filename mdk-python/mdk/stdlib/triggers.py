@@ -6,6 +6,7 @@ from mdk.types.defined import HitStringType
 import mdk.types.defined as defined
 
 from mdk.utils.shared import convert
+from mdk.utils.expressions import check_types_assignable
 
 ## helper function to take 1 argument and the types involved and produce an output.
 def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecifier) -> Callable[..., Expression]:
@@ -47,6 +48,24 @@ def TriggerExpressionWithOptional(name: str, inputs: list[TypeSpecifier], output
         return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
     return _callable
 
+## helper function for cond/ifelse specifically.
+def TriggerExpressionCond(name: str) -> Callable[..., Expression]:
+    def _callable(*args) -> Expression:
+        if len(args) != 3:
+            raise Exception(f"Trigger expression {name} requires 3 inputs, but got {len(args)} instead.")
+        conv_args: list[Expression] = []
+        for index in range(len(args)):
+            next_arg = convert(args[index])
+            if not isinstance(next_arg, Expression):
+                raise Exception(f"Inputs to trigger expressions should always be Expressions, not {type(args[index])}.")
+            conv_args.append(next_arg)
+        if conv_args[0].type != BoolType:
+            raise Exception(f"First argument to Cond or ifelse must be a bool, not {conv_args[0].type.name}.")
+        if (output := check_types_assignable(conv_args[1].type, conv_args[2].type)) == None:
+            raise Exception(f"Second and third arguments to Cond or ifelse must have assignable types; got {conv_args[1].type.name} and {conv_args[2].type.name}.")
+        return Expression(f"{name}({', '.join([str(arg) for arg in conv_args])})", output)
+    return _callable
+
 ## this is used for built-in position/velocity structures (e.g. Vel, Pos)
 ## it avoids the need for custom structure types, which are still not
 ## fully implemented either here or in MTL.
@@ -77,7 +96,7 @@ BackEdgeDist = Expression("BackEdgeDist", FloatType)
 CanRecover = Expression("CanRecover", BoolType)
 Ceil = TriggerExpression("ceil", [FloatType], IntType)
 Command = Expression("Command", UStringType)
-## Cond
+Cond = TriggerExpressionCond("ifelse")
 Const = TriggerExpression("Const", [UStringType], FloatType)
 Const240p = TriggerExpression("Const240p", [FloatType], FloatType)
 Const480p = TriggerExpression("Const480p", [FloatType], FloatType)
@@ -104,7 +123,7 @@ HitPauseTime = Expression("HitPauseTime", IntType)
 HitShakeOver = Expression("HitShakeOver", BoolType)
 HitVel = PositionExpression("HitVel", FloatType)
 ID = Expression("ID", IntType)
-## ifelse
+ifelse = TriggerExpressionCond("ifelse")
 InGuardDist = Expression("InGuardDist", BoolType)
 IsHelper = TriggerExpressionWithOptional("IsHelper", [IntType], BoolType)
 IsHomeTeam = Expression("IsHomeTeam", BoolType)
@@ -188,5 +207,6 @@ __all__ = [
     "ProjCancelTime", "ProjContactTime", "ProjGuardedTime", "ProjHitTime", "Random", "RoundNo", "RoundsExisted", "RoundState",
     "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect",
     "HitDefAttr", "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType",
-    "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel"
+    "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel",
+    "ifelse", "Cond"
 ]

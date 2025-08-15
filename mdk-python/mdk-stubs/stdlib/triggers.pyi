@@ -3,7 +3,7 @@ from typing import Callable
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
 
-__all__ = ['Abs', 'Acos', 'AiLevel', 'Alive', 'Anim', 'AnimElemNo', 'AnimElemTime', 'AnimExist', 'AnimTime', 'Asin', 'Atan', 'AuthorName', 'BackEdgeBodyDist', 'BackEdgeDist', 'CanRecover', 'Ceil', 'Command', 'Const', 'Const240p', 'Const480p', 'Const720p', 'Cos', 'Ctrl', 'DrawGame', 'E', 'Exp', 'Facing', 'Floor', 'FrontEdgeBodyDist', 'FrontEdgeDist', 'GameHeight', 'GameTime', 'GameWidth', 'GetHitVar', 'HitCount', 'HitFall', 'HitOver', 'HitPauseTime', 'HitShakeOver', 'ID', 'InGuardDist', 'IsHelper', 'IsHomeTeam', 'Life', 'LifeMax', 'Ln', 'Log', 'Lose', 'MatchNo', 'MatchOver', 'MoveContact', 'MoveGuarded', 'MoveHit', 'MoveReversed', 'Name', 'NumEnemy', 'NumExplod', 'NumHelper', 'NumPartner', 'NumProj', 'NumProjID', 'NumTarget', 'P1Name', 'P2Life', 'P2StateNo', 'P2Name', 'P3Name', 'P4Name', 'PalNo', 'Pi', 'Power', 'PowerMax', 'PlayerIDExist', 'ProjCancelTime', 'ProjContactTime', 'ProjGuardedTime', 'ProjHitTime', 'Random', 'RoundNo', 'RoundsExisted', 'RoundState', 'SelfAnimExist', 'Sin', 'StateNo', 'StageVar', 'Tan', 'TeamSide', 'TicksPerSecond', 'Time', 'Win', 'WinKO', 'WinTime', 'WinPerfect', 'HitDefAttr', "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType", "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel"]
+__all__ = ['Abs', 'Acos', 'AiLevel', 'Alive', 'Anim', 'AnimElemNo', 'AnimElemTime', 'AnimExist', 'AnimTime', 'Asin', 'Atan', 'AuthorName', 'BackEdgeBodyDist', 'BackEdgeDist', 'CanRecover', 'Ceil', 'Command', 'Const', 'Const240p', 'Const480p', 'Const720p', 'Cos', 'Ctrl', 'DrawGame', 'E', 'Exp', 'Facing', 'Floor', 'FrontEdgeBodyDist', 'FrontEdgeDist', 'GameHeight', 'GameTime', 'GameWidth', 'GetHitVar', 'HitCount', 'HitFall', 'HitOver', 'HitPauseTime', 'HitShakeOver', 'ID', 'InGuardDist', 'IsHelper', 'IsHomeTeam', 'Life', 'LifeMax', 'Ln', 'Log', 'Lose', 'MatchNo', 'MatchOver', 'MoveContact', 'MoveGuarded', 'MoveHit', 'MoveReversed', 'Name', 'NumEnemy', 'NumExplod', 'NumHelper', 'NumPartner', 'NumProj', 'NumProjID', 'NumTarget', 'P1Name', 'P2Life', 'P2StateNo', 'P2Name', 'P3Name', 'P4Name', 'PalNo', 'Pi', 'Power', 'PowerMax', 'PlayerIDExist', 'ProjCancelTime', 'ProjContactTime', 'ProjGuardedTime', 'ProjHitTime', 'Random', 'RoundNo', 'RoundsExisted', 'RoundState', 'SelfAnimExist', 'Sin', 'StateNo', 'StageVar', 'Tan', 'TeamSide', 'TicksPerSecond', 'Time', 'Win', 'WinKO', 'WinTime', 'WinPerfect', 'HitDefAttr', "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType", "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel", "ifelse", "Cond"]
 
 class PositionExpression:
     x: Expression
@@ -27,6 +27,7 @@ BackEdgeDist: Expression
 CanRecover: Expression
 Ceil: Callable[..., Expression]
 Command: Expression
+Cond: Callable[..., Expression]
 Const: Callable[..., Expression]
 Const240p: Callable[..., Expression]
 Const480p: Callable[..., Expression]
@@ -52,6 +53,7 @@ HitPauseTime: Expression
 HitShakeOver: Expression
 HitVel: PositionExpression
 ID: Expression
+ifelse: Callable[..., Expression]
 InGuardDist: Expression
 IsHelper: Callable[..., Expression]
 IsHomeTeam: Expression
