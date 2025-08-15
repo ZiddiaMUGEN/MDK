@@ -36,7 +36,15 @@ def getVariable(index: int, offset: int, size: int, is_float: bool, target: Debu
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)
-        return (variable_value & mask.value) >> offset
+        end_mask = (2 ** size) - 1
+        value = ((variable_value & mask.value) >> offset) & end_mask
+        if size == 32:
+            return ctypes.c_int32(value).value
+        elif size == 16:
+            return ctypes.c_short(value).value
+        elif size == 8:
+            return ctypes.c_byte(value).value
+        return value
     
 ## utility function to read trigger values from memory
 def getValue(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> int:
