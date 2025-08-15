@@ -11,6 +11,10 @@ def check_types_assignable(spec1: TypeSpecifier, spec2: TypeSpecifier) -> Option
     ## ustring and string are convertible to ustring.
     if spec1 in [StringType, UStringType] and spec2 in [StringType, UStringType]:
         return UStringType
+    
+    ## `int` is implicitly convertible to `anim`, `stateno`
+    if spec1.name == "int" and spec2.name in ["anim", "stateno"]:
+        return spec2
 
     ## `int` is implicitly convertible to `float`
     if spec1.name == "int" and spec2.name == "float":

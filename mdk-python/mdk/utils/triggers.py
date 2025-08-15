@@ -2,8 +2,9 @@ from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
 from mdk.types.variables import VariableExpression
 from mdk.types.builtins import BoolType, IntType
+from mdk.types.defined import StateNoType
 
-from mdk.utils.shared import format_bool
+from mdk.utils.shared import format_bool, convert
 from mdk.utils.expressions import check_types_assignable
 
 def TriggerAnd(*exprs_: Expression | bool):
@@ -18,7 +19,7 @@ def TriggerAnd(*exprs_: Expression | bool):
     for expr in exprs:
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to AND statement to be convertible to an Expression, but found {type(expr)}.")
-        if expr.type not in [BoolType, IntType]:
+        if expr.type not in [BoolType, IntType, StateNoType]:
             raise Exception(f"Expected input to AND statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " && ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
@@ -36,7 +37,7 @@ def TriggerOr(*exprs_: Expression | bool):
     for expr in exprs:
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to OR statement to be convertible to an Expression, but found {type(expr)}.")
-        if expr.type not in [BoolType, IntType]:
+        if expr.type not in [BoolType, IntType, StateNoType]:
             raise Exception(f"Expected input to OR statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " || ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
@@ -61,7 +62,7 @@ def TriggerAssign(expr1: Expression, expr2: Expression):
     if not isinstance(expr1, VariableExpression):
         raise Exception(f"First parameter to assignment statement should be a VariableExpression, not {type(expr1)}.")
     if not isinstance(expr2, Expression):
-        expr2 = Expression(str(expr2), expr1.type)
+        expr2 = convert(expr2)
     if check_types_assignable(expr1.type, expr2.type) == None:
         raise Exception(f"Inputs to assignment expression must have assignable types, not {expr1.type.name} and {expr2.type.name}.")
 
