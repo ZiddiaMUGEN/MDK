@@ -380,8 +380,10 @@ class ControllerProps:
         context = CompilerContext.instance()
         self.prev_state = context.default_state
         context.default_state = (self.ignorehitpause, self.persistent)
-    def __exit__(self):
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
         context = CompilerContext.instance()
         context.default_state = self.prev_state
+        return False
     
 __all__ = ["build", "library", "statedef", "create_statedef", "template", "trigger"]
