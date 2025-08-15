@@ -1,5 +1,6 @@
 from mdk.types.expressions import Expression
-from typing import Callable, Optional
+from mdk.stdlib.triggers import PositionExpression
+from typing import Callable, Optional, Protocol
 
 __all__ = ['parent', 'root', 'partner', 'helper', 'target', 'enemy', 'enemynear', 'playerID']
 
@@ -30,6 +31,7 @@ class RedirectTarget:
     HitOver: Expression
     HitPauseTime: Expression
     HitShakeOver: Expression
+    HitVel: PositionExpression
     ID: Expression
     InGuardDist: Expression
     IsHelper: Callable[..., Expression]
@@ -51,6 +53,8 @@ class RedirectTarget:
     NumProjID: Callable[..., Expression]
     NumTarget: Callable[..., Expression]
     P1Name: Expression
+    P2BodyDist: PositionExpression
+    P2Dist: PositionExpression
     P2Life: Expression
     P2MoveType: Expression
     P2Name: Expression
@@ -59,6 +63,8 @@ class RedirectTarget:
     P3Name: Expression
     P4Name: Expression
     PalNo: Expression
+    ParentDist: PositionExpression
+    Pos: PositionExpression
     Power: Expression
     PowerMax: Expression
     PrevStateNo: Expression
@@ -66,23 +72,37 @@ class RedirectTarget:
     ProjContactTime: Callable[..., Expression]
     ProjGuardedTime: Callable[..., Expression]
     ProjHitTime: Callable[..., Expression]
+    RootDist: PositionExpression
+    ScreenPos: PositionExpression
     SelfAnimExist: Callable[..., Expression]
     StateNo: Expression
     StateType: Expression
+    StageVar: Callable[..., Expression]
     TeamMode: Expression
     TeamSide: Expression
     Time: Expression
+    Vel: PositionExpression
     Win: Expression
     WinKO: Expression
     WinPerfect: Expression
     WinTime: Expression
     def __init__(self, target: str, expr: Expression | None = None) -> None: ...
 
+class RedirectFunction(Protocol):
+    def __call__(self, id: Optional[Expression] = ..., /) -> RedirectTarget:
+        ...
+
+
 parent: RedirectTarget
 root: RedirectTarget
 partner: RedirectTarget
-helper: Callable[[Optional[Expression]], RedirectTarget]
-target: Callable[[Optional[Expression]], RedirectTarget]
-enemy: Callable[[Optional[Expression]], RedirectTarget]
-enemynear: Callable[[Optional[Expression]], RedirectTarget]
-playerID: Callable[[Optional[Expression]], RedirectTarget]
+helper: RedirectTarget
+target: RedirectTarget
+enemy: RedirectTarget
+enemynear: RedirectTarget
+
+helperID: RedirectFunction
+targetID: RedirectFunction
+enemyID: RedirectFunction
+enemynearID: RedirectFunction
+playerID: RedirectFunction

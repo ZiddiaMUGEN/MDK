@@ -50,6 +50,7 @@ HitFall: Expression
 HitOver: Expression
 HitPauseTime: Expression
 HitShakeOver: Expression
+HitVel: PositionExpression
 ID: Expression
 InGuardDist: Expression
 IsHelper: Callable[..., Expression]
@@ -74,16 +75,21 @@ NumProj: Expression
 NumProjID: Callable[..., Expression]
 NumTarget: Callable[..., Expression]
 P1Name: Expression
+P2BodyDist: PositionExpression
+P2Dist: PositionExpression
 P2Life: Expression
 P2StateNo: Expression
 P2Name: Expression
 P3Name: Expression
 P4Name: Expression
 PalNo: Expression
+ParentDist: PositionExpression
 Pi: Expression
+Pos: PositionExpression
 Power: Expression
 PowerMax: Expression
 PlayerIDExist: Callable[..., Expression]
+PrevStateNo: Expression
 ProjCancelTime: Callable[..., Expression]
 ProjContactTime: Callable[..., Expression]
 ProjGuardedTime: Callable[..., Expression]
@@ -92,6 +98,8 @@ Random: Expression
 RoundNo: Expression
 RoundsExisted: Expression
 RoundState: Expression
+RootDist: PositionExpression
+ScreenPos: PositionExpression
 SelfAnimExist: Callable[..., Expression]
 Sin: Callable[..., Expression]
 StateNo: Expression
@@ -100,6 +108,7 @@ Tan: Callable[..., Expression]
 TeamSide: Expression
 TicksPerSecond: Expression
 Time: Expression
+Vel: PositionExpression
 Win: Expression
 WinKO: Expression
 WinTime: Expression

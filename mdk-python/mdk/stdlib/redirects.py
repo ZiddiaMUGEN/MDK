@@ -34,6 +34,7 @@ class RedirectTarget:
         self.HitOver = self._redirect_atom(triggers.HitOver)
         self.HitPauseTime = self._redirect_atom(triggers.HitPauseTime)
         self.HitShakeOver = self._redirect_atom(triggers.HitShakeOver)
+        self.HitVel = self._redirect_position(triggers.HitVel)
         self.ID = self._redirect_atom(triggers.ID)
         self.InGuardDist = self._redirect_atom(triggers.InGuardDist)
         self.IsHelper: Callable[..., Expression] = self._redirect_function(triggers.IsHelper) # type: ignore
@@ -55,6 +56,8 @@ class RedirectTarget:
         self.NumProjID: Callable[..., Expression] = self._redirect_function(triggers.NumProjID)  # type: ignore
         self.NumTarget: Callable[..., Expression] = self._redirect_function(triggers.NumTarget) # type: ignore
         self.P1Name = self._redirect_atom(triggers.P1Name)
+        self.P2BodyDist = self._redirect_position(triggers.P2BodyDist)
+        self.P2Dist = self._redirect_position(triggers.P2Dist)
         self.P2Life = self._redirect_atom(triggers.P2Life)
         self.P2MoveType = self._redirect_atom(triggers.P2MoveType)
         self.P2Name = self._redirect_atom(triggers.P2Name)
@@ -63,6 +66,8 @@ class RedirectTarget:
         self.P3Name = self._redirect_atom(triggers.P3Name)
         self.P4Name = self._redirect_atom(triggers.P4Name)
         self.PalNo = self._redirect_atom(triggers.PalNo)
+        self.ParentDist = self._redirect_position(triggers.ParentDist)
+        self.Pos = self._redirect_position(triggers.Pos)
         self.Power = self._redirect_atom(triggers.Power)
         self.PowerMax = self._redirect_atom(triggers.PowerMax)
         self.PrevStateNo = self._redirect_atom(triggers.PrevStateNo)
@@ -70,13 +75,16 @@ class RedirectTarget:
         self.ProjContactTime: Callable[..., Expression] = self._redirect_function(triggers.ProjContactTime)  # type: ignore
         self.ProjGuardedTime: Callable[..., Expression] = self._redirect_function(triggers.ProjGuardedTime)  # type: ignore
         self.ProjHitTime: Callable[..., Expression] = self._redirect_function(triggers.ProjHitTime)  # type: ignore
+        self.RootDist = self._redirect_position(triggers.RootDist)
+        self.ScreenPos = self._redirect_position(triggers.ScreenPos)
         self.SelfAnimExist: Callable[..., Expression] = self._redirect_function(triggers.SelfAnimExist)  # type: ignore
         self.StateNo = self._redirect_atom(triggers.StateNo)
         self.StateType = self._redirect_atom(triggers.StateType)
-        self.SelfAnimExist = self._redirect_function(triggers.StageVar)  # type: ignore
+        self.StageVar = self._redirect_function(triggers.StageVar)  # type: ignore
         self.TeamMode = self._redirect_atom(triggers.TeamMode)
         self.TeamSide = self._redirect_atom(triggers.TeamSide)
         self.Time = self._redirect_atom(triggers.Time)
+        self.Vel = self._redirect_position(triggers.Vel)
         self.Win = self._redirect_atom(triggers.Win)
         self.WinKO = self._redirect_atom(triggers.WinKO)
         self.WinPerfect = self._redirect_atom(triggers.WinPerfect)
@@ -84,6 +92,9 @@ class RedirectTarget:
 
     def _redirect_atom(self, expr: Expression) -> Expression:
         return expr.make_expression(f"{self.__repr__()},{expr.exprn}")
+    
+    def _redirect_position(self, expr: triggers.PositionExpression) -> triggers.PositionExpression:
+        return triggers.PositionExpression(f"{self.__repr__()},{expr._name}", expr.x.type)
 
     def _redirect_function(self, fn: Callable[..., Expression]) -> Callable[..., Expression]:
         def _call(*args, **kwargs) -> Expression:
@@ -104,11 +115,15 @@ def RedirectTargetBuilder(target: str) -> Callable[[Optional[Expression]], Redir
 parent = RedirectTarget("parent")
 root = RedirectTarget("root")
 partner = RedirectTarget("partner")
+helper = RedirectTarget("helper")
+target = RedirectTarget("target")
+enemy = RedirectTarget("enemy")
+enemynear = RedirectTarget("enemynear")
 
-helper = RedirectTargetBuilder("helper")
-target = RedirectTargetBuilder("target")
-enemy = RedirectTargetBuilder("enemy")
-enemynear = RedirectTargetBuilder("enemynear")
+helperID = RedirectTargetBuilder("helper")
+targetID = RedirectTargetBuilder("target")
+enemyID = RedirectTargetBuilder("enemy")
+enemynearID = RedirectTargetBuilder("enemynear")
 playerID = RedirectTargetBuilder("playerID")
 
 __all__ = ["parent", "root", "partner", "helper", "target", "enemy", "enemynear", "playerID"]

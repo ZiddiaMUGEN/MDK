@@ -84,6 +84,10 @@ def parseUnary(line: str, index: int, location: Location, nested: bool = False) 
         # move the unary inside the multivalue.
         nextExprn.children[0] = TriggerTree(TriggerTreeNode.UNARY_OP, operator, [nextExprn.children[0]], location)
         return (index, nextExprn)
+    elif nextExprn.node == TriggerTreeNode.BINARY_OP:
+        # move the unary inside the binary op.
+        nextExprn.children[0] = TriggerTree(TriggerTreeNode.UNARY_OP, operator, [nextExprn.children[0]], location)
+        return (index, nextExprn)
     return (index, TriggerTree(TriggerTreeNode.UNARY_OP, operator, [nextExprn], location))
 
 def parseBracketed(line: str, index: int, location: Location, nested: bool = False, fn: bool = False) -> tuple[int, Optional[TriggerTree]]:
@@ -164,7 +168,7 @@ def parseBinary(line: str, index: int, location: Location, lhs: TriggerTree, nes
     elif nextExprn.node == TriggerTreeNode.INTERVAL_OP:
         rhs_precedence = 6
     elif nextExprn.node == TriggerTreeNode.UNARY_OP:
-        rhs_precedence = 1
+        rhs_precedence = -1
     elif nextExprn.node == TriggerTreeNode.ATOM:
         rhs_precedence = 0
     

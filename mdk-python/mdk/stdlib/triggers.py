@@ -53,7 +53,9 @@ def TriggerExpressionWithOptional(name: str, inputs: list[TypeSpecifier], output
 class PositionExpression:
     x: Expression
     y: Expression
+    _name: str
     def __init__(self, name: str, type: TypeSpecifier):
+        self._name = name
         self.x = Expression(f"{name} X", type)
         self.y = Expression(f"{name} Y", type)
 
