@@ -1,17 +1,18 @@
-from typing import Callable, NoReturn, Literal
+from typing import Callable, NoReturn, Literal, Protocol, Optional
 
+from mdk.types.context import StateScope
 from mdk.types.expressions import ConvertibleExpression, Expression
 from mdk.types.specifier import TypeSpecifier
 
-__all__ = ['VariableExpression', 'IntVar', 'FloatVar']
+__all__ = ['VariableExpression', 'IntVar', 'FloatVar', 'ShortVar', 'ByteVar', 'BoolVar']
 
 class VariableExpression(Expression):
     type: TypeSpecifier
     exprn: str
-    def __init__(self, type: TypeSpecifier) -> None: ...
+    def __init__(self, type: TypeSpecifier, scope: StateScope | None = None) -> None: ...
     def make_expression(self, exprn: str): ...
-    def set(self, val: ConvertibleExpression): ...
-    def add(self, val: ConvertibleExpression): ...
+    def set(self, val: ConvertibleExpression) -> None: ...
+    def add(self, val: ConvertibleExpression) -> None: ...
 
     def __eq__(self, other: ConvertibleExpression) -> Expression: ... # type: ignore
     def __ne__(self, other: ConvertibleExpression) -> Expression: ... # type: ignore
@@ -53,5 +54,12 @@ class VariableExpression(Expression):
     def __ceil__(self) -> Expression: ...
     def __bool__(self) -> Literal[True]: ...
 
-IntVar: Callable[[], VariableExpression]
-FloatVar: Callable[[], VariableExpression]
+class VariableType(Protocol):
+    def __call__(self, /, scope: Optional[StateScope] = ...) -> VariableExpression:
+        ...
+
+IntVar: VariableType
+ShortVar: VariableType
+ByteVar: VariableType
+BoolVar: VariableType
+FloatVar: VariableType

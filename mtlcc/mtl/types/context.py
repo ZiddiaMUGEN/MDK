@@ -38,7 +38,7 @@ class LoadContext:
     struct_definitions: list[StructureDefinitionSection]
     includes: list[INISection]
     mode: TranslationMode
-    global_forwards: dict[str, str]
+    global_forwards: list[ForwardParameter]
     compiler_flags: CompilerConfiguration
 
     def __init__(self, fn: str, cc: CompilerConfiguration):
@@ -50,7 +50,7 @@ class LoadContext:
         self.type_definitions = []
         self.struct_definitions = []
         self.includes = []
-        self.global_forwards = {}
+        self.global_forwards = []
         self.compiler_flags = cc
 
 @dataclass
@@ -89,7 +89,7 @@ class ProjectContext:
     constants: list[INISection]
     commands: list[INISection]
     contents: list[INISection]
-    global_forwards: dict[str, str]
+    global_forwards: list[ForwardParameter]
     compiler_flags: CompilerConfiguration
 
     def __init__(self, filename: str):
@@ -103,5 +103,5 @@ class ProjectContext:
         self.ai_file = None
         self.constants = []
         self.commands = []
-        self.global_forwards = {}
+        self.global_forwards = []
         self.compiler_flags = CompilerConfiguration()

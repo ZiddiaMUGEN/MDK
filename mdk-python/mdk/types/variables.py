@@ -1,11 +1,12 @@
 import traceback
 import functools
 import copy
+from typing import Optional
 
 from mdk.types.expressions import Expression, ConvertibleExpression
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.context import CompilerContext, ParameterDefinition, StateController
-from mdk.types.builtins import IntType, FloatType
+from mdk.types.context import CompilerContext, ParameterDefinition, StateController, StateScope
+from mdk.types.builtins import IntType, FloatType, ShortType, ByteType, BoolType
 
 from mdk.utils.shared import generate_random_string, convert, format_bool
 
@@ -13,7 +14,7 @@ from mdk.utils.shared import generate_random_string, convert, format_bool
 ## generally speaking this is just treated differently so that we can
 ## detect variable initialization and scope in the state/template code.
 class VariableExpression(Expression):
-    def __init__(self, type: TypeSpecifier):
+    def __init__(self, type: TypeSpecifier, scope: Optional[StateScope] = None):
         self.type = type
         self.exprn = ""
 
@@ -37,12 +38,12 @@ class VariableExpression(Expression):
                 if next(filter(lambda k: k.name == self.exprn, context.templates[function_name].locals), None) != None:
                     raise Exception(f"Attempted to create 2 local variables with the same name {self.exprn} in template definition {function_name}.")
                 context.templates[function_name].locals.append(ParameterDefinition(self.type, self.exprn))
-            elif context.current_state == None and context.current_template == None and function_name == "<module>" and frame.line != None and len(frame.line.split("=")) == 2:
+            elif context.current_state == None and context.current_template == None and function_name == "<module>" and frame.line != None and len(frame.line.split("=")) >= 2:
                 ## means this is a line from a global scope
                 self.exprn = frame.line.split("=")[0].strip()
                 if next(filter(lambda k: k.name == self.exprn, context.globals), None) != None:
                     raise Exception(f"Attempted to create 2 global variables with the same name {self.exprn}.")
-                context.globals.append(ParameterDefinition(self.type, self.exprn))
+                context.globals.append(ParameterDefinition(self.type, self.exprn, scope))
         
         ## if it could not be found, print a warning and assign a variable name.
         if context.current_state != None and self.exprn == "":
@@ -98,6 +99,9 @@ class VariableExpression(Expression):
     
 ## these are helpers for creating variables from commonly-used built-in types.
 IntVar = functools.partial(VariableExpression, type = IntType)
+ShortVar = functools.partial(VariableExpression, type = ShortType)
+ByteVar = functools.partial(VariableExpression, type = ByteType)
+BoolVar = functools.partial(VariableExpression, type = BoolType)
 FloatVar = functools.partial(VariableExpression, type = FloatType)
 
-__all__ = ["VariableExpression", "IntVar", "FloatVar"]
+__all__ = ["VariableExpression", "IntVar", "FloatVar", "ShortVar", "ByteVar", "BoolVar"]

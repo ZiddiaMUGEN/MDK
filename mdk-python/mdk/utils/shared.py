@@ -2,17 +2,22 @@ import traceback
 import random
 import string
 import sys
-from typing import Union
+from typing import Union, Callable
+from functools import partial
 
 from mdk.types.errors import CompilationException
-from mdk.types.context import CompilerContext
+from mdk.types.context import CompilerContext, StateController
 from mdk.types.expressions import Expression, TupleExpression
-from mdk.types.builtins import BoolType, IntType, FloatType, StringType
+from mdk.types.builtins import BoolType, IntType, FloatType, StringType, StateNoType
 from mdk.types.defined import TupleType
 
-def convert(input: Union[Expression, str, int, float, bool]) -> Expression:
+def convert(input: Union[Expression, str, int, float, bool, Callable[..., StateController]]) -> Expression:
     if isinstance(input, Expression):
         return input
+    elif isinstance(input, partial):
+        return Expression(input.keywords["value"], StateNoType)
+    elif isinstance(input, Callable):
+        return Expression(input.__name__, StateNoType)
     elif type(input) == str:
         return Expression(input, StringType)
     elif type(input) == int:

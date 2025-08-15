@@ -6,6 +6,7 @@ import traceback
 import os
 
 import mtl.project
+from mtl.types.translation import ForwardParameter, StateDefinitionScope, StateScopeType
 import mtlcc
 
 from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition
@@ -78,7 +79,15 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             project = mtl.project.loadDefinition(def_file)
             project.source_files.append(output)
             for global_variable in context.globals:
-                project.global_forwards[global_variable.name] = global_variable.type.name
+                scoped = StateDefinitionScope(StateScopeType.SHARED, None)
+                if global_variable.scope != None:
+                    if global_variable.scope.scope == StateScopeType.PLAYER:
+                        scoped = StateDefinitionScope(StateScopeType.PLAYER, None)
+                    if global_variable.scope.scope == StateScopeType.TARGET:
+                        scoped = StateDefinitionScope(StateScopeType.TARGET, None)
+                    if global_variable.scope.scope == StateScopeType.HELPER:
+                        scoped = StateDefinitionScope(StateScopeType.HELPER, global_variable.scope.target)
+                project.global_forwards.append(ForwardParameter(global_variable.name, global_variable.type.name, scoped))
             mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), target_folder), project)
 
         ## delete the output file if we're not preserving IR

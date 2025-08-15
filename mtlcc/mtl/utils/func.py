@@ -247,3 +247,18 @@ def search_file(source: str, includer: str, extra: list[str] = []) -> str:
         if os.path.exists(path):
             return path
     raise TranslationError(f"Could not find the source file specified by {source} for inclusion.", compiler_internal(None))
+
+def get_scope(value: str, location: Location) -> StateDefinitionScope:
+    if equals_insensitive(value, "shared"):
+        return StateDefinitionScope(StateScopeType.SHARED, None)
+    elif equals_insensitive(value, "player"):
+        return StateDefinitionScope(StateScopeType.PLAYER, None)
+    elif equals_insensitive(value, "helper"):
+        return StateDefinitionScope(StateScopeType.HELPER, None)
+    elif equals_insensitive(value, "target"):
+        return StateDefinitionScope(StateScopeType.TARGET, None)
+    elif value.lower().startswith("helper(") and value.endswith(")"):
+        if (new_target := tryparse(value.split("(")[1].split(")")[0], int)) == None:
+            raise TranslationError(f"Could not identify ID for helper scope from input {value}.", location)
+        return StateDefinitionScope(StateScopeType.HELPER, new_target)
+    raise TranslationError(f"Did not understand scope from input {value}.", location)

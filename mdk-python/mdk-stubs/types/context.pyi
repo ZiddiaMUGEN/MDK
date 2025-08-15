@@ -31,6 +31,7 @@ class StateController:
 class ParameterDefinition:
     type: TypeSpecifier
     name: str
+    scope: StateScope | None = None
 
 @dataclass
 class StateDefinition:

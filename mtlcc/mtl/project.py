@@ -1,8 +1,8 @@
 from mtl.types.shared import TranslationError, Location
 from mtl.types.ini import INIParserContext
-from mtl.types.context import ProjectContext
+from mtl.types.context import ProjectContext, ForwardParameter
 from mtl.parser import ini
-from mtl.utils.func import find, equals_insensitive, compiler_internal, search_file
+from mtl.utils.func import find, equals_insensitive, compiler_internal, search_file, get_scope
 from mtl.utils.constant import LEGAL_COMPILER_FLAGS
 
 def loadDefinition(file: str) -> ProjectContext:
@@ -89,6 +89,11 @@ def loadDefinition(file: str) -> ProjectContext:
         for property in section.properties:
             if property.key in ctx.global_forwards:
                 raise TranslationError(f"Global variable forward declaration with name {property.key} already exists!", property.location)
-            ctx.global_forwards[property.key] = property.value
+            new_forward = ForwardParameter(property.key, property.value)
+            if "=" in property.value:
+                new_forward.type = property.value.split("=")[0].strip()
+                new_forward.scope = get_scope(property.value.split("=")[1].strip(), compiler_internal(None))
+
+            ctx.global_forwards.append(new_forward)
 
     return ctx

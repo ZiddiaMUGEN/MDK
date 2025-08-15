@@ -45,6 +45,12 @@ class TypeParameter:
     ## scopes need to be baked in.
     scope: 'StateDefinitionScope' = field(default_factory=lambda: StateDefinitionScope(StateScopeType.SHARED, None))
 
+@dataclass
+class ForwardParameter:
+    name: str
+    type: str
+    scope: 'StateDefinitionScope' = field(default_factory=lambda: StateDefinitionScope(StateScopeType.SHARED, None))
+
 class TriggerCategory(Enum):
     SIMPLE = 0
     CONST = 1

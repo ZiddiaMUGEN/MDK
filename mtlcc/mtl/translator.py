@@ -203,19 +203,7 @@ def translateStateDefinitions(load_ctx: LoadContext, ctx: TranslationContext):
             if prop.key.lower() in ["type", "movetype", "physics", "anim", "ctrl", "poweradd", "juggle", "facep2", "hitdefpersist", "movehitpersist", "hitcountpersist", "sprpriority", "velset", "id"]:
                 setattr(state_params, prop.key.lower(), make_atom(prop.value))
             elif equals_insensitive(prop.key, "scope"):
-                if equals_insensitive(prop.value, "shared"):
-                    state_scope.type = StateScopeType.SHARED
-                elif equals_insensitive(prop.value, "player"):
-                    state_scope.type = StateScopeType.PLAYER
-                elif equals_insensitive(prop.value, "helper"):
-                    state_scope.type = StateScopeType.HELPER
-                elif equals_insensitive(prop.value, "target"):
-                    state_scope.type = StateScopeType.TARGET
-                elif prop.value.lower().startswith("helper(") and prop.value.endswith(")"):
-                    state_scope.type = StateScopeType.HELPER
-                    if (new_target := tryparse(prop.value.split("(")[1].split(")")[0], int)) == None:
-                        raise TranslationError(f"Could not identify ID for helper scope from input {prop.value}.", prop.location)
-                    state_scope.target = new_target
+                state_scope = get_scope(prop.value, prop.location)
         ## if state name is an ID but an ID was provided, throw an error
         if state_params.id != None and (ival := tryparse(state_name, int)) != None and ival != state_params.id:
             raise TranslationError(f"State definition with name {state_name} has a numeric name, but specifies an explicit ID {state_params.id}.", state_definition.location)
@@ -309,7 +297,7 @@ def replaceTemplates(ctx: TranslationContext, iterations: int = 0):
 
     if iterations == 0: print("Successfully completed template replacement.")
 
-def createGlobalsTable(ctx: TranslationContext, forwards: dict[str, str]):
+def createGlobalsTable(ctx: TranslationContext, forwards: list[ForwardParameter]):
     print("Start global variable identification and assignment...")
     ## initialize the scopes list in ctx based on the scopes of each statedef.
     ## the SHARED, PLAYER, HELPER, and TARGET scopes will all exist even if not used.
@@ -327,9 +315,9 @@ def createGlobalsTable(ctx: TranslationContext, forwards: dict[str, str]):
 
     ## create a global entry for each known/forward-declared global variable.
     for gv in forwards:
-        if (target_type := find_type(forwards[gv], ctx)) == None:
-            raise TranslationError(f"Failed to define forward-declared global variable {gv}: no type with name {forwards[gv]}.", compiler_internal(ctx.compiler_flags))
-        global_list.append(TypeParameter(gv, target_type, None, compiler_internal(ctx.compiler_flags)))
+        if (target_type := find_type(gv.type, ctx)) == None:
+            raise TranslationError(f"Failed to define forward-declared global variable {gv}: no type with name {gv.type}.", compiler_internal(ctx.compiler_flags))
+        global_list.append(TypeParameter(gv.name, target_type, None, compiler_internal(ctx.compiler_flags), scope = gv.scope))
 
     ## iterate all translated statedefs and identify global assignments
     for statedef in ctx.statedefs:
