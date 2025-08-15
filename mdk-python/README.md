@@ -8,6 +8,12 @@ This document provides an overview of how to use mdk-python to start developing 
 
 mdk-python compilation is a 2-step process. It first compiles your Python code to MTL, which is an extension to the CNS language. Then the MTL compiler translates the code to CNS which can be used to run a character.
 
+## Debugger
+
+mdk-python generates MTL which is compatible with the MTL debugger. This means you can use the `mtldbg` command-line interface for debugging your character.
+
+Refer to the documentation for `mtldbg` (`mtlcc/DEBUGGER.md`) to learn how to use the debugger. Run `info files` in the debugger to check which files you can set breakpoints on. You should be able to set breakpoints using your Python files and line numbers directly.
+
 ## Package Overview
 
 The `mdk.compiler` package contains functions you will need to build your character, such as the `statedef`, `template`, `trigger`, and `statefunc` decorators, as well as the `build` function.
