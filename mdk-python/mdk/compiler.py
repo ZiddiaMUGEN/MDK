@@ -370,5 +370,18 @@ def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optiona
 
         return partial(do_trigger, fn.__name__, validator)
     return decorator
+
+class ControllerProps:
+    def __init__(self, ignorehitpause: Expression | bool | None = None, persistent: Expression | int | None = None):
+        self.ignorehitpause = convert(ignorehitpause) if ignorehitpause != None else None
+        self.persistent = convert(persistent) if persistent != None else None
+        self.prev_state = (None, None)
+    def __enter__(self):
+        context = CompilerContext.instance()
+        self.prev_state = context.default_state
+        context.default_state = (self.ignorehitpause, self.persistent)
+    def __exit__(self):
+        context = CompilerContext.instance()
+        context.default_state = self.prev_state
     
 __all__ = ["build", "library", "statedef", "create_statedef", "template", "trigger"]

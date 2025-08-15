@@ -57,10 +57,14 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
 
     ctrl: StateController = fn(*args, **new_kwargs)
     ctrl.type = fn.__name__
-    if ignorehitpause != None: ctrl.params["ignorehitpause"] = format_bool(ignorehitpause)
-    if persistent != None: ctrl.params["persistent"] = Expression(str(persistent), IntType)
 
     ctx = CompilerContext.instance()
+    if ctx.default_state[0] != None: ctrl.params["ignorehitpause"] = ctx.default_state[0]
+    if ctx.default_state[1] != None: ctrl.params["persistent"] = ctx.default_state[1]
+
+    if ignorehitpause != None: ctrl.params["ignorehitpause"] = format_bool(ignorehitpause)
+    if persistent != None: ctrl.params["persistent"] = Expression(str(persistent), IntType)
+    
     if ctx.current_state == None and ctx.current_template == None:
         raise Exception("Attempted to call a state controller outside of a statedef function.")
     
