@@ -26,6 +26,21 @@ By default, the debugging database specified with `-d` (or the compiled debuggin
 
 To start, input command `launch` to start a MUGEN debugging process, then input command `continue` to start running the process. At any point while running, you can enter `CTRL+C` to access the command prompt again.
 
+#### Basic Usage
+
+Start by running `launch`.
+
+Run `info files` to check which files make up the code for your character. Set a breakpoint either by passing a file name and line number pair, or by passing a state ID and controller index pair:
+
+```
+break myfile.mtl:20
+break 5200 3
+```
+
+You can also use `breakp` to set a 'passpoint' (which is a breakpoint that only pauses the program if the character actually executes that controller/triggers evaluated to true).
+
+When you have set whatever breakpoints you need, run `continue` to start the MUGEN process. When a breakpoint is encountered, MUGEN will pause and an input prompt will re-appear. You can then use `step` or `continue` to resume. Use `delete` (or `deletep`) to delete a breakpoint.
+
 #### `launch`
 
 Launches a MUGEN process for debugging. This can only be run if a debugging database is loaded. This will launch the process with p1 assigned as the character where the `mdbg` database is contained.
