@@ -43,7 +43,7 @@ def find_property(property: str, controller: StateController) -> list[StateContr
     return list(filter(lambda k: equals_insensitive(property, k.key), controller.properties))
 
 ## this checks EACH possible match and identifies which can potentially match the input trigger.
-def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location, scope: Optional[StateDefinitionScope] = None) -> list[TriggerDefinition]:
+def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[TriggerTree], ctx: TranslationContext, loc: Location, scope: Optional[StateDefinitionScope] = None, pass_through: Optional[bool] = True) -> list[TriggerDefinition]:
     results: list[TriggerDefinition] = []
     #all_matches = get_all(ctx.triggers, lambda k: equals_insensitive(k.name, trigger_name))
     trigger_lower = trigger_name.lower()
@@ -59,10 +59,10 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
         for index in range(len(params)):
             ## this is to help handle automatic enum matching.
             next_expected = [TypeSpecifier(match.params[index].type)]
-            type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope)
+            type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)
             ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
             try:
-                if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope)) == None:
+                if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)) == None:
                     is_match = False
                     break
             except TranslationError:
@@ -425,7 +425,7 @@ def match_enum_parts(input: str, ctx: TranslationContext) -> Optional[list[TypeS
                 return matched
     return None
 
-def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None) -> Optional[list[TypeSpecifier]]:
+def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationContext, expected: Optional[list[TypeSpecifier]] = None, scope: Optional[StateDefinitionScope] = None, pass_through: Optional[bool] = False) -> Optional[list[TypeSpecifier]]:
     ## runs a type check against a single tree. this assesses that the types of the components used in the tree
     ## are correct and any operators used in the tree are valid.
     ## this returns a list of Specifiers because the tree can potentially have multiple results (e.g. for multivalues)
@@ -469,14 +469,14 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         maybe_expected: Optional[list[TypeSpecifier]] = None
         for child in tree.children:
             try:
-                if (child_type := type_check(child, table, ctx, scope = scope)) != None:
+                if (child_type := type_check(child, table, ctx, scope = scope, pass_through = pass_through)) != None:
                     if len(child_type) == 1 and child_type[0].type.category in [TypeCategory.ENUM, TypeCategory.STRING_ENUM, TypeCategory.FLAG, TypeCategory.STRING_FLAG]:
                         maybe_expected = child_type
             except TranslationError:
                 continue
         for child in tree.children:
             # if any child fails type checking, bubble that up
-            if (child_type := type_check(child, table, ctx, scope = scope, expected = maybe_expected)) == None:
+            if (child_type := type_check(child, table, ctx, scope = scope, expected = maybe_expected, pass_through = pass_through)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
@@ -504,7 +504,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
             else:
                 next_expected = None
 
-            if (child_type := type_check(child, table, ctx, next_expected, scope = scope)) == None:
+            if (child_type := type_check(child, table, ctx, next_expected, scope = scope, pass_through = pass_through)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from multivalued operator.", tree.location)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
@@ -515,7 +515,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         ## determine the widened type match and return that as the type of the interval.
         specs: list[TypeSpecifier] = []
         for child in tree.children:
-            if (child_type := type_check(child, table, ctx, expected = [TypeSpecifier(BUILTIN_FLOAT)], scope = scope)) == None:
+            if (child_type := type_check(child, table, ctx, expected = [TypeSpecifier(BUILTIN_FLOAT)], scope = scope, pass_through = pass_through)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from interval operator.", tree.location)
             ## it is not possible to nest multi-values. unpack the child
             if len(child_type) != 1: return None
@@ -532,7 +532,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
 
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
-        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope)
+        matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope, pass_through = pass_through)
         if len(matches) == 0:
             ## if no match exists, the trigger does not exist.
             raise TranslationError(f"No matching trigger overload was found for trigger named {tree.operator}.", tree.location)
@@ -548,7 +548,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         return [TypeSpecifier(struct_type)]
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects will always have the redirect target as child 1, and the redirect expression as child 2.
-        if (target := type_check(tree.children[0], table, ctx, scope = scope)) == None or target[0].type != BUILTIN_TARGET:
+        if (target := type_check(tree.children[0], table, ctx, scope = scope, pass_through = pass_through)) == None or target[0].type != BUILTIN_TARGET:
             raise TranslationError(f"Target of redirected expression could not be resolved to a target type.", tree.location)
         if equals_insensitive(tree.children[0].operator, "rescope") and scope != None:
             ## rescope needs special handling in type-checking.
@@ -562,7 +562,11 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         else:
             target_scope = None
             target_table = []
-        if (exprn := type_check(tree.children[1], target_table, ctx, scope = target_scope)) == None:
+        ## if `pass_through` is set, the input table contains locals to a template or trigger definition.
+        ## pass them through to the redirect type check.
+        if pass_through:
+            target_table += table
+        if (exprn := type_check(tree.children[1], target_table, ctx, scope = target_scope, pass_through = pass_through)) == None:
             raise TranslationError(f"Could not determine the type of the redirected expression.", tree.location)
         return exprn
     

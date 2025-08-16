@@ -127,7 +127,7 @@ def translateTriggers(load_ctx: LoadContext, ctx: TranslationContext):
 
         ## run the type-checker against the trigger expression
         ## the locals table for triggers is just the input params.
-        result_type = type_check(trigger_definition.value, param_defs, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
+        result_type = type_check(trigger_definition.value, param_defs, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)], pass_through = True)
         ## trigger returns and trigger expressions are only permitted to have one return type currently.
         ## ensure only one type was returned.
         if result_type == None or len(result_type) != 1:
@@ -177,10 +177,10 @@ def translateTemplates(load_ctx: LoadContext, ctx: TranslationContext):
             ## the type checker will throw an error if it does not recognize any symbol.
             for trigger_group in controller.triggers:
                 for trigger in controller.triggers[trigger_group].triggers:
-                    type_check(trigger, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)])
+                    type_check(trigger, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = [TypeSpecifier(BUILTIN_BOOL)], pass_through = True)
             for property in controller.properties:
                 target_prop = find(target_template.params, lambda k: equals_insensitive(k.name, property.key))
-                type_check(property.value, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = target_prop.type if target_prop != None else None)
+                type_check(property.value, [TypeParameter(t.name, t.type[0].type) for t in template_params] + template_locals, ctx, expected = target_prop.type if target_prop != None else None, pass_through = True)
             template_states.append(controller)
         
         ctx.templates.append(TemplateDefinition(template_name, template_params, template_locals, template_states, template_definition.location))

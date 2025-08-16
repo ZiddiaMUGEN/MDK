@@ -50,8 +50,9 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 if context.triggers[t].library == None:
                     context.triggers[t].library = output + ".inc"
                 lib_groups.add(context.triggers[t].library)
-            
-        library(lib_targets, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
+
+        if len(lib_targets) > 0: 
+            library(lib_targets, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
         
         with open(output, mode="w") as f:
             if not skip_templates and len(lib_groups) != 0:

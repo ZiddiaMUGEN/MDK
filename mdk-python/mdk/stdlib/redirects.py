@@ -1,5 +1,6 @@
-from typing import Protocol, Optional, Callable
+from typing import Optional, Callable
 
+from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
 import mdk.stdlib.triggers as triggers
 
@@ -106,6 +107,14 @@ class RedirectTarget:
         if isinstance(self.expr, Expression):
             return f"{self.target}({self.expr})"
         return self.target
+    
+    ## redirects need to be able to access their (global) variables.
+    ## it's not important to check scope/ownership here, MTL will take care of it.
+    def __getattr__(self, name: str) -> Expression:
+        ctx = CompilerContext.instance()
+        if (var := next(filter(lambda gv: gv.name == name, ctx.globals), None)) == None:
+            raise Exception(f"No variable exists with name {name} for redirect {self.target}.")
+        return Expression(f"{self.__repr__()},{name}", var.type)
 
 def RedirectTargetBuilder(target: str) -> Callable[[Optional[Expression]], RedirectTarget]:
     def _redirect(id: Optional[Expression] = None) -> RedirectTarget:
