@@ -161,6 +161,11 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
     ## `int` is implicitly convertible to `float`
     if t1.name == "int" and t2.name == "float":
         return t2
+    ## implicit convert `state` to `int`
+    if t1.name == "int" and t2.name == "state":
+        return t2
+    if t1.name == "state" and t2.name == "int":
+        return t1
 
     ## `float` cannot be implicitly converted to `int` as it results in loss of precision.
     if t1.name == "float" and t2.name == "int":
