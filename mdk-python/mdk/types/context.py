@@ -101,6 +101,7 @@ class CompilerContext:
     trigger_stack: list[Expression]
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
+    statefuncs: list[str]
 
     def __init__(self):
         self.statedefs = {}
@@ -112,6 +113,7 @@ class CompilerContext:
         self.trigger_stack = []
         self.globals = []
         self.default_state = (None, None)
+        self.statefuncs = []
     
     @classmethod
     def instance(cls):

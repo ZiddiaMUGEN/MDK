@@ -64,6 +64,8 @@ def create_compiler_error(exc: CompilationException):
             if context.templates[tm].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
         for sd in context.statedefs:
             if context.statedefs[sd].fn.__name__ == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
+        for fn in context.statefuncs:
+            if fn == fs.name: save_lines.append(f"{fs.filename}:{fs.lineno}\n\t{fs.line}")
     ## now print full exception and likely causes.
     traceback.print_exception(_exc)
     print()

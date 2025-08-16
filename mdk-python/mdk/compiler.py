@@ -201,7 +201,9 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
 ## very simple decorator to ensure a function called from a statedef
 ## can also have triggers applied correctly.
 def statefunc(fn: Callable[..., None]) -> Callable[..., None]:
+    ctx = CompilerContext.instance()
     new_fn = rewrite_function(fn)
+    ctx.statefuncs.append(fn.__name__)
     return new_fn
 
 def statedef(
