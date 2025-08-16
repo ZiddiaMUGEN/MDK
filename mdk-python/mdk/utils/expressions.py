@@ -15,6 +15,8 @@ def check_types_assignable(spec1: TypeSpecifier, spec2: TypeSpecifier) -> Option
     ## `int` is implicitly convertible to `anim`, `stateno`
     if spec1.name == "int" and spec2.name in ["anim", "stateno"]:
         return spec2
+    if spec1.name in ["stateno", "anim"] and spec2.name == "int":
+        return spec1
 
     ## `int` is implicitly convertible to `float`
     if spec1.name == "int" and spec2.name == "float":
