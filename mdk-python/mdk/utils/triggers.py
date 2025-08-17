@@ -1,8 +1,8 @@
 from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
 from mdk.types.variables import VariableExpression
-from mdk.types.builtins import BoolType, IntType
-from mdk.types.defined import StateNoType
+from mdk.types.builtins import BoolType, IntType, ShortType, ByteType
+from mdk.types.defined import StateNoType, EnumType, FlagType
 
 from mdk.utils.shared import format_bool, convert
 from mdk.utils.expressions import check_types_assignable
@@ -19,8 +19,9 @@ def TriggerAnd(*exprs_: Expression | bool):
     for expr in exprs:
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to AND statement to be convertible to an Expression, but found {type(expr)}.")
-        if expr.type not in [BoolType, IntType, StateNoType]:
-            raise Exception(f"Expected input to AND statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
+        if expr.type not in [BoolType, IntType, ShortType, ByteType, StateNoType]:
+            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.user_defined:
+                raise Exception(f"Expected input to AND statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " && ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
     return Expression(f"({expr_string})", BoolType)
@@ -37,8 +38,9 @@ def TriggerOr(*exprs_: Expression | bool):
     for expr in exprs:
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to OR statement to be convertible to an Expression, but found {type(expr)}.")
-        if expr.type not in [BoolType, IntType, StateNoType]:
-            raise Exception(f"Expected input to OR statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
+        if expr.type not in [BoolType, IntType, ShortType, ByteType, StateNoType]:
+            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.user_defined:
+                raise Exception(f"Expected input to OR statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " || ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
     return Expression(f"({expr_string})", BoolType)

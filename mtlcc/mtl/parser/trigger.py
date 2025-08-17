@@ -236,7 +236,7 @@ def parseMultiValue(line: str, index: int, location: Location, lhs: TriggerTree,
     ## this needs to also handle redirects.
     if (lhs.node == TriggerTreeNode.ATOM and lhs.operator.lower() in ["parent", "root", "helper", "target", "partner", "enemy", "enemynear"]) or \
        (lhs.node == TriggerTreeNode.FUNCTION_CALL and lhs.operator.lower() in ["helper", "target", "enemy", "enemynear", "playerid", "rescope"]):
-        if nextExprn.node == TriggerTreeNode.ATOM or nextExprn.node == TriggerTreeNode.FUNCTION_CALL:
+        if nextExprn.node == TriggerTreeNode.ATOM or nextExprn.node == TriggerTreeNode.FUNCTION_CALL or nextExprn.node == TriggerTreeNode.STRUCT_ACCESS:
             return (index, TriggerTree(TriggerTreeNode.REDIRECT, "", [lhs, nextExprn], location))
         elif nextExprn.node == TriggerTreeNode.BINARY_OP:
             redirected = TriggerTree(TriggerTreeNode.REDIRECT, "", [lhs, nextExprn.children[0]], location)

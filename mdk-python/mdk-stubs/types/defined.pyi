@@ -20,14 +20,18 @@ class EnumType(TypeSpecifier):
     members: list[str]
     name: str
     category: TypeCategory
-    def __init__(self, name: str, members: list[str]) -> None: ...
+    user_defined: bool
+    library: str | None
+    def __init__(self, name: str, members: list[str], register: bool = True, library: str | None = None) -> None: ...
     def __getattr__(self, name: str) -> Expression: ...
 
 class FlagType(TypeSpecifier):
     members: list[str]
     name: str
     category: TypeCategory
-    def __init__(self, name: str, members: list[str]) -> None: ...
+    user_defined: bool
+    library: str | None
+    def __init__(self, name: str, members: list[str], register: bool = True, library: str | None = None) -> None: ...
     def __getattr__(self, name: str) -> Expression: ...
 
 class TupleType(TypeSpecifier):

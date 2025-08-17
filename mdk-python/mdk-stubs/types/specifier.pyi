@@ -10,4 +10,5 @@ class TypeCategory(Enum):
 class TypeSpecifier:
     name: str
     category: TypeCategory
+    library: str | None
     def __init__(self, name: str, category: TypeCategory) -> None: ...

@@ -14,7 +14,7 @@ from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType, StateNoType
-from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType
+from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType, EnumType, FlagType
 
 from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
 from mdk.utils.compiler import write_controller, rewrite_function
@@ -37,7 +37,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             context.current_state = None
 
         lib_groups = set()
-        lib_targets: list[Callable] = []
+        lib_targets: list[Callable | TypeSpecifier] = []
         if not skip_templates and len(context.templates) != 0:
             for t in context.templates:
                 lib_targets.append(context.templates[t].fn)
@@ -50,6 +50,12 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 if context.triggers[t].library == None:
                     context.triggers[t].library = output + ".inc"
                 lib_groups.add(context.triggers[t].library)
+        if not skip_templates and len(context.typedefs) != 0:
+            for t in context.typedefs:
+                lib_targets.append(context.typedefs[t])
+                if context.typedefs[t].library == None:
+                    context.typedefs[t].library = output + ".inc"
+                lib_groups.add(context.typedefs[t].library)
 
         if len(lib_targets) > 0: 
             library(lib_targets, dirname = os.path.abspath(os.path.dirname(def_file)), locations = locations)
@@ -109,12 +115,12 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         print("An internal error occurred while compiling a template, bug the developers.")
         raise exc
 
-def library(inputs: list[Callable[..., None]], dirname: str = "", output: Optional[str] = None, locations: bool = True, preserve_ir: bool = False) -> None:
+def library(inputs: list[Callable[..., None] | TypeSpecifier], dirname: str = "", output: Optional[str] = None, locations: bool = True, preserve_ir: bool = False) -> None:
     if len(inputs) == 0:
         raise Exception("Please specify some templates and/or triggers to be built.")
     context = CompilerContext.instance()
     try:
-        per_file: dict[str, list[Union[TriggerDefinition, TemplateDefinition]]] = {}
+        per_file: dict[str, list[Union[TriggerDefinition, TemplateDefinition, TypeSpecifier]]] = {}
         for template in context.templates:
             definition = context.templates[template]
             context.current_template = definition
@@ -145,6 +151,16 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
                 definition.exprn = definition.fn(**kwargs)
             except Exception as exc:
                 raise CompilationException(exc)
+            if definition.library == None and output != None and definition.fn in inputs:
+                definition.library = output
+            if definition.library not in per_file:
+                per_file[definition.library] = [] # type: ignore
+            per_file[definition.library].append(definition) # type: ignore
+
+        for typedef in context.typedefs:
+            definition = context.typedefs[typedef]
+            if not isinstance(definition, EnumType) and not isinstance(definition, FlagType):
+                raise CompilationException(f"Can only emit type declarations for EnumType and FlagType, not {type(definition)}.")
             if definition.library == None and output != None and definition.fn in inputs:
                 definition.library = output
             if definition.library not in per_file:
@@ -191,6 +207,18 @@ def library(inputs: list[Callable[..., None]], dirname: str = "", output: Option
                         f.write("[Define Parameters]\n")
                         for param in definition.params:
                             f.write(f"{param} = {definition.params[param].name}\n")
+                        f.write("\n")
+                    elif isinstance(definition, TypeSpecifier):
+                        f.write("[Define Type]\n")
+                        f.write(f"name = {definition.name}")
+                        if isinstance(definition, EnumType):
+                            f.write(f"type = enum\n")
+                            for member in definition.members:
+                                f.write(f"enum = {member}\n")
+                        elif isinstance(definition, FlagType):
+                            f.write(f"type = flag\n")
+                            for member in definition.members:
+                                f.write(f"flag = {member}\n")
                         f.write("\n")
     except CompilationException as exc:
         create_compiler_error(exc)

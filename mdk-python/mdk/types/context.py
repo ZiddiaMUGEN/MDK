@@ -95,6 +95,7 @@ class CompilerContext:
     statedefs: dict[str, StateDefinition]
     templates: dict[str, TemplateDefinition]
     triggers: dict[str, TriggerDefinition]
+    typedefs: dict[str, TypeSpecifier]
     current_state: Optional[StateDefinition]
     current_template: Optional[TemplateDefinition]
     current_trigger: Optional[Expression]
@@ -107,6 +108,7 @@ class CompilerContext:
         self.statedefs = {}
         self.templates = {}
         self.triggers = {}
+        self.typedefs = {}
         self.current_state = None
         self.current_template = None
         self.current_trigger = None

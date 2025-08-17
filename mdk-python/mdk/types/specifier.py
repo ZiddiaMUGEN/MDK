@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 
 ## this specifies a subset of the type categories provided by MTL.
 class TypeCategory(Enum):
@@ -20,6 +21,8 @@ class TypeCategory(Enum):
 class TypeSpecifier:
     name: str
     category: TypeCategory
+    library: Optional[str]
     def __init__(self, name: str, category: TypeCategory):
         self.name = name
         self.category = category
+        self.library = None
