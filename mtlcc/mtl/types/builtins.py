@@ -33,6 +33,7 @@ BUILTIN_TRANSTYPE = TypeDefinition("TransType", TypeCategory.STRING_ENUM, 32, ["
 BUILTIN_ASSERTTYPE = TypeDefinition("AssertType", TypeCategory.STRING_ENUM, 32, ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"], Location("mtl/builtins.py", line_number()))
 BUILTIN_BINDTYPE = TypeDefinition("BindType", TypeCategory.STRING_ENUM, 32, ["Foot", "Mid", "Head"], Location("mtl/builtins.py", line_number()))
 BUILTIN_POSTYPE = TypeDefinition("PosType", TypeCategory.STRING_ENUM, 32, ["P1", "P2", "Front", "Back", "Left", "Right", "None"], Location("mtl/builtins.py", line_number()))
+BUILTIN_SPACETYPE = TypeDefinition("SpaceType", TypeCategory.STRING_ENUM, 32, ["Screen", "Stage"], Location("mtl/builtins.py", line_number()))
 BUILTIN_WAVETYPE = TypeDefinition("WaveType", TypeCategory.STRING_ENUM, 32, ["Sine", "Square", "SineSquare", "Off"], Location("mtl/builtins.py", line_number()))
 BUILTIN_HELPERTYPE = TypeDefinition("HelperType", TypeCategory.STRING_ENUM, 32, ["Normal", "Player", "Proj"], Location("mtl/builtins.py", line_number()))
 BUILTIN_HITFLAG = TypeDefinition("HitFlag", TypeCategory.STRING_FLAG, 32, ["H", "L", "A", "M", "F", "D", "+", "-"], Location("mtl/builtins.py", line_number()))

@@ -71,6 +71,7 @@ HitAnimType = EnumType("HitAnimType", ["Light", "Medium", "Hard", "Back", "Up", 
 AttackType = EnumType("AttackType", ["High", "Low", "Trip", "None"])
 PriorityType = EnumType("PriorityType", ["Hit", "Miss", "Dodge"])
 PosType = EnumType("PosType", ["P1", "P2", "Front", "Back", "Left", "Right", "None"])
+SpaceType = EnumType("SpaceType", ["Screen", "Stage"])
 TeamModeType = EnumType("TeamModeType", ["Single", "Simul", "Turns"])
 
 ## TODO: +/- won't work.
@@ -96,5 +97,6 @@ __all__ = [
     "WaveType", "HelperType", "HitFlagType", "GuardFlagType", "TeamType", "HitAnimType",
     "AttackType", "PriorityType", "PosType", "FloatPosType", "IntPairType",
     "WaveTupleType", "HitType", "HitAttr", "HitStringType", "PriorityPairType",
-    "SoundPairType", "PeriodicColorType", "BoolPairType", "TeamModeType"
+    "SoundPairType", "PeriodicColorType", "BoolPairType", "TeamModeType",
+    "SpaceType"
 ]

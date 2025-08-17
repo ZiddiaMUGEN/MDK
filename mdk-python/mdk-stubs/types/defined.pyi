@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeCategory, TypeSpecifier
 
-__all__ = ['StructureMember', 'StructureType', 'EnumType', 'FlagType', 'TupleType', 'StateType', 'MoveType', 'PhysicsType', 'ColorType', 'ColorMultType', 'TransType', 'AssertType', 'FloatPairType', 'WaveType', 'HelperType', 'HitFlagType', 'GuardFlagType', 'TeamType', 'HitAnimType', 'AttackType', 'PriorityType', 'PosType', 'FloatPosType', 'IntPairType', 'WaveTupleType', 'HitType', 'HitAttr', 'HitStringType', 'PriorityPairType', 'SoundPairType', 'PeriodicColorType', 'BoolPairType']
+__all__ = ['StructureMember', 'StructureType', 'EnumType', 'FlagType', 'TupleType', 'StateType', 'MoveType', 'PhysicsType', 'ColorType', 'ColorMultType', 'TransType', 'AssertType', 'FloatPairType', 'WaveType', 'HelperType', 'HitFlagType', 'GuardFlagType', 'TeamType', 'HitAnimType', 'AttackType', 'PriorityType', 'PosType', 'FloatPosType', 'IntPairType', 'WaveTupleType', 'HitType', 'HitAttr', 'HitStringType', 'PriorityPairType', 'SoundPairType', 'PeriodicColorType', 'BoolPairType', 'SpaceType']
 
 @dataclass
 class StructureMember:
@@ -50,6 +50,7 @@ HitAnimType: EnumType
 AttackType: EnumType
 PriorityType: EnumType
 PosType: EnumType
+SpaceType: EnumType
 TeamModeType: EnumType
 HitFlagType: FlagType
 GuardFlagType: FlagType

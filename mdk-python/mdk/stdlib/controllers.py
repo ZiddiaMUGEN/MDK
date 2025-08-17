@@ -809,6 +809,7 @@ the default phase offset is 90.</dd>
     id = [IntType, None],
     pos = [FloatPairType, None],
     postype = [PosType, None],
+    space = [SpaceType, None],
     facing = [IntType, None],
     vfacing = [IntType, None],
     bindtime = [IntType, None],
@@ -832,7 +833,8 @@ def Explod(
     anim: ConvertibleExpression, 
     id: Optional[ConvertibleExpression] = None, 
     pos: Optional[TupleExpression] = None, 
-    postype: Optional[ConvertibleExpression] = None, 
+    postype: Optional[ConvertibleExpression] = None,
+    space: Optional[ConvertibleExpression] = None,
     facing: Optional[ConvertibleExpression] = None, 
     vfacing: Optional[ConvertibleExpression] = None, 
     bindtime: Optional[ConvertibleExpression] = None, 
@@ -1093,6 +1095,7 @@ actual screen position will be 165,0.</p>
     set_if(result, "id", id)
     set_if_tuple(result, "pos", pos, FloatPairType)
     set_if(result, "postype", postype)
+    set_if(result, "space", space)
     set_if(result, "facing", facing)
     set_if(result, "vfacing", vfacing)
     set_if(result, "bindtime", bindtime)
