@@ -7,7 +7,8 @@ import traceback
 # the pyreadline3 library works as a replacement?
 import readline
 
-from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext
+from mtl.types.translation import TypeCategory
+from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext, DebugTypeInfo
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugCommand
 from mtl.utils.func import match_filenames, mask_variable, search_file
@@ -17,8 +18,27 @@ def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget
     alloc = var.allocations[0]
     target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
     target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger, ctx)
-    if var.type.name == "bool": target_value = "true" if target_value != 0 else "false"
-    print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<12}\t{target_name:<24}\t{target_value}")
+    ## special handling for specific types:
+    ### - `bool` should display as either `true` or `false`
+    ### - `state` should display the state name, if available
+    ### - `enum` and `flag` types should display the stored value
+    if var.type.name == "bool": 
+        target_value = "true" if target_value != 0 else "false"
+    elif var.type.name == "state":
+        if (state := next(filter(lambda k: str(k.id) == str(target_value), ctx.states), None)) != None:
+            target_value = state.name
+    elif var.type.category == TypeCategory.ENUM and isinstance(var.type, DebugTypeInfo):
+        if int(target_value) < len(var.type.member_names):
+            target_value = var.type.member_names[int(target_value)]
+    elif var.type.category == TypeCategory.FLAG and isinstance(var.type, DebugTypeInfo):
+        tv = int(target_value)
+        target_value = ""
+        flag = 0
+        for member in var.type.member_names:
+            if (tv & 2 ** flag) != 0: target_value += member
+            flag += 1
+
+    print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<24}\t{target_name:<24}\t{target_value}")
 
 def runDebugger(target: str, mugen: str):
     debugger = None
@@ -280,7 +300,7 @@ def runDebugger(target: str, mugen: str):
                         continue
                     scope = state.scope
                     ## display
-                    print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<12}\t{'Allocation':<24}\t{'Value':<16}")
+                    print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<24}\t{'Allocation':<24}\t{'Value':<16}")
                     for var in ctx.globals:
                         if var.scope == scope:
                             print_variable("Global", var, debugger, ctx)

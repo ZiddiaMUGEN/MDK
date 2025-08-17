@@ -4,7 +4,7 @@ import ast
 import types
 from typing import Callable, Optional
 
-from mdk.types.context import StateController
+from mdk.types.context import StateController, Expression
 
 from mdk.utils.shared import format_bool
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop

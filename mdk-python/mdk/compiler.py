@@ -397,6 +397,9 @@ def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optiona
         # get params of decorated function
         signature = inspect.signature(fn)
 
+        # create new function with ast fixes
+        new_fn = rewrite_function(fn) # type: ignore
+
         # ensure parameters align
         if len(signature.parameters) != len(inputs):
             raise Exception(f"Mismatch in trigger parameter count: saw {len(inputs)} input types, and {len(signature.parameters)} real parameters.")
@@ -407,7 +410,7 @@ def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optiona
             params[param] = inputs[index]
             index += 1
 
-        trigger = TriggerDefinition(fn, library, result, params)
+        trigger = TriggerDefinition(new_fn, library, result, params) # type: ignore
 
         # add the new template to the context
         ctx = CompilerContext.instance()
