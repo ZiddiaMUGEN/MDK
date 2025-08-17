@@ -28,14 +28,14 @@ def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget
         if (state := next(filter(lambda k: str(k.id) == str(target_value), ctx.states), None)) != None:
             target_value = state.name
     elif var.type.category == TypeCategory.ENUM and isinstance(var.type, DebugTypeInfo):
-        if int(target_value) < len(var.type.member_names):
-            target_value = var.type.member_names[int(target_value)]
+        if int(target_value) < len(var.type.members):
+            target_value = var.type.members[int(target_value)]
     elif var.type.category == TypeCategory.FLAG and isinstance(var.type, DebugTypeInfo):
         tv = int(target_value)
         target_value = ""
         flag = 0
-        for member in var.type.member_names:
-            if (tv & 2 ** flag) != 0: target_value += member
+        for member in var.type.members:
+            if (tv & 2 ** flag) != 0: target_value += str(member)
             flag += 1
 
     print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<24}\t{target_name:<24}\t{target_value}")
