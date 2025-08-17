@@ -69,10 +69,14 @@ def runCompilerFromDef(input: str, output: str, projectContext: ProjectContext):
                     raise TranslationError(f"Attempted to redefine a type {struct.name} (previously defined at {os.path.realpath(existing.location.filename)}:{existing.location.line})", struct.location)
             # for includes, apply them if they are not matched. if they are matched, skip if it's the same source; otherwise emit an error.
             for incl in nextLoadContext.includes:
-                if (existing := find(loadContext.includes, lambda k: equals_insensitive(k.name, incl.name))) == None:
-                    loadContext.includes.append(incl)
-                elif existing.location != incl.location:
-                    raise TranslationError(f"Attempted to redefine an include {incl.name} (previously defined at {os.path.realpath(existing.location.filename)}:{existing.location.line})", incl.location)
+                source = find(incl.properties, lambda k: k.key.lower() == "source")
+                if source == None: raise TranslationError("The 'source' property is required on Include blocks.", incl.location)
+                for existing in loadContext.includes:
+                    existing_source = find(existing.properties, lambda k: k.key.lower() == "source")
+                    if existing_source == None: raise TranslationError("The 'source' property is required on Include blocks.", existing.location)
+                    if source.value == existing_source.value:
+                        raise TranslationError(f"Attempted to redefine an include {incl.name} (previously defined at {os.path.realpath(existing.location.filename)}:{existing.location.line})", incl.location)
+                loadContext.includes.append(incl)
 
         ## includes must be processed against the COMBINED context,
         ## so the processIncludes call has to be moved out to here.
