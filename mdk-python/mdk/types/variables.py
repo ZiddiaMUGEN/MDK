@@ -73,6 +73,10 @@ class VariableExpression(Expression):
         ## i believe this should always be right, since it flows from <callsite> -> .set
         callsite = traceback.extract_stack()[-2]
         new_controller.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
+
+        if context.default_state[0] != None: new_controller.params["ignorehitpause"] = context.default_state[0]
+        if context.default_state[1] != None: new_controller.params["persistent"] = context.default_state[1]
+
         if context.current_state != None:
             context.current_state.controllers.append(new_controller)
         elif context.current_template != None:
@@ -92,6 +96,10 @@ class VariableExpression(Expression):
         ## i believe this should always be right, since it flows from <callsite> -> .set
         callsite = traceback.extract_stack()[-2]
         new_controller.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
+
+        if context.default_state[0] != None: new_controller.params["ignorehitpause"] = context.default_state[0]
+        if context.default_state[1] != None: new_controller.params["persistent"] = context.default_state[1]
+
         if context.current_state != None:
             context.current_state.controllers.append(new_controller)
         elif context.current_template != None:
