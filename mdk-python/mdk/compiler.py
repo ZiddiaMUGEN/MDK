@@ -210,7 +210,7 @@ def library(inputs: list[Callable[..., None] | TypeSpecifier], dirname: str = ""
                         f.write("\n")
                     elif isinstance(definition, TypeSpecifier):
                         f.write("[Define Type]\n")
-                        f.write(f"name = {definition.name}")
+                        f.write(f"name = {definition.name}\n")
                         if isinstance(definition, EnumType):
                             f.write(f"type = enum\n")
                             for member in definition.members:
