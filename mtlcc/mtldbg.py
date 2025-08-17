@@ -158,7 +158,7 @@ def runDebugger(target: str, mugen: str):
                     continue
                 ctx.breakpoints.remove(ctx.breakpoints[index - 1])
                 ## update the table in-memory after removing.
-                process.insertBreakpointTable(ctx.breakpoints, target)
+                process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
             elif command == DebuggerCommand.DELETEP:
                 ## delete PP by ID.
                 index = int(request.params[0])
@@ -166,7 +166,8 @@ def runDebugger(target: str, mugen: str):
                     print(f"Could not find a passpoint with ID {index}.")
                     continue
                 ctx.passpoints.remove(ctx.passpoints[index - 1])
-                ## TODO update with new in-memory breakpoint management
+                ## update the table in-memory after removing.
+                process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
             elif command == DebuggerCommand.EXIT:
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT

@@ -29,9 +29,19 @@ def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: Debuggi
     ctx.breakpoints.append((stateno, index))
 
     ## update breakpoint table
-    insertBreakpointTable(ctx.breakpoints, target)
+    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target)
 
-def insertBreakpointTable(breakpoints: list[tuple[int, int]], target: DebuggerTarget, step: Optional[tuple[int, int]] = None):
+def setPasspoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
+    if len(ctx.passpoints) >= 8:
+        print(f"Reached maximum active passpoint count (8)")
+        return
+    
+    ctx.passpoints.append((stateno, index))
+
+    ## update breakpoint table
+    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target)
+
+def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[tuple[int, int]], target: DebuggerTarget, step: Optional[tuple[int, int]] = None):
     ## suspend the thread
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
     thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, target.launch_info.thread_id)
@@ -46,6 +56,12 @@ def insertBreakpointTable(breakpoints: list[tuple[int, int]], target: DebuggerTa
     breakpoints_ = copy.deepcopy(breakpoints)
     if step != None: breakpoints_.append(step)
     for bp in breakpoints_:
+        set_addr_int(start_addr, bp[0], process_handle)
+        set_addr_int(start_addr + 4, bp[1], process_handle)
+        start_addr += 8
+
+    start_addr = target.launch_info.database['SCTRL_BREAKPOINT_TABLE'] + (8 * 10)
+    for bp in passpoints:
         set_addr_int(start_addr, bp[0], process_handle)
         set_addr_int(start_addr + 4, bp[1], process_handle)
         start_addr += 8
@@ -262,29 +278,32 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                     results.put(DebugBreakResult(step = next_event.step))
                     continue
                 
-                ## breakpoint was matched, pause and wait for input
-                launch_info.state = DebugProcessState.PAUSED
-                stateno = get_uncached(ctx.current_owner + launch_info.database["stateno"], process_handle)
-                ctx.current_breakpoint = (stateno, ctx.last_index)
-                ## find the file and line corresponding to this breakpoint
-                if (state := get_state_by_id(stateno, ctx)) == None:
-                    print(f"Warning: Debugger could not find any state with ID {stateno} in database.")
-                    continue
-                if ctx.last_index >= len(state.states):
-                    print(f"Warning: Debugger could not match controller index {ctx.last_index} for state {stateno} in database.")
-                    continue
-                player_id = get_uncached(ctx.current_owner + 0x04, process_handle)
-                helper_id = get_uncached(ctx.current_owner + 0x1644, process_handle)
-                game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
-                p1_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
-                player_name = "root" if ctx.current_owner == p1_address else f"helper({helper_id})"
-                print(f"Encountered breakpoint for player {player_id} ( {player_name} ) at: {state.states[ctx.last_index]} (state {stateno}, controller {ctx.last_index})")
+                match_breakpoint(launch_info, ctx, process_handle)
             else:
                 ## just immediately tell the engine to continue in this case.
                 results.put(DebugBreakResult(step = next_event.step))
         except Empty as exc:
             ## this happens if the queue is empty and the read times out.
             continue
+
+def match_breakpoint(launch_info: DebuggerLaunchInfo, ctx: DebuggingContext, process_handle: int):
+    ## breakpoint was matched, pause and wait for input
+    launch_info.state = DebugProcessState.PAUSED
+    stateno = get_uncached(ctx.current_owner + launch_info.database["stateno"], process_handle)
+    ctx.current_breakpoint = (stateno, ctx.last_index)
+    ## find the file and line corresponding to this breakpoint
+    if (state := get_state_by_id(stateno, ctx)) == None:
+        print(f"Warning: Debugger could not find any state with ID {stateno} in database.")
+        return
+    if ctx.last_index >= len(state.states):
+        print(f"Warning: Debugger could not match controller index {ctx.last_index} for state {stateno} in database.")
+        return
+    player_id = get_uncached(ctx.current_owner + 0x04, process_handle)
+    helper_id = get_uncached(ctx.current_owner + 0x1644, process_handle)
+    game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
+    p1_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
+    player_name = "root" if ctx.current_owner == p1_address else f"helper({helper_id})"
+    print(f"Encountered breakpoint for player {player_id} ( {player_name} ) at: {state.states[ctx.last_index]} (state {stateno}, controller {ctx.last_index})")
 
 def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget:
     ## copy the character folder to the MUGEN chars folder.
@@ -328,7 +347,7 @@ def cont(target: DebuggerTarget, ctx: DebuggingContext, step: bool = False):
         ## reinsert the breakpoint table
         next_step = None
         if step and ctx.current_breakpoint != None: next_step = (ctx.current_breakpoint[0], ctx.current_breakpoint[1] + 1)
-        insertBreakpointTable(ctx.breakpoints, target, step = next_step)
+        insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target, step = next_step)
 
         results_queue.put(DebugBreakResult(step = step))
         target.launch_info.state = DebugProcessState.RUNNING
