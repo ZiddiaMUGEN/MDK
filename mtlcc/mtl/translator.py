@@ -551,7 +551,8 @@ def checkScopes(ctx: TranslationContext):
                 else:
                     ## check the scopes are compatible.
                     if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                        if not scopes_compatible(statedef.scope, target_statedef.scope, ctx):
+                        state_id = statedef.parameters.id if statedef.parameters.id != None else 0
+                        if not scopes_compatible(statedef.scope, target_statedef.scope, ctx) and state_id >= 0:
                             raise TranslationError(f"Target state {target_node.operator} for ChangeState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
             elif equals_insensitive(controller.name, "SelfState"):
                 if statedef.scope.type == StateScopeType.TARGET: continue
@@ -569,7 +570,8 @@ def checkScopes(ctx: TranslationContext):
                 else:
                     ## check the scopes are compatible.
                     if (target_statedef := find(ctx.statedefs, lambda k: equals_insensitive(k.name, target_node.operator))) != None:
-                        if not scopes_compatible(statedef.scope, target_statedef.scope, ctx):
+                        state_id = statedef.parameters.id if statedef.parameters.id != None else 0
+                        if not scopes_compatible(statedef.scope, target_statedef.scope, ctx) and state_id >= 0:
                             raise TranslationError(f"Target state {target_node.operator} for SelfState from state {statedef.name} does not have a compatible statedef scope.", target[0].location)
             elif equals_insensitive(controller.name, "Helper"):
                 target = find_property("stateno", controller)
