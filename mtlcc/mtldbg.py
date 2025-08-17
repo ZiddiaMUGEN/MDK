@@ -111,7 +111,7 @@ def runDebugger(target: str, mugen: str):
                         elif command == DebuggerCommand.BREAKP:
                             ## TODO: convert to use new in-memory breakpoint function
                             print(f"Created passpoint {len(ctx.passpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
-                            ctx.passpoints.append(match)
+                            process.setPasspoint(match[0], match[1], debugger, ctx)
                 elif len(request.params) == 2:
                     # stateno index, just set it directly...
                     stateno = request.params[0]
@@ -140,7 +140,7 @@ def runDebugger(target: str, mugen: str):
                     elif command == DebuggerCommand.BREAKP:
                         ## TODO: convert to use new in-memory breakpoint function
                         print(f"Created passpoint {len(ctx.passpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.passpoints.append((state.id, index))
+                        process.setPasspoint(state.id, index, debugger, ctx)
                 else:
                     print("Format of arguments to `break` command should either be <file>:<line> or <stateno> <ctrl index>.")
                     continue

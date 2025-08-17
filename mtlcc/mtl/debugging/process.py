@@ -238,17 +238,24 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
     for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_FUNC'])):
         set_addr(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_BREAKPOINT_FUNC'][idx], process_handle)
 
+    ## write the passpoint handling function
+    for idx in range(len(launch_info.database['SCTRL_PASSPOINT_FUNC'])):
+        set_addr(launch_info.database['SCTRL_PASSPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_PASSPOINT_FUNC'][idx], process_handle)
+
     ## write the breakpoint handling jump
     for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'])):
         set_addr(launch_info.database['SCTRL_BREAKPOINT_INSERT'] + idx, launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'][idx], process_handle)
+
+    ## write the passpoint handling jump
+    for idx in range(len(launch_info.database['SCTRL_PASSPOINT_INSERT_FUNC'])):
+        set_addr(launch_info.database['SCTRL_PASSPOINT_INSERT'] + idx, launch_info.database['SCTRL_PASSPOINT_INSERT_FUNC'][idx], process_handle)
 
     ## now add a breakpoint at the breakpoint insertion address
     context = CONTEXT()
     get_context(thread_handle, context)
 
     context.Dr0 = launch_info.database["SCTRL_BREAKPOINT_ADDR"]
-    ## TODO: support passpoints again.
-    context.Dr1 = launch_info.database["SCTRL_BREAKPOINT_ADDR"] # launch_info.database["SCTRL_PASSPOINT_ADDR"]
+    context.Dr1 = launch_info.database["SCTRL_PASSPOINT_ADDR"]
     context.Dr7 |= 0x103 | 0x0C # bits 0, 1, 2, 3, 8 enable breakpoint set on DR0 and DR1.
 
     set_context(thread_handle, context)
@@ -262,19 +269,33 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
             ## set timeout to a small number so it can continue if nothing arrives
             ## (it would be better to be infinite but then this thread never exits)
             next_event: DebugBreakEvent = events.get(True, 1/60)
-            if next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
+            if next_event.address == launch_info.database["SCTRL_PASSPOINT_ADDR"]:
+                ## early-exit
+                if len(ctx.passpoints) == 0:
+                    results.put(DebugBreakResult(step = next_event.step))
+                    continue
+
+                ## always store breakpoint info for passpoints
+                get_context(thread_handle, context)
+                ctx.current_owner = context.Ebp
+                ctx.last_index = get_uncached(ctx.current_owner + 0x5c, process_handle)
+                
+                match_breakpoint(launch_info, ctx, process_handle)
+            elif next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
                 ## early exit: if we have no breakpoints, nothing to worry about
                 if len(ctx.breakpoints) == 0 and len(ctx.passpoints) == 0:
                     results.put(DebugBreakResult(step = next_event.step))
                     continue
 
-                ## always store ECX for passpoints
+                ## always store breakpoint info for passpoints
                 get_context(thread_handle, context)
                 ctx.last_index = context.Ecx
                 ctx.current_owner = context.Ebp
 
                 ## early-exit again after storing ECX
-                if len(ctx.breakpoints) == 0:
+                ## if step is set and no breakpoints are present, we check breakpoints anyway,
+                ## as we are likely stepping through the code.
+                if len(ctx.breakpoints) == 0 and not next_event.step:
                     results.put(DebugBreakResult(step = next_event.step))
                     continue
                 
