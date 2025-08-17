@@ -69,7 +69,7 @@ def runDebugger(target: str, mugen: str):
                 if debugger == None or debugger.subprocess == None:
                     print("Cannot continue when MUGEN has not been launched.")
                     continue
-                process.cont(debugger)
+                process.cont(debugger, ctx)
             elif command == DebuggerCommand.BREAK or command == DebuggerCommand.BREAKP:
                 ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index> or <state name> <ctrl index>
                 if len(request.params) == 1:
@@ -104,13 +104,14 @@ def runDebugger(target: str, mugen: str):
                                     match_distance = line - controller.line
                     if match == None:
                         print(f"Could not determine the state or controller to use for breakpoint {filename}:{line}")
-                    else:
+                    elif debugger != None:
                         if command == DebuggerCommand.BREAK:
                             print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
-                            ctx.breakpoints.append(match)
+                            process.setBreakpoint(match[0], match[1], debugger, ctx)
                         elif command == DebuggerCommand.BREAKP:
+                            ## TODO: convert to use new in-memory breakpoint function
                             print(f"Created passpoint {len(ctx.passpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
-                            ctx.passpoints.append(match)
+                            process.setPasspoint(match[0], match[1], debugger, ctx)
                 elif len(request.params) == 2:
                     # stateno index, just set it directly...
                     stateno = request.params[0]
@@ -133,12 +134,13 @@ def runDebugger(target: str, mugen: str):
                     if index >= len(state.states):
                         print(f"State with ID {stateno} only has {len(state.states)} controllers (controller indices are 0-indexed).")
                         continue
-                    if command == DebuggerCommand.BREAK:
+                    if command == DebuggerCommand.BREAK and debugger != None:
                         print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.breakpoints.append((state.id, index))
+                        process.setBreakpoint(state.id, index, debugger, ctx)
                     elif command == DebuggerCommand.BREAKP:
+                        ## TODO: convert to use new in-memory breakpoint function
                         print(f"Created passpoint {len(ctx.passpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.passpoints.append((state.id, index))
+                        process.setPasspoint(state.id, index, debugger, ctx)
                 else:
                     print("Format of arguments to `break` command should either be <file>:<line> or <stateno> <ctrl index>.")
                     continue
@@ -147,7 +149,7 @@ def runDebugger(target: str, mugen: str):
                 if debugger == None or debugger.subprocess == None:
                     print("Cannot continue when MUGEN has not been launched.")
                     continue
-                process.cont(debugger, step = True)
+                process.cont(debugger, ctx, step = True)
             elif command == DebuggerCommand.DELETE:
                 ## delete BP by ID.
                 index = int(request.params[0])
@@ -155,6 +157,8 @@ def runDebugger(target: str, mugen: str):
                     print(f"Could not find a breakpoint with ID {index}.")
                     continue
                 ctx.breakpoints.remove(ctx.breakpoints[index - 1])
+                ## update the table in-memory after removing.
+                process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
             elif command == DebuggerCommand.DELETEP:
                 ## delete PP by ID.
                 index = int(request.params[0])
@@ -162,6 +166,8 @@ def runDebugger(target: str, mugen: str):
                     print(f"Could not find a passpoint with ID {index}.")
                     continue
                 ctx.passpoints.remove(ctx.passpoints[index - 1])
+                ## update the table in-memory after removing.
+                process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
             elif command == DebuggerCommand.EXIT:
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
@@ -285,7 +291,7 @@ def runDebugger(target: str, mugen: str):
                     print("Cannot stop debugging when MUGEN has not been launched.")
                     continue
                 ## continue the process.
-                process.cont(debugger)
+                process.cont(debugger, ctx)
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
         except:
