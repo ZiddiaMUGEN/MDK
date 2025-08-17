@@ -104,10 +104,10 @@ def runDebugger(target: str, mugen: str):
                                     match_distance = line - controller.line
                     if match == None:
                         print(f"Could not determine the state or controller to use for breakpoint {filename}:{line}")
-                    else:
+                    elif debugger != None:
                         if command == DebuggerCommand.BREAK:
                             print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
-                            ctx.breakpoints.append(match)
+                            process.setBreakpoint(match[0], match[1], debugger, ctx)
                         elif command == DebuggerCommand.BREAKP:
                             print(f"Created passpoint {len(ctx.passpoints) + 1} at: {match_location} (state {match[0]}, controller {match[1]})")
                             ctx.passpoints.append(match)
@@ -133,9 +133,9 @@ def runDebugger(target: str, mugen: str):
                     if index >= len(state.states):
                         print(f"State with ID {stateno} only has {len(state.states)} controllers (controller indices are 0-indexed).")
                         continue
-                    if command == DebuggerCommand.BREAK:
+                    if command == DebuggerCommand.BREAK and debugger != None:
                         print(f"Created breakpoint {len(ctx.breakpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
-                        ctx.breakpoints.append((state.id, index))
+                        process.setBreakpoint(state.id, index, debugger, ctx)
                     elif command == DebuggerCommand.BREAKP:
                         print(f"Created passpoint {len(ctx.passpoints) + 1} at: {state.states[index]} (state {stateno}, controller {index})")
                         ctx.passpoints.append((state.id, index))

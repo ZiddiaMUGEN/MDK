@@ -3,7 +3,7 @@
 ### read memory at this address to determine MUGEN version.
 SELECT_VERSION_ADDRESS = 0x4405C0
 
-### note: to find the SCTRL_BREAKPOINT_ADDR value search for `PlayerSCtrlApplyElem not recognised`.
+### note: to find the SCTRL_BREAKPOINT_INSERT value search for `PlayerSCtrlApplyElem not recognised`.
 ### then look outward to find where the controllers are looped through.
 
 ADDRESS_MUGEN_100 = {
@@ -14,12 +14,42 @@ ADDRESS_MUGEN_11A4 = {
 
 }
 
-## at SCTRL_BREAKPOINT_ADDR:
+## at SCTRL_BREAKPOINT_INSERT:
 ### ECX = controller index in state, EBP = player pointer
-### if ECX = 0, EAX = state data pointer
-### otherwise, EDX = state data pointer
 ADDRESS_MUGEN_11B1 = {
-    "SCTRL_BREAKPOINT_ADDR": 0x45C1F5,
+    "SCTRL_BREAKPOINT_INSERT": 0x45C1F5, # address to insert a jump
+    "SCTRL_BREAKPOINT_INSERT_FUNC": [0xE9, 0xC6, 0x17, 0x08, 0x00], # patch to insert at SCTRL_BREAKPOINT_INSERT
+    "SCTRL_BREAKPOINT_TABLE": 0x4DD920, # address of the breakpoints table, this is enough for 19 breakpoints.
+    "SCTRL_BREAKPOINT_FUNC_ADDR": 0x4DD9C0, # address to write the function to
+    "SCTRL_BREAKPOINT_ADDR": 0x4DD9FF, # address inside the function to break at
+    "SCTRL_BREAKPOINT_FUNC": [
+        0x50, 0x53, 0x52, # pushes
+        0x8B, 0xC5, 0x90, # mov eax, ebp; nop
+        0x8B, 0x80, 0x50, 0x16, 0x00, 0x00, # mov eax, [eax + 1650]
+        0x8B, 0x15, 0xE8, 0x40, 0x50, 0x00, # mov edx, [0x5040e8]
+        0x8B, 0x92, 0x78, 0x22, 0x01, 0x00, # mov edx, [edx+12278]
+        0x39, 0xD5, # cmp ebp, edx
+        0x74, 0x04, # je .check_breakpoints
+        0x39, 0xD0, # cmp eax, edx
+        0x75, 0x27, # jne .reset
+        0xB8, 0x20, 0xD9, 0x4D, 0x00, # mov eax, 0x4dd920
+        0x8B, 0xDD, 0x90, # mov ebx, ebp; nop
+        0x8B, 0x9B, 0xCC, 0x0C, 0x00, 0x00, # mov ebx, [ebx+ccc]
+        0x81, 0x38, 0xFF, 0xFF, 0xFF, 0xFF, # cmp [eax], ffffffff
+        0x74, 0x11, # je .reset
+        0x39, 0x18, # cmp [eax], ebx
+        0x75, 0x08, # jne .continue
+        0x39, 0x48, 0x04, # cmp [eax+4], ecx
+        0x75, 0x03, # jne .continue
+        0x90, # nop <-- THIS IS WHERE THE BP IS PLACED
+        0xEB, 0x05, # jmp .reset
+        0x83, 0xC0, 0x08, # add eax,8
+        0xEB, 0xE7, # jmp .loop_breaks
+        0x5A, 0x5B, 0x58, # pops
+        0x83, 0x3E, 0x00, # cmp [esi], 0
+        0x0F, 0x85, 0x4C, 0xE8, 0xF7, 0xFF, # jne 45C25F
+        0xE9, 0xE2, 0xE7, 0xF7, 0xFF # jmp 45c1fa
+    ],
     "SCTRL_PASSPOINT_ADDR": 0x45C243,
     "game": 0x5040E8,
     "player": 0x12278,

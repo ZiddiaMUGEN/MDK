@@ -20,6 +20,29 @@ import struct
 events_queue = multiprocessing.Queue()
 results_queue = multiprocessing.Queue()
 
+## utility function to update the breakpoint list in memory
+def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
+    if len(ctx.breakpoints) >= 9:
+        print(f"Reached maximum active breakpoint count (9)")
+        return
+    
+    ctx.breakpoints.append((stateno, index))
+
+    ## suspend the thread
+    process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
+    thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, target.launch_info.thread_id)
+    if target.launch_info.state != DebugProcessState.SUSPENDED_WAIT: _winapi(ctypes.windll.kernel32.SuspendThread(thread_handle), errno = -1)
+
+    ## write the breakpoint list
+    start_addr = target.launch_info.database['SCTRL_BREAKPOINT_TABLE']
+    for bp in ctx.breakpoints:
+        set_addr_int(start_addr, bp[0], process_handle)
+        set_addr_int(start_addr + 4, bp[1], process_handle)
+        start_addr += 8
+
+    ## resume thread now that breakpoint is applied
+    if target.launch_info.state != DebugProcessState.SUSPENDED_WAIT: _winapi(ctypes.windll.kernel32.ResumeThread(thread_handle), errno = -1)
+
 ## utility function to read variables from memory
 def getVariable(index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
     if ctx.current_owner == 0:
@@ -70,6 +93,20 @@ def get_uncached(addr: int, handle: int) -> int:
     read = c_int()
     _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, 4, ctypes.byref(read)))
     return int.from_bytes(buf, byteorder='little')
+
+def set_addr(addr: int, val: int, handle: int):
+    v = val.to_bytes(1, byteorder='little', signed=False)
+    buf = ctypes.create_string_buffer(v, 1)
+
+    total = c_int()
+    _winapi(ctypes.windll.kernel32.WriteProcessMemory(handle, addr, buf, 1, ctypes.byref(total)))
+
+def set_addr_int(addr: int, val: int, handle: int):
+    v = val.to_bytes(4, byteorder='little', signed=False)
+    buf = ctypes.create_string_buffer(v, 4)
+
+    total = c_int()
+    _winapi(ctypes.windll.kernel32.WriteProcessMemory(handle, addr, buf, 4, ctypes.byref(total)))
 
 ## for us we only care about DEBUG_REGISTERS and INTEGER
 def get_context(handle: int, context: CONTEXT):
@@ -214,12 +251,25 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
     thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, launch_info.thread_id)
     _winapi(ctypes.windll.kernel32.SuspendThread(thread_handle), errno = -1)
 
+    ## write the breakpoint dispatch handling table with initial values, 0xFF
+    for idx in range(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] - launch_info.database['SCTRL_BREAKPOINT_TABLE']):
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_TABLE'] + idx, 0xFF, process_handle)
+
+    ## write the breakpoint handling function
+    for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_FUNC'])):
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_BREAKPOINT_FUNC'][idx], process_handle)
+
+    ## write the breakpoint handling jump
+    for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'])):
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_INSERT'] + idx, launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'][idx], process_handle)
+
     ## now add a breakpoint at the breakpoint insertion address
     context = CONTEXT()
     get_context(thread_handle, context)
 
     context.Dr0 = launch_info.database["SCTRL_BREAKPOINT_ADDR"]
-    context.Dr1 = launch_info.database["SCTRL_PASSPOINT_ADDR"]
+    ## TODO: support passpoints again.
+    context.Dr1 = launch_info.database["SCTRL_BREAKPOINT_ADDR"] # launch_info.database["SCTRL_PASSPOINT_ADDR"]
     context.Dr7 |= 0x103 | 0x0C # bits 0, 1, 2, 3, 8 enable breakpoint set on DR0 and DR1.
 
     set_context(thread_handle, context)
