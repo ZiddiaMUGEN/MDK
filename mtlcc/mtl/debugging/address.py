@@ -16,6 +16,13 @@ ADDRESS_MUGEN_11A4 = {
 
 ## at SCTRL_BREAKPOINT_INSERT:
 ### ECX = controller index in state, EBP = player pointer
+## breakpoints are complicated because trying to set breakpoints on a specific controller would mean breaking hundreds of times per frame.
+## to avoid the laggy mess this results in, i inject code into MUGEN to handle breakpoint checking itself.
+## basically this looks like this:
+### - at SCTRL_BREAKPOINT_INSERT, set a JUMP to SCTRL_BREAKPOINT_FUNC_ADDR
+### - at SCTRL_BREAKPOINT_TABLE, insert a table with all the known breakpoints
+### - at SCTRL_BREAKPOINT_FUNC, insert code to scan the breakpoint table and trigger a breakpoint if a stateno/index pair matches
+### - whenever a breakpoint gets set or deleted, updated the table at SCTRL_BREAKPOINT_TABLE.
 ADDRESS_MUGEN_11B1 = {
     "SCTRL_BREAKPOINT_INSERT": 0x45C1F5, # address to insert a jump
     "SCTRL_BREAKPOINT_INSERT_FUNC": [0xE9, 0xC6, 0x17, 0x08, 0x00], # patch to insert at SCTRL_BREAKPOINT_INSERT
