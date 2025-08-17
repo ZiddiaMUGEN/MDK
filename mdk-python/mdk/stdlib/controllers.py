@@ -202,6 +202,35 @@ displayed before being removed.</dd>
 
     return result
 
+@controller(
+    time = [IntType, None],
+    add = [ColorType, None],
+    mul = [ColorType, None],
+    sinadd = [PeriodicColorType, None],
+    invertall = [BoolType, None],
+    color = [IntType, None]
+)
+def AllPalFX(
+    time: Optional[ConvertibleExpression] = None, 
+    add: Optional[TupleExpression] = None, 
+    mul: Optional[TupleExpression] = None, 
+    sinadd: Optional[TupleExpression] = None, 
+    invertall: Optional[ConvertibleExpression] = None, 
+    color: Optional[ConvertibleExpression] = None, 
+	ignorehitpause: Optional[ConvertibleExpression] = None, 
+	persistent: Optional[ConvertibleExpression] = None
+) -> StateController:
+    result = StateController()
+
+    set_if(result, "time", time)
+    set_if_tuple(result, "add", add, ColorType)
+    set_if_tuple(result, "mul", mul, ColorType)
+    set_if_tuple(result, "sinadd", sinadd, PeriodicColorType)
+    set_if(result, "invertall", invertall)
+    set_if(result, "color", color)
+
+    return result
+
 @controller(value = [FloatType])
 def AngleAdd(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
@@ -553,6 +582,35 @@ target's head or midsection.</dd>
     set_if(result, "time", time)
     set_if(result, "id", id)
     set_if_tuple(result, "pos", pos, FloatPairType)
+
+    return result
+
+@controller(
+    time = [IntType, None],
+    add = [ColorType, None],
+    mul = [ColorType, None],
+    sinadd = [PeriodicColorType, None],
+    invertall = [BoolType, None],
+    color = [IntType, None]
+)
+def BGPalFX(
+    time: Optional[ConvertibleExpression] = None, 
+    add: Optional[TupleExpression] = None, 
+    mul: Optional[TupleExpression] = None, 
+    sinadd: Optional[TupleExpression] = None, 
+    invertall: Optional[ConvertibleExpression] = None, 
+    color: Optional[ConvertibleExpression] = None, 
+	ignorehitpause: Optional[ConvertibleExpression] = None, 
+	persistent: Optional[ConvertibleExpression] = None
+) -> StateController:
+    result = StateController()
+
+    set_if(result, "time", time)
+    set_if_tuple(result, "add", add, ColorType)
+    set_if_tuple(result, "mul", mul, ColorType)
+    set_if_tuple(result, "sinadd", sinadd, PeriodicColorType)
+    set_if(result, "invertall", invertall)
+    set_if(result, "color", color)
 
     return result
 
@@ -4313,5 +4371,5 @@ __all__ = [
     "PowerSet", "Projectile", "RemapPal", "RemoveExplod", "ReversalDef", "ScreenBound", "SelfState", "SprPriority", 
     "StateTypeSet", "SndPan", "SuperPause", "TargetBind", "TargetDrop", "TargetFacing", "TargetLifeAdd", "TargetPowerAdd", 
     "TargetState", "TargetVelAdd", "TargetVelSet", "Trans", "Turn", "VarAdd", "VarSet", "VarRandom", "VarRangeSet", 
-    "VelAdd", "VelMul", "VelSet", "VictoryQuote", "Width"
+    "VelAdd", "VelMul", "VelSet", "VictoryQuote", "Width", "BGPalFX", "AllPalFX"
 ]

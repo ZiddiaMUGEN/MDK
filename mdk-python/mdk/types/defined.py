@@ -85,7 +85,7 @@ PhysicsType = EnumType("PhysicsType", ["S", "C", "A", "N", "U"], register = Fals
 HitType = FlagType("HitType", ["S", "C", "A"], register = False)
 HitAttr = FlagType("HitAttr", ["N", "S", "H", "A", "T", "P"], register = False)
 
-TransType = EnumType("TransType", ["add", "add1", "sub", "none"], register = False)
+TransType = EnumType("TransType", ["add", "add1", "addalpha", "sub", "none"], register = False)
 AssertType = EnumType("AssertType", ["Intro", "Invisible", "RoundNotOver", "NoBarDisplay", "NoBG", "NoFG", "NoStandGuard", "NoCrouchGuard", "NoAirGuard", "NoAutoTurn", "NoJuggleCheck", "NoKOSnd", "NoKOSlow", "NoKO", "NoShadow", "GlobalNoShadow", "NoMusic", "NoWalk", "TimerFreeze", "Unguardable"], register = False)
 WaveType = EnumType("WaveType", ["Sine", "Square", "SineSquare", "Off"], register = False)
 HelperType = EnumType("HelperType", ["Normal", "Player", "Proj"], register = False)
