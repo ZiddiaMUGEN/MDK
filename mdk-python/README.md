@@ -278,6 +278,36 @@ def myValidator(myInput):
     return { "myInput": myInput }
 ```
 
+## Using User-Defined Types
+
+MTL also provides functionality for creating user-defined types. MTL supports several kinds of user-defined types, including aliases and unions; however these types are not super useful in mdk-python as the Python typing system provides support for union-ish types already.
+
+However mdk-python does offer support for the MTL flag and enum types. Enum types are used to specify a value by name, which is useful if you want to avoid using magic numbers in your code. MTL will compile your user-defined enum and flag types into integers which are compatible with CNS.
+
+For example, you can create a user-defined enum type as below. You specify a name for the type (which should generally match with the name you use for the Python variable that stores the type), as well as each member for the enum. You can also optionally specify an output library for the type definition to be written to.
+
+```
+from mdk.types import EnumType
+
+MyEnumType = EnumType("MyEnumType", ["StartValue", "ValueOne", "ValueTwo"], library = "my_types.inc")
+```
+
+Using this type is simple; you can treat it as an integer in most places, and can also create, assign, and compare variables of this enum type.
+
+```
+from mdk.types import EnumType, VariableExpression
+
+MyEnumType = EnumType("MyEnumType", ["StartValue", "ValueOne", "ValueTwo"], library = "my_types.inc")
+
+@statedef()
+def myState():
+    myVar = VariableExpression(MyEnumType)
+
+    myVar.set(MyEnumType.ValueOne)
+```
+
+In the emitted CNS, `myVar` would correspond to an integer variable, and it would be assigned a value of 1 (based on the index of `ValueOne` in the member list of the type).
+
 ## Building Templates
 
 To build templates, use the `mdk.compiler.library` function. This function accepts a list of templates you want to compile, and outputs one or more include files which can then be used for MTL.
