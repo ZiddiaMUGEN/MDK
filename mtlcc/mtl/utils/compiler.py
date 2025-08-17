@@ -318,7 +318,7 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
             ## only perform replacements on non-builtin triggers. but, still need to inspect children.
             if match.category == TriggerCategory.BUILTIN or match.exprn == None:
                 for child in tree.children:
-                    replaced = replaced or replace_triggers(child, table, ctx, scope = scope)
+                    replaced = replace_triggers(child, table, ctx, scope = scope) or replaced
                 return replaced
             ## we need to do 2 things:
             ## - copy the trigger expression and update it with parameter replacements
@@ -333,7 +333,7 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
             replaced = True
 
     for child in tree.children:
-        replaced = replaced or replace_triggers(child, table, ctx, scope = scope)
+        replaced = replace_triggers(child, table, ctx, scope = scope) or replaced
 
     return replaced
 

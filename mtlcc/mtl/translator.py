@@ -429,9 +429,9 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
         for controller in statedef.states:
             for group_index in controller.triggers:
                 for trigger in controller.triggers[group_index].triggers:
-                    replaced = replaced or replace_triggers(trigger, table, ctx, scope = statedef.scope)
+                    replaced = replace_triggers(trigger, table, ctx, scope = statedef.scope) or replaced
             for property in controller.properties:
-                replaced = replaced or replace_triggers(property.value, table, ctx, scope = statedef.scope)
+                replaced = replace_triggers(property.value, table, ctx, scope = statedef.scope) or replaced
 
     ## recurse if any replacements were made.
     if replaced:
