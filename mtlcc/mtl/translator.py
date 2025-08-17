@@ -72,7 +72,15 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
         else:
             raise TranslationError(f"Unrecognized type category {type_definition.type} in Define Type section.", type_definition.location)
         
-        ctx.types.append(TypeDefinition(type_name, type_category, target_size, type_members, type_definition.location))
+        definition = TypeDefinition(type_name, type_category, target_size, type_members, type_definition.location)
+        ctx.types.append(definition)
+
+        ## automatically register equality and assignment for all Enum and Flag user-defined types.
+        ## if other operators are required, end users should implement it themselves.
+        if definition.category in [TypeCategory.ENUM, TypeCategory.FLAG]:
+            ctx.triggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtins.builtin_eq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator=", category = TriggerCategory.OPERATOR))
+            ctx.triggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtins.builtin_neq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator!=", category = TriggerCategory.OPERATOR))
+            ctx.triggers.append(TriggerDefinition("operator:=", definition, builtins.builtin_assign, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator:=", category = TriggerCategory.OPERATOR))
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):
     for struct_definition in load_ctx.struct_definitions:

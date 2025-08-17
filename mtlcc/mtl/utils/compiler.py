@@ -192,6 +192,17 @@ def get_type_match(t1_: TypeDefinition, t2_: TypeDefinition, ctx: TranslationCon
     ## here `state` counts as an integer type.
     if not ctx.compiler_flags.no_implicit_bool and t1.name in ["byte", "short", "int", "state"] and t2.name == "bool":
         return t2
+    
+    ## implicitly convert enum/flag types to int/bool for compatibility.
+    if not ctx.compiler_flags.no_implicit_conversion and t1.category in [TypeCategory.ENUM, TypeCategory.FLAG] and t2.name == "int":
+        return t2
+    if not ctx.compiler_flags.no_implicit_conversion and t2.category in [TypeCategory.ENUM, TypeCategory.FLAG] and t1.name == "int":
+        return t1
+    
+    if not ctx.compiler_flags.no_implicit_bool and t1.category in [TypeCategory.ENUM, TypeCategory.FLAG] and t2.name == "bool":
+        return t2
+    if not ctx.compiler_flags.no_implicit_bool and t2.category in [TypeCategory.ENUM, TypeCategory.FLAG] and t1.name == "bool":
+        return t1
 
     ## could not convert.
     return None
