@@ -2,7 +2,7 @@ from mdk.types.expressions import Expression
 from mdk.stdlib.triggers import PositionExpression
 from typing import Callable, Optional, Protocol
 
-__all__ = ['parent', 'root', 'partner', 'helper', 'target', 'enemy', 'enemynear', 'playerID']
+__all__ = ['parent', 'root', 'partner', 'helper', 'target', 'enemy', 'enemynear', 'helperID', 'targetID', 'enemyID', 'enemynearID', 'playerID']
 
 class RedirectTarget:
     target: Expression

@@ -4,10 +4,12 @@ from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
 import mdk.stdlib.triggers as triggers
 
+from mdk.utils.shared import convert
+
 class RedirectTarget:
     def __init__(self, target: str, expr: Optional[Expression] = None):
         self.target = target
-        self.expr = expr
+        self.expr = convert(expr) if expr != None else None
 
         ## create redirected trigger expressions.
         ## this is littered with type-check failures, they are safe to ignore.
@@ -135,4 +137,4 @@ enemyID = RedirectTargetBuilder("enemy")
 enemynearID = RedirectTargetBuilder("enemynear")
 playerID = RedirectTargetBuilder("playerID")
 
-__all__ = ["parent", "root", "partner", "helper", "target", "enemy", "enemynear", "playerID"]
+__all__ = ["parent", "root", "partner", "helper", "target", "enemy", "enemynear", "helperID", "targetID", "enemyID", "enemynearID", "playerID"]
