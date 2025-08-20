@@ -90,6 +90,11 @@ def TriggerPop():
 ## it replaces the `print` with an appropriate `DisplayToClipboard`.
 ## this accepts an optional `append` kwarg, if this is set to `True` it will do AppendToClipboard instead.
 def TriggerPrint(*args, **kwargs):
+    ## before anything: if compile = False, just print normally
+    if 'compile' in kwargs and kwargs['compile'] == False:
+        print(*args)
+        return
+
     ctx = CompilerContext.instance()
     if len(args) == 0: raise Exception("Must provide text input to convertible `print` statement.")
 

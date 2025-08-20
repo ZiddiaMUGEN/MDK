@@ -136,6 +136,39 @@ def myCustomState():
     VarAdd(var = myVar, value = 1)
 ```
 
+## Print Statements
+
+All `print` statements inside a function annotated with `@statedef` (as well as any functions annotated with `@statefunc` or `@template`) are automatically converted into DisplayToClipboard or AppendToClipboard functions.
+
+You may specify some optional parameters to control the behaviour:
+
+- Pass `append = True` to use AppendToClipboard instead of DisplayToClipboard in the generated MTL
+- Pass `end = 'x'` where `x` is any string to set the end character for your statement
+
+Additionally if you want to issue a `print` statement which is NOT converted into a clipboard controller (e.g. if you are trying to debug something which is happening during compilation), pass `compile = False` in your print statement.
+
+So for example, the below code:
+
+```
+@statedef()
+def myStatedef():
+    local_myVar = IntVar()
+    local_myFloat = FloatVar()
+
+    print(f"myVar = {local_myVar} and myFloat = {local_myFloat}")
+```
+
+would be automatically converted into the following MTL:
+
+```
+[Statedef 1]
+[State ]
+type = DisplayToClipboard
+trigger1 = true
+text = "myVar = %d and myFloat = %f"
+params = local_myVar, local_myFloat
+```
+
 ## Using Redirects
 
 Redirecting triggers is enabled by the redirect forms provided in the `mdk.stdlib` package. Each redirect is set up for you to access redirected triggers as a property. For example, to access `Time` on the `root` redirect:
