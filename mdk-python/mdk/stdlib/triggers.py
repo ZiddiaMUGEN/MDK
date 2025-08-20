@@ -21,6 +21,8 @@ def TriggerExpression(name: str, inputs: list[TypeSpecifier], output: TypeSpecif
             if next_arg.type in [UStringType, StringType] and inputs[index] in [UStringType, StringType]:
                 ## UString and String are considered matching.
                 next_arg.type = UStringType
+            elif next_arg.type == IntType and inputs[index] == FloatType:
+                next_arg.type = FloatType
             elif next_arg.type != inputs[index]:
                 raise Exception(f"Trigger expression {name} expected input at index {index + 1} to have type {inputs[index].name}, not {next_arg.type.name}")
             conv_args.append(next_arg)

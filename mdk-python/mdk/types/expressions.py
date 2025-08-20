@@ -1,17 +1,21 @@
 import functools
-from typing import Union
+from typing import Union, Callable
 
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.builtins import IntType, BoolType, FloatType, StringType
-from mdk.types.context import CompilerContext
+from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType
+from mdk.types.context import CompilerContext, StateController
 
 from mdk.utils.expressions import check_types_assignable
 
 ## this is just the 'convert' function from mdk.utils.shared,
 ## but copied here to avoid circular imports.
-def _convert(input: Union['Expression', str, int, float, bool]) -> 'Expression':
+def _convert(input: Union['Expression', str, int, float, bool, Callable[..., StateController]]) -> 'Expression':
     if isinstance(input, Expression):
         return input
+    elif isinstance(input, functools.partial):
+        return Expression(input.keywords["value"], StateNoType)
+    elif isinstance(input, Callable):
+        return Expression(input.__name__, StateNoType)
     elif type(input) == str:
         return Expression(input, StringType)
     elif type(input) == int:
@@ -21,7 +25,7 @@ def _convert(input: Union['Expression', str, int, float, bool]) -> 'Expression':
     elif type(input) == bool:
         return Expression("true" if input else "false", BoolType)
     else:
-        raise Exception(f"During expression processing: Attempted to convert from unsupported builtin type {type(input)}.")
+        raise Exception(f"Attempted to convert from unsupported builtin type {type(input)}.")
 
 ## an Expression is a core component of building CNS.
 ## Expressions represent all trigger expressions, parameter expressions, etc.

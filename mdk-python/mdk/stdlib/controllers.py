@@ -885,7 +885,9 @@ the default phase offset is 90.</dd>
     ownpal = [BoolType, None],
     removeongethit = [BoolType, None],
     ignorehitpause = [BoolType, None],
-    trans = [TransType, None]
+    trans = [TransType, None],
+    angle = [IntType, None],
+    alpha = [IntPairType, None]
 )
 def Explod(
     anim: ConvertibleExpression, 
@@ -910,6 +912,8 @@ def Explod(
     ownpal: Optional[ConvertibleExpression] = None, 
     removeongethit: Optional[ConvertibleExpression] = None, 
     trans: Optional[ConvertibleExpression] = None, 
+    angle: Optional[ConvertibleExpression] = None,
+    alpha: Optional[TupleExpression] = None,
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
 ) -> StateController:
@@ -1171,6 +1175,8 @@ actual screen position will be 165,0.</p>
     set_if(result, "ownpal", ownpal)
     set_if(result, "removeongethit", removeongethit)
     set_if(result, "trans", trans)
+    set_if(result, "angle", angle)
+    set_if_tuple(result, "alpha", alpha, IntPairType)
 
     return result
 
@@ -2481,6 +2487,7 @@ cloud of dust every third frame. spacing should be 1 or greater.</dd>
     shadow = [BoolType, None],
     ownpal = [BoolType, None],
     removeongethit = [BoolType, None],
+    alpha = [IntPairType, None],
     ignorehitpause = [BoolType, None],
     trans = [TransType, None]
 )
@@ -2505,6 +2512,7 @@ def ModifyExplod(
     ownpal: Optional[ConvertibleExpression] = None, 
     removeongethit: Optional[ConvertibleExpression] = None, 
     trans: Optional[ConvertibleExpression] = None, 
+    alpha: Optional[TupleExpression] = None,
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
 ) -> StateController:
@@ -2537,6 +2545,7 @@ work in the future.</p>
     set_if(result, "ownpal", ownpal)
     set_if(result, "removeongethit", removeongethit)
     set_if(result, "trans", trans)
+    set_if_tuple(result, "alpha", alpha, IntPairType)
 
     return result
 
@@ -3975,7 +3984,7 @@ target ID will be affected. Defaults to -1 (affects all targets.)</dd>
     return result
 
 @controller(trans = [TransType], alpha = [IntPairType, None])
-def Trans(trans: ConvertibleExpression, alpha: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def Trans(trans: ConvertibleExpression, alpha: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>Trans</h2>
 <p>Overrides the player's animation transparency parameters for current game tick. Useful for special effects.</p>
@@ -4008,7 +4017,7 @@ default depends on <em>trans_type</em>.</dd>
     result = StateController()
 
     set_if(result, "trans", trans)
-    set_if(result, "alpha", alpha)
+    set_if_tuple(result, "alpha", alpha, IntPairType)
 
     return result
 
