@@ -14,10 +14,10 @@ from mtl.debugging.commands import DebuggerCommand, processDebugCommand
 from mtl.utils.func import match_filenames, mask_variable, search_file
 from mtl.utils.debug import get_state_by_id, get_state_by_name
 
-def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget, ctx: DebuggingContext):
+def print_variable(base_addr: int, scope: str, var: DebugParameterInfo, debugger: DebuggerTarget, ctx: DebuggingContext):
     alloc = var.allocations[0]
     target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
-    target_value = process.getVariable(alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger, ctx)
+    target_value = process.getVariable(base_addr, alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger, ctx)
     ## special handling for specific types:
     ### - `bool` should display as either `true` or `false`
     ### - `state` should display the state name, if available
@@ -39,6 +39,59 @@ def print_variable(scope: str, var: DebugParameterInfo, debugger: DebuggerTarget
             flag += 1
 
     print(f"{var.name:<32}\t{scope:<8}\t{var.type.name:<24}\t{target_name:<24}\t{target_value}")
+
+def displayVariables(base_addr: int, p1_address: int, target: DebuggerTarget, ctx: DebuggingContext):
+    state_id = process.getValue(base_addr + target.launch_info.database["stateno"], target, ctx)
+
+    ## print all globals and all locals for the owner's statedef's scope.
+    if (state := get_state_by_id(state_id, ctx)) == None: # type: ignore
+        print(f"Couldn't determine the current state from state ID {state_id}.")
+        return
+    scope = state.scope
+    ## display a header for the player
+    player_id = process.getValue(base_addr + 0x04, target, ctx)
+    helper_id = process.getValue(base_addr + target.launch_info.database["helperid"], target, ctx)
+    player_scope = "Player" if base_addr == p1_address else f"Helper({helper_id})"
+    player_name = process.getString(base_addr + 0x20, target, ctx)
+    print(f"Player {player_id} - {player_scope} - {player_name}")
+    print("========================================")
+    ## display
+    print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<24}\t{'Allocation':<24}\t{'Value':<16}")
+    for var in ctx.globals:
+        if var.scope == scope:
+            print_variable(base_addr, "Global", var, target, ctx)
+    for var in state.locals:
+        print_variable(base_addr, "Local", var, target, ctx)
+
+def displayMultipleVariables(scope: str, target: DebuggerTarget, ctx: DebuggingContext):
+    ## fetch a list of all targets to display variables for.
+    ## we have to suspend the process here otherwise the data will likely be junk!
+    process.suspendExternal(target)
+
+    ## iterate each player
+    game_address = process.getValue(target.launch_info.database["game"], target, ctx)
+    if game_address == 0:
+        print("Can't fetch variables, game has not been initialized.")
+        return
+    p1_address = process.getValue(game_address + target.launch_info.database["player"], target, ctx)
+    if p1_address == 0:
+        print("Can't fetch variables, players have not been initialized.")
+        return
+    
+    for idx in range(60):
+        player_address = process.getValue(game_address + target.launch_info.database["player"] + idx * 4, target, ctx)
+        if player_address == 0:
+            continue
+        root_address = process.getValue(player_address + target.launch_info.database["root_addr"], target, ctx)
+        helper_id = process.getValue(player_address + target.launch_info.database["helperid"], target, ctx)
+        if (player_address == p1_address and scope in ["all", "player"]) \
+           or (root_address == p1_address and scope == "all") \
+           or (root_address == p1_address and scope == f"helper({helper_id})"):
+            ## display their variables
+            displayVariables(player_address, p1_address, target, ctx)
+            print("")
+
+    process.resumeExternal(target)
 
 def runDebugger(target: str, mugen: str):
     debugger = None
@@ -229,12 +282,15 @@ def runDebugger(target: str, mugen: str):
                     if ctx.current_breakpoint == None or debugger == None:
                         print("Can't show trigger values unless a breakpoint has been reached.")
                         continue
+                    if ctx.current_owner == 0:
+                        print(f"Cannot get trigger values when the current owner is not known!")
+                        continue
                     trigger = request.params[1].lower()
                     if trigger not in debugger.launch_info.database["triggers"]:
                         print(f"Offsets for trigger with name {request.params[1]} are not known; cannot display value.")
                         continue
                     offset = debugger.launch_info.database["triggers"][trigger]
-                    raw_value = process.getValue(offset[0], debugger, ctx)
+                    raw_value = process.getValue(ctx.current_owner + offset[0], debugger, ctx)
                     if offset[1] == int:
                         value = raw_value
                     elif offset[1] == float:
@@ -291,21 +347,31 @@ def runDebugger(target: str, mugen: str):
                             if lines[index].startswith("["): lines[index] = "\n" + lines[index]
                         print("".join([line for line in lines if len(line.strip()) != 0]))
                 elif request.params[0].lower() == "variables":
+                    ## if we are passed a scope, display variables for every character matching that scope.
+                    if len(request.params) == 2:
+                        if debugger == None:
+                            print("Can't show variables unless the game has been launched.")
+                            continue
+                        if request.params[1].lower() in ["all", "player"] or request.params[1].lower().startswith("helper("):
+                            displayMultipleVariables(request.params[1].lower(), debugger, ctx)
+                            continue
+                        else:
+                            print(f"Can't show variables for unrecognized variable scope {request.params[1]} (should be one of all, player, or helper(xx))")
+                            continue
+
+                    ## otherwise display variables for the current player + statedef.
                     if ctx.current_breakpoint == None or debugger == None:
                         print("Can't show variables unless a breakpoint has been reached.")
                         continue
-                    ## print all globals and all locals for the current statedef's scope.
-                    if (state := get_state_by_id(ctx.current_breakpoint[0], ctx)) == None: # type: ignore
-                        print(f"Couldn't determine the current state from breakpoint {ctx.current_breakpoint}.")
-                        continue
-                    scope = state.scope
-                    ## display
-                    print(f"{'Name':<32}\t{'Scope':<8}\t{'Type':<24}\t{'Allocation':<24}\t{'Value':<16}")
-                    for var in ctx.globals:
-                        if var.scope == scope:
-                            print_variable("Global", var, debugger, ctx)
-                    for var in state.locals:
-                        print_variable("Local", var, debugger, ctx)
+                    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+                    if game_address == 0:
+                        print("Can't fetch variables, game has not been initialized.")
+                        return
+                    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+                    if p1_address == 0:
+                        print("Can't fetch variables, players have not been initialized.")
+                        return
+                    displayVariables(ctx.current_owner, p1_address, debugger, ctx)
             elif command == DebuggerCommand.STOP:
                 if debugger == None or debugger.subprocess == None:
                     print("Cannot stop debugging when MUGEN has not been launched.")

@@ -20,6 +20,14 @@ import struct
 events_queue = multiprocessing.Queue()
 results_queue = multiprocessing.Queue()
 
+def suspendExternal(target: DebuggerTarget):
+    thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, target.launch_info.thread_id)
+    _winapi(ctypes.windll.kernel32.SuspendThread(thread_handle), errno = -1)
+
+def resumeExternal(target: DebuggerTarget):
+    thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, target.launch_info.thread_id)
+    if target.launch_info.state != DebugProcessState.SUSPENDED_WAIT: _winapi(ctypes.windll.kernel32.ResumeThread(thread_handle), errno = -1)
+
 ## utility function to update the breakpoint list in memory
 def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
     if len(ctx.breakpoints) >= 8:
@@ -70,18 +78,14 @@ def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[t
     if target.launch_info.state != DebugProcessState.SUSPENDED_WAIT: _winapi(ctypes.windll.kernel32.ResumeThread(thread_handle), errno = -1)
 
 ## utility function to read variables from memory
-def getVariable(index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
-    if ctx.current_owner == 0:
-        print(f"Cannot get variables when the current owner is not known!")
-        return 0
-
+def getVariable(base_addr: int, index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
     
     if is_float:
-        variable_value = get_uncached(ctx.current_owner + target.launch_info.database["fvar"] + index * 4, process_handle)
+        variable_value = get_uncached(base_addr + target.launch_info.database["fvar"] + index * 4, process_handle)
         return round(struct.unpack('<f', variable_value.to_bytes(4, byteorder = 'little'))[0], 3)
     else:
-        variable_value = get_uncached(ctx.current_owner + target.launch_info.database["var"] + index * 4, process_handle)
+        variable_value = get_uncached(base_addr + target.launch_info.database["var"] + index * 4, process_handle)
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)
@@ -97,12 +101,17 @@ def getVariable(index: int, offset: int, size: int, is_float: bool, target: Debu
     
 ## utility function to read trigger values from memory
 def getValue(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> int:
-    if ctx.current_owner == 0:
-        print(f"Cannot get trigger values when the current owner is not known!")
-        return 0
-
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
-    return get_uncached(ctx.current_owner + offset, process_handle)
+    return get_uncached(offset, process_handle)
+
+## utility function to read strings from memory
+def getString(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> str:
+    process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
+    result = ""
+    while (b := get_byte(offset, process_handle)) != b'':
+        result += b.decode("utf-8")
+        offset += 1
+    return result
 
 ## helper to get a value from cache if possible.
 def get_cached(addr: int, handle: int, launch_info: DebuggerLaunchInfo) -> int:
@@ -119,6 +128,12 @@ def get_uncached(addr: int, handle: int) -> int:
     read = c_int()
     _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, 4, ctypes.byref(read)))
     return int.from_bytes(buf, byteorder='little')
+
+def get_byte(addr: int, handle: int) -> bytes:
+    buf = ctypes.create_string_buffer(1)
+    read = c_int()
+    _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, 1, ctypes.byref(read)))
+    return buf.value
 
 def set_addr(addr: int, val: int, handle: int):
     v = val.to_bytes(1, byteorder='little', signed=False)
@@ -320,7 +335,7 @@ def match_breakpoint(launch_info: DebuggerLaunchInfo, ctx: DebuggingContext, pro
         print(f"Warning: Debugger could not match controller index {ctx.last_index} for state {stateno} in database.")
         return
     player_id = get_uncached(ctx.current_owner + 0x04, process_handle)
-    helper_id = get_uncached(ctx.current_owner + 0x1644, process_handle)
+    helper_id = get_uncached(ctx.current_owner + launch_info.database["helperid"], process_handle)
     game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
     p1_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
     player_name = "root" if ctx.current_owner == p1_address else f"helper({helper_id})"

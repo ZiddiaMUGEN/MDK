@@ -41,6 +41,8 @@ You can also use `breakp` to set a 'passpoint' (which is a breakpoint that only 
 
 When you have set whatever breakpoints you need, run `continue` to start the MUGEN process. When a breakpoint is encountered, MUGEN will pause and an input prompt will re-appear. You can then use `step` or `continue` to resume. Use `delete` (or `deletep`) to delete a breakpoint.
 
+You may issue the command `info variables` to get a summary of the current breakpoint character's variables. You can also issue the command `info variables <scope>` at any point (even if a breakpoint has not been reached) to get information about the current variables. `<scope>` can be any of `all`, `player`, or `helper(<id>)` depending on which actors you want to view variables for.
+
 #### `launch`
 
 Launches a MUGEN process for debugging. This can only be run if a debugging database is loaded. This will launch the process with p1 assigned as the character where the `mdbg` database is contained.
