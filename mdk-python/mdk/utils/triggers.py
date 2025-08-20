@@ -4,6 +4,8 @@ from mdk.types.variables import VariableExpression
 from mdk.types.builtins import BoolType, IntType, ShortType, ByteType
 from mdk.types.defined import StateNoType, EnumType, FlagType
 
+from mdk.stdlib.controllers import DisplayToClipboard, AppendToClipboard
+
 from mdk.utils.shared import format_bool, convert
 from mdk.utils.expressions import check_types_assignable
 
@@ -83,3 +85,31 @@ def TriggerPop():
     if len(ctx.trigger_stack) == 0:
         raise Exception(f"Tried to pop triggers from an empty trigger stack.")
     ctx.trigger_stack.pop()
+
+## this function is used if a bare `print` statement is found inside a `statedef`, `statefunc`, or `template`.
+## it replaces the `print` with an appropriate `DisplayToClipboard`.
+## this accepts an optional `append` kwarg, if this is set to `True` it will do AppendToClipboard instead.
+def TriggerPrint(*args, **kwargs):
+    ctx = CompilerContext.instance()
+    if len(args) == 0: raise Exception("Must provide text input to convertible `print` statement.")
+
+    if len(ctx.format_params) > 6:
+        raise Exception("Convertible print statements and Clipboard controllers only support up to 6 parameters.")
+
+    text: str = args[0]
+
+    if 'end' in kwargs and kwargs['end'] != None:
+        text += kwargs['end']
+
+    ## handle formatting:
+    ### - any % in the string becomes %%, UNLESS it matches a known type specifier.
+    ### - any \ in the string becomes \\
+    text = text.replace("\\", "\\\\").replace("%", "%%")
+    text = text.replace("%%d", "%d").replace("%%f", "%f").replace("%%e", "%e").replace("%%E", "%E").replace("%%g", "%g").replace("%%G", "%G")
+
+    if 'append' in kwargs and kwargs['append'] == True:
+        AppendToClipboard(text = text, params = tuple(ctx.format_params) if len(ctx.format_params) > 0 else None)
+    else:
+        DisplayToClipboard(text = text, params = tuple(ctx.format_params) if len(ctx.format_params) > 0 else None)
+
+    ctx.format_params = []

@@ -52,7 +52,8 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
             elif type(input_expression) in [functools.partial, Callable] and StateNoType in valid_types:
                 ## you're allowed to use function pointers directly as stateno types.
                 new_kwargs[name] = input_expression
-            else:
+            elif input_expression != None:
+                ## required parameters were already checked, so if None was passed explicitly it's completely fine. we just skip that parameter.
                 raise Exception(f"Couldn't determine input type for parameter {name} on controller {fn.__name__}; input type was {type(input_expression)}.")
 
     ctrl: StateController = fn(*args, **new_kwargs)

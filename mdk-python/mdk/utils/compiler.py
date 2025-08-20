@@ -7,21 +7,21 @@ from typing import Callable, Optional
 from mdk.types.context import StateController
 
 from mdk.utils.shared import format_bool
-from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop
+from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop, TriggerPrint
 
 def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool):
     f.write("[State ]\n")
     f.write(f"type = {ctrl.type}\n")
     if len(ctrl.triggers) == 0: ctrl.triggers.append(format_bool(True))
     for trigger in ctrl.triggers:
-        f.write(f"trigger1 = {trigger}\n")
+        f.write(f"trigger1 = {trigger.__str__()}\n")
     for param in ctrl.params:
-        f.write(f"{param} = {ctrl.params[param]}\n")
+        f.write(f"{param} = {ctrl.params[param].__str__()}\n")
     if ctrl.location[0] != "<?>" and ctrl.location[1] != 0 and locations:
         f.write(f"mtl.location.file = {ctrl.location[0]}\n")
         f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 
-def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
+def rewrite_function(fn: Callable[..., None], overload_print: bool = True) -> Callable[..., None]:
     # get effective source code of the decorated function
     source, line_number = inspect.getsourcelines(fn)
     location = inspect.getsourcefile(fn)
@@ -32,7 +32,7 @@ def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     # parse AST from the decorated function
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators().visit(old_ast)
+    new_ast = ReplaceLogicalOperators(overload_print).visit(old_ast)
     ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
@@ -45,6 +45,7 @@ def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
     new_globals["mdk.impl.TriggerPush"] = TriggerPush
     new_globals["mdk.impl.TriggerPop"] = TriggerPop
+    new_globals["mdk.impl.TriggerPrint"] = TriggerPrint
     ## find the last code object in the const list.
     new_fn = None
     for index in range(len(new_code_obj.co_consts)):
@@ -56,6 +57,19 @@ def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]:
     return new_fn
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
+    def __init__(self, prints: bool):
+        self.prints = prints
+        super().__init__()
+
+    def visit_Call(self, node: ast.Call):
+        ## if this Call is a print, we want to override with TriggerPrint.
+        if not self.prints: return node
+
+        if isinstance(node.func, ast.Name) and node.func.id == 'print':
+            node.func.id = "mdk.impl.TriggerPrint"
+
+        return node
+
     def visit_BoolOp(self, node: ast.BoolOp):
         # inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore

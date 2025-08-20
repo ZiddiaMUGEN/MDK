@@ -107,7 +107,7 @@ class RedirectTarget:
 
     def __repr__(self):
         if isinstance(self.expr, Expression):
-            return f"{self.target}({self.expr})"
+            return f"{self.target}({self.expr.__str__()})"
         return self.target
     
     ## redirects need to be able to access their (global) variables.

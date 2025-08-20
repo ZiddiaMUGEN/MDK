@@ -68,6 +68,7 @@ class CompilerContext:
     trigger_stack: list[Expression]
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
+    format_params: list[Expression]
     def __init__(self) -> None: ...
     @classmethod
     def instance(cls) -> CompilerContext: ...

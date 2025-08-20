@@ -70,7 +70,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 statedef = context.statedefs[name]
                 f.write(f"[Statedef {name}]\n")
                 for param in statedef.params:
-                    f.write(f"{param} = {statedef.params[param]}\n")
+                    f.write(f"{param} = {statedef.params[param].__str__()}\n")
                 for local in statedef.locals:
                     f.write(f"local = {local.name} = {local.type.name}\n")
                 if statedef.scope != None:
@@ -398,7 +398,8 @@ def trigger(inputs: list[TypeSpecifier], result: TypeSpecifier, library: Optiona
         signature = inspect.signature(fn)
 
         # create new function with ast fixes
-        new_fn = rewrite_function(fn) # type: ignore
+        ## note: triggers cannot overload print functions (because triggers can't contain controllers).
+        new_fn = rewrite_function(fn, overload_print = False) # type: ignore
 
         # ensure parameters align
         if len(signature.parameters) != len(inputs):

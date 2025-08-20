@@ -53,7 +53,7 @@ class Expression:
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} = {other})", BoolType)
+        return Expression(f"({self.__str__()} = {other.__str__()})", BoolType)
     def __ne__(self, other): # type: ignore
         if other is None:
             return NotImplemented
@@ -61,31 +61,31 @@ class Expression:
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} != {other})", BoolType)
+        return Expression(f"({self.__str__()} != {other.__str__()})", BoolType)
     def __lt__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} < {other})", BoolType)
+        return Expression(f"({self.__str__()} < {other.__str__()})", BoolType)
     def __le__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} <= {other})", BoolType)
+        return Expression(f"({self.__str__()} <= {other.__str__()})", BoolType)
     def __gt__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} > {other})", BoolType)
+        return Expression(f"({self.__str__()} > {other.__str__()})", BoolType)
     def __ge__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be compared.")
-        return Expression(f"({self} >= {other})", BoolType)
+        return Expression(f"({self.__str__()} >= {other.__str__()})", BoolType)
     
     ## mathematical operations
     def __add__(self, other):
@@ -93,44 +93,44 @@ class Expression:
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be added.")
-        return Expression(f"({self} + {other})", self.type)
+        return Expression(f"({self.__str__()} + {other.__str__()})", self.type)
     def __sub__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be subtracted.")
-        return Expression(f"({self} - {other})", self.type)
+        return Expression(f"({self.__str__()} - {other.__str__()})", self.type)
     def __mul__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be multiplied.")
-        return Expression(f"({self} * {other})", self.type)
+        return Expression(f"({self.__str__()} * {other.__str__()})", self.type)
     def __truediv__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be divided.")
-        return Expression(f"({self} / {other})", self.type)
+        return Expression(f"({self.__str__()} / {other.__str__()})", self.type)
     def __floordiv__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be divided.")
-        return Expression(f"floor({self} / {other})", self.type)
+        return Expression(f"floor({self.__str__()} / {other.__str__()})", self.type)
     def __mod__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have modulus taken.")
         ## TODO: confirm the input types are both `int` or assignable to `int`
-        return Expression(f"({self} % {other})", IntType)
+        return Expression(f"({self.__str__()} % {other.__str__()})", IntType)
     def __pow__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have exponentiation taken.")
-        return Expression(f"({self} ** {other})", self.type)
+        return Expression(f"({self.__str__()} ** {other.__str__()})", self.type)
     def __rshift__(self, other):
         raise Exception()
     def __lshift__(self, other):
@@ -140,19 +140,19 @@ class Expression:
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise and taken.")
-        return Expression(f"({self} & {other})", self.type)
+        return Expression(f"({self.__str__()} & {other.__str__()})", self.type)
     def __or__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise or taken.")
-        return Expression(f"({self} | {other})", self.type)
+        return Expression(f"({self.__str__()} | {other.__str__()})", self.type)
     def __xor__(self, other):
         if not isinstance(other, Expression):
             other = _convert(other)
         if check_types_assignable(self.type, other.type) == None:
             raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot have bitwise xor taken.")
-        return Expression(f"({self} ^ {other})", self.type)
+        return Expression(f"({self.__str__()} ^ {other.__str__()})", self.type)
     def __radd__(self, other): return self.__add__(other)
     def __rsub__(self, other): return self.__sub__(other)
     def __rmul__(self, other): return self.__mul__(other)
@@ -166,26 +166,51 @@ class Expression:
     def __ror__(self, other): return self.__or__(other)
     def __rxor__(self, other): return self.__xor__(other)
     def __neg__(self):
-        return Expression(f"-({self})", self.type)
+        return Expression(f"-({self.__str__()})", self.type)
     def __pos__(self):
-        return Expression(f"+({self})", self.type)
+        return Expression(f"+({self.__str__()})", self.type)
     def __abs__(self):
-        return Expression(f"abs({self})", self.type)
+        return Expression(f"abs({self.__str__()})", self.type)
     def __invert__(self):
-        return Expression(f"~({self})", self.type)
+        return Expression(f"~({self.__str__()})", self.type)
     def __round__(self):
-        return Expression(f"floor({self})", self.type)
+        return Expression(f"floor({self.__str__()})", self.type)
     def __trunc__(self):
-        return Expression(f"floor({self})", self.type)
+        return Expression(f"floor({self.__str__()})", self.type)
     def __floor__(self):
-        return Expression(f"floor({self})", self.type)
+        return Expression(f"floor({self.__str__()})", self.type)
     def __ceil__(self):
-        return Expression(f"ceil({self})", self.type)
+        return Expression(f"ceil({self.__str__()})", self.type)
     
     def __bool__(self):
         ctx = CompilerContext.instance()
         ctx.current_trigger = Expression(self.exprn, self.type)
         return True
+    
+    def __format__(self, spec: str):
+        ## MUGEN valid specifiers are: %d, %i, %f, %F, %e, %E, %g, %G
+        ## the only thing we need to support explicitly from here is e/E and g/G
+        ## none of the other Python specifiers seem to be supported by MUGEN.
+        if spec not in ["e", "E", "g", "G", ""]:
+            raise Exception(f"Expected type specifier to be e, E, g, or G, but received {spec}. Other type specifies are not supported by MUGEN.")
+        
+        ## add this expression to the context
+        ctx = CompilerContext.instance()
+        ctx.format_params.append(self)
+
+        if spec == "e":
+            return "%e"
+        elif spec == "E":
+            return "%E"
+        elif spec == "g":
+            return "%g"
+        elif spec == "G":
+            return "%G"
+        
+        if self.type == FloatType:
+            return "%f"
+        else:
+            return "%d"
     
 ## these are helpers for specifying expressions for commonly-used built-in types.
 IntExpression = functools.partial(Expression, type = IntType)

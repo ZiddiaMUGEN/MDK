@@ -53,9 +53,9 @@ class StateController:
         result = "[State ]"
         result += f"\ntype = {self.type}"
         for trigger in self.triggers:
-            result += f"\ntrigger1 = {trigger}"
+            result += f"\ntrigger1 = {trigger.__str__()}"
         for param in self.params:
-            result += f"\n{param} = {self.params[param]}"
+            result += f"\n{param} = {self.params[param].__str__()}"
         return result
     
 @dataclass
@@ -103,6 +103,7 @@ class CompilerContext:
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
     statefuncs: list[str]
+    format_params: list[Expression]
 
     def __init__(self):
         self.statedefs = {}
@@ -116,6 +117,7 @@ class CompilerContext:
         self.globals = []
         self.default_state = (None, None)
         self.statefuncs = []
+        self.format_params = []
     
     @classmethod
     def instance(cls):
