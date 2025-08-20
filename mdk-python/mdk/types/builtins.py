@@ -1,6 +1,7 @@
 from mdk.types.specifier import TypeCategory, TypeSpecifier
 
 ## these are builtin types which must be available to all characters.
+AnyType = TypeSpecifier("any", TypeCategory.BUILTIN) ## note: this is used for DTC and ATC. it's not intended for normal use.
 IntType = TypeSpecifier("int", TypeCategory.BUILTIN)
 FloatType = TypeSpecifier("float", TypeCategory.BUILTIN)
 BoolType = TypeSpecifier("bool", TypeCategory.BUILTIN)
@@ -18,6 +19,6 @@ SoundType = TypeSpecifier("sound", TypeCategory.BUILTIN)
 SpriteType = TypeSpecifier("sprite", TypeCategory.BUILTIN)
 
 __all__ = [
-    "IntType", "FloatType", "BoolType", "ShortType", "ByteType", "CharType", "StringType",
+    "AnyType", "IntType", "FloatType", "BoolType", "ShortType", "ByteType", "CharType", "StringType",
     "StateNoType", "AnimType", "SoundType", "SpriteType", "UStringType"
 ]

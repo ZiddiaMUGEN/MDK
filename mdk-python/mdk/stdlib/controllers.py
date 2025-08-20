@@ -324,13 +324,14 @@ def AngleSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
 
     return result
 
-"""
 @controller(text = [StringType], params = [AnyType, None])
-def AppendToClipboard(text: ConvertibleExpression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def AppendToClipboard(text: ConvertibleExpression, params: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
+    set_if(result, "text", text)
+    set_if_tuple(result, "params", params, AnyType)
+
     return result
-"""
 
 @controller(flag = [AssertType], flag2 = [AssertType, None], flag3 = [AssertType, None])
 def AssertSpecial(flag: ConvertibleExpression, flag2: Optional[ConvertibleExpression] = None, flag3: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
@@ -780,13 +781,14 @@ is executed.</p>
     result = StateController()
     return result
 
-"""
 @controller(text = [StringType], params = [AnyType, None])
-def DisplayToClipboard(text: ConvertibleExpression, params: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def DisplayToClipboard(text: ConvertibleExpression, params: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     result = StateController()
 
+    set_if(result, "text", text)
+    set_if_tuple(result, "params", params, AnyType)
+
     return result
-"""
 
 @controller(value = [ColorType, None], time = [IntType, None], under = [BoolType, None])
 def EnvColor(value: Optional[TupleExpression] = None, time: Optional[ConvertibleExpression] = None, under: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
@@ -1617,8 +1619,8 @@ those hit attributes which appear in the HitBy attribute string.</dd>
     damage = [IntPairType, None],
     pausetime = [IntPairType, None],
     guard_pausetime = [IntPairType, None],
-    sparkno = [SpriteType, None],
-    guard_sparkno = [SpriteType, None],
+    sparkno = [SpriteType, IntType, None],
+    guard_sparkno = [SpriteType, IntType, None],
     sparkxy = [IntPairType, None],
     hitsound = [SoundPairType, None],
     guardsound = [SoundPairType, None],
@@ -3450,19 +3452,23 @@ removes all explods owned by the player.</dd>
 @controller(
     reversal_attr = [HitStringType],
     pausetime = [IntPairType, None],
-    sparkno = [IntType, None],
-    hitsound = [IntPairType, None],
+    sparkno = [SpriteType, IntType, None],
+    guard_sparkno = [SpriteType, IntType, None],
+    sparkxy = [IntPairType, None],
+    hitsound = [SoundPairType, None],
+    guardsound = [SoundPairType, None],
     p1stateno = [IntType, None],
     p2stateno = [IntType, None],
     p1sprpriority = [IntType, None],
-    p2sprpriority = [IntType, None],
-    sparkxy = [IntPairType, None]
+    p2sprpriority = [IntType, None]
 )
 def ReversalDef(
     reversal_attr: TupleExpression, 
     pausetime: Optional[TupleExpression] = None, 
-    sparkno: Optional[ConvertibleExpression] = None, 
+    sparkno: Optional[ConvertibleExpression] = None,
+    guard_sparkno: Optional[ConvertibleExpression] = None, 
     hitsound: Optional[TupleExpression] = None, 
+    guardsound: Optional[TupleExpression] = None, 
     p1stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, 
     p2stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None, 
     p1sprpriority: Optional[ConvertibleExpression] = None, 
@@ -3497,7 +3503,9 @@ means stand+air, normal attack, special attack.</dd>
     set_if_tuple(result, "reversal.attr", reversal_attr, HitStringType)
     set_if_tuple(result, "pausetime", pausetime, IntPairType)
     set_if(result, "sparkno", sparkno)
+    set_if(result, "guard.sparkno", guard_sparkno)
     set_if_tuple(result, "hitsound", hitsound, IntPairType)
+    set_if_tuple(result, "guardsound", guardsound, IntPairType)
     set_stateno(result, "p1stateno", p1stateno)
     set_stateno(result, "p2stateno", p2stateno)
     set_if(result, "p1sprpriority", p1sprpriority)
@@ -4380,5 +4388,5 @@ __all__ = [
     "PowerSet", "Projectile", "RemapPal", "RemoveExplod", "ReversalDef", "ScreenBound", "SelfState", "SprPriority", 
     "StateTypeSet", "SndPan", "SuperPause", "TargetBind", "TargetDrop", "TargetFacing", "TargetLifeAdd", "TargetPowerAdd", 
     "TargetState", "TargetVelAdd", "TargetVelSet", "Trans", "Turn", "VarAdd", "VarSet", "VarRandom", "VarRangeSet", 
-    "VelAdd", "VelMul", "VelSet", "VictoryQuote", "Width", "BGPalFX", "AllPalFX"
+    "VelAdd", "VelMul", "VelSet", "VictoryQuote", "Width", "BGPalFX", "AllPalFX", "DisplayToClipboard", "AppendToClipboard"
 ]

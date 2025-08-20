@@ -5,7 +5,7 @@ import traceback
 
 from mdk.types.context import StateController, CompilerContext
 from mdk.types.expressions import Expression, TupleExpression
-from mdk.types.builtins import IntType, StateNoType
+from mdk.types.builtins import IntType, StateNoType, AnyType
 from mdk.types.defined import TupleType
 from mdk.types.specifier import TypeSpecifier
 
@@ -42,7 +42,7 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
                 new_kwargs[name] = input_expression
             elif type(input_expression) == tuple:
                 ## for a tuple, we expect TupleExpression in the valid types. there should be exactly 1 valid type.
-                if len(valid_no_none) != 1 or not isinstance(valid_no_none[0], TupleType):
+                if len(valid_no_none) != 1 or (not isinstance(valid_no_none[0], TupleType) and valid_no_none[0] != AnyType):
                     raise Exception(f"Controller {fn.__name__} has a parameter {name} which expects an expression with a type from ({', '.join(valid_typenames)}), but parameter required {type(valid_no_none[0])} - bug the developers.")
                 target_type = valid_no_none[0]
                 ## although we provide typings for the tuple, we don't actually check them here.

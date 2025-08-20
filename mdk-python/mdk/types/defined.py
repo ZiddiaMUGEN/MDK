@@ -98,8 +98,8 @@ SpaceType = EnumType("SpaceType", ["Screen", "Stage"], register = False)
 TeamModeType = EnumType("TeamModeType", ["Single", "Simul", "Turns"], register = False)
 
 ## TODO: +/- won't work.
-HitFlagType = FlagType("HitFlagType", ["H", "L", "A", "M", "F", "D", "+", "-"], register = False)
-GuardFlagType = FlagType("GuardFlagType", ["H", "L", "A", "M"], register = False)
+HitFlagType = FlagType("HitFlag", ["H", "L", "A", "M", "F", "D", "+", "-"], register = False)
+GuardFlagType = FlagType("GuardFlag", ["H", "L", "A", "M"], register = False)
 
 ColorType = TupleType("ColorType", TypeCategory.TUPLE, [IntType, IntType, IntType])
 ColorMultType = TupleType("ColorMultType", TypeCategory.TUPLE, [FloatType, FloatType, FloatType])

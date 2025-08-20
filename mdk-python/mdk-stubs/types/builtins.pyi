@@ -1,7 +1,8 @@
 from mdk.types.specifier import TypeSpecifier
 
-__all__ = ['IntType', 'FloatType', 'BoolType', 'ShortType', 'ByteType', 'CharType', 'StringType', 'StateNoType', 'AnimType', 'SoundType', 'SpriteType']
+__all__ = ['AnyType', 'IntType', 'FloatType', 'BoolType', 'ShortType', 'ByteType', 'CharType', 'StringType', 'StateNoType', 'AnimType', 'SoundType', 'SpriteType']
 
+AnyType: TypeSpecifier
 IntType: TypeSpecifier
 FloatType: TypeSpecifier
 BoolType: TypeSpecifier

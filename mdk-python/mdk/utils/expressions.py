@@ -8,6 +8,10 @@ def check_types_assignable(spec1: TypeSpecifier, spec2: TypeSpecifier) -> Option
     ## if types match, t1 return the type.
     if spec1 == spec2: return spec1
 
+    ## 'any' type can be converted to anything.
+    if spec1.name == "any": return spec2
+    if spec2.name == "any": return spec1
+
     ## ustring and string are convertible to ustring.
     if spec1 in [StringType, UStringType] and spec2 in [StringType, UStringType]:
         return UStringType
