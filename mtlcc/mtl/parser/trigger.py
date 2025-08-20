@@ -286,6 +286,10 @@ def parseExpression(line: str, location: Location, index: int = 0, nested: bool 
                         children = nextExpression.children
                     else:
                         children = [nextExpression]
+                    ## special case for the `rescope` function, which will often have a REDIRECT expression as its sole child
+                    ## that REDIRECT needs to be converted to two arguments.
+                    if stack[0].operator.lower() == "rescope" and len(children) == 1 and children[0].node == TriggerTreeNode.REDIRECT:
+                        children = [children[0].children[0], children[0].children[1]]
                     stack.append(TriggerTree(TriggerTreeNode.FUNCTION_CALL, stack.pop().operator, children, location))
                 elif nextExpression != None: 
                     stack.append(nextExpression)

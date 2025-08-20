@@ -303,6 +303,26 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
             tree.children = copy.deepcopy(match.exprn.children)
             tree.operator = match.exprn.operator
             replaced = True
+    elif tree.node == TriggerTreeNode.REDIRECT:
+        ## for redirects we need to identify the target scope of the redirect
+        ## before analyzing the target of the redirect expression.
+        if (target := type_check(tree.children[0], table, ctx, scope = scope)) == None or target[0].type != BUILTIN_TARGET:
+            raise TranslationError(f"Target of redirected expression could not be resolved to a target type.", tree.location)
+        if equals_insensitive(tree.children[0].operator, "rescope") and scope != None:
+            ## rescope needs special handling in type-checking.
+            ## the target scope is really `children[0].children[1]`.
+            target_node = tree.children[0].children[1]
+            target_scope = get_redirect_scope(target_node, scope)
+            target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
+        elif scope != None:
+            target_scope = get_redirect_scope(tree.children[0], scope)
+            target_table = list(filter(lambda k: k.scope == target_scope, ctx.globals))
+        else:
+            target_scope = None
+            target_table = []
+        ## now we need to analyze the redirect target, WITHIN the new target scope.
+        replaced = replace_triggers(tree.children[1], target_table, ctx, scope = target_scope) or replaced
+        return replaced
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
