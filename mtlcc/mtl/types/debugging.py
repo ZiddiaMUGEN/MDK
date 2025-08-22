@@ -137,6 +137,8 @@ class DebuggingContext:
     passpoints: list[tuple[int, int]]
     last_index: int
     filename: str
+    p2_target: str
+    enable_ai: int
 
     def __init__(self):
         self.strings = []
@@ -151,6 +153,8 @@ class DebuggingContext:
         self.passpoints = []
         self.last_index = 0
         self.filename = ""
+        self.p2_target = "kfm"
+        self.enable_ai = 0
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

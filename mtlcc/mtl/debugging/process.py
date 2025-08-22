@@ -354,7 +354,7 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
         character_folder = os.path.dirname(f"{working}/{character}")
 
     ## prep the command-line arguments.
-    args = [target, "-p1", character, "-p2", "kfm", "-p1.ai", "0", "-p2.ai", "0"]
+    args = [target, "-p1", character, "-p2", ctx.p2_target, "-p1.ai", str(ctx.enable_ai), "-p2.ai", str(ctx.enable_ai)]
     child = subprocess.Popen(args, cwd=working, creationflags=CREATE_SUSPENDED)
 
     ## share the launch info across processes
