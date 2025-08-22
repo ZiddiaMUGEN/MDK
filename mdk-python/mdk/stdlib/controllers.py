@@ -3114,9 +3114,9 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
 
 @controller(
     projid = [IntType, None],
-    projint = [IntType, None],
-    projhitint = [IntType, None],
-    projremint = [IntType, None],
+    projanim = [IntType, None],
+    projhitanim = [IntType, None],
+    projremanim = [IntType, None],
     projscale = [FloatPairType, None],
     projremove = [BoolType, None],
     projremovetime = [IntType, None],
@@ -3147,13 +3147,95 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
     afterimage_palmul = [ColorMultType, None],
     afterimage_timegap = [IntType, None],
     afterimage_framegap = [IntType, None],
-    afterimage_trans = [TransType, None]
+    afterimage_trans = [TransType, None],
+    attr = [HitStringType],
+    hitflag = [HitFlagType, None],
+    guardflag = [GuardFlagType, None],
+    affectteam = [TeamType, None],
+    animtype = [HitAnimType, None],
+    air_animtype = [HitAnimType, None],
+    fall_animtype = [HitAnimType, None],
+    priority = [PriorityPairType, None],
+    damage = [IntPairType, None],
+    pausetime = [IntPairType, None],
+    guard_pausetime = [IntPairType, None],
+    sparkno = [SpriteType, IntType, None],
+    guard_sparkno = [SpriteType, IntType, None],
+    sparkxy = [IntPairType, None],
+    hitsound = [SoundPairType, None],
+    guardsound = [SoundPairType, None],
+    ground_type = [AttackType, None],
+    air_type = [AttackType, None],
+    ground_slidetime = [IntType, None],
+    guard_slidetime = [IntType, None],
+    ground_hittime = [IntType, None],
+    guard_hittime = [IntType, None],
+    air_hittime = [IntType, None],
+    guard_ctrltime = [IntType, None],
+    guard_dist = [IntType, None],
+    yaccel = [FloatType, None],
+    ground_velocity = [FloatType, None],
+    guard_velocity = [FloatType, None],
+    air_velocity = [FloatPairType, None],
+    airguard_velocity = [FloatPairType, None],
+    ground_cornerpush_veloff = [FloatType, None],
+    air_cornerpush_veloff = [FloatType, None],
+    down_cornerpush_veloff = [FloatType, None],
+    guard_cornerpush_veloff = [FloatType, None],
+    airguard_cornerpush_veloff = [FloatType, None],
+    airguard_ctrltime = [IntType, None],
+    air_juggle = [IntType, None],
+    mindist = [IntPairType, None],
+    maxdist = [IntPairType, None],
+    snap = [IntPairType, None],
+    p1sprpriority = [IntType, None],
+    p2sprpriority = [IntType, None],
+    p1facing = [IntType, None],
+    p1getp2facing = [IntType, None],
+    p2facing = [IntType, None],
+    p1stateno = [StateNoType, IntType, StringType, None],
+    p2stateno = [StateNoType, IntType, StringType, None],
+    p2getp1state = [BoolType, None],
+    forcestand = [BoolType, None],
+    fall = [BoolType, None],
+    fall_xvelocity = [FloatType, None],
+    fall_yvelocity = [FloatType, None],
+    fall_recover = [BoolType, None],
+    fall_recovertime = [IntType, None],
+    fall_damage = [IntType, None],
+    air_fall = [BoolType, None],
+    forcenofall = [BoolType, None],
+    down_velocity = [FloatPairType, None],
+    down_hittime = [IntType, None],
+    down_bounce = [BoolType, None],
+    id = [IntType, None],
+    chainid = [IntType, None],
+    nochainid = [IntPairType, None],
+    hitonce = [BoolType, None],
+    kill = [BoolType, None],
+    guard_kill = [BoolType, None],
+    fall_kill = [BoolType, None],
+    numhits = [IntType, None],
+    getpower = [IntPairType, None],
+    givepower = [IntPairType, None],
+    palfx_time = [IntType, None],
+    palfx_mul = [ColorType, None],
+    palfx_add = [ColorType, None],
+    envshake_time = [IntType, None],
+    envshake_freq = [FloatType, None],
+    envshake_ampl = [IntType, None],
+    envshake_phase = [FloatType, None],
+    fall_envshake_time = [IntType, None],
+    fall_envshake_freq = [FloatType, None],
+    fall_envshake_ampl = [IntType, None],
+    fall_envshake_phase = [FloatType, None]
 )
 def Projectile(
+    attr: TupleExpression,
     projid: Optional[ConvertibleExpression] = None,
-    projint: Optional[ConvertibleExpression] = None,
-    projhitint: Optional[ConvertibleExpression] = None,
-    projremint: Optional[ConvertibleExpression] = None,
+    projanim: Optional[ConvertibleExpression] = None,
+    projhitanim: Optional[ConvertibleExpression] = None,
+    projremanim: Optional[ConvertibleExpression] = None,
     projscale: Optional[TupleExpression] = None,
     projremove: Optional[ConvertibleExpression] = None,
     projremovetime: Optional[ConvertibleExpression] = None,
@@ -3183,7 +3265,86 @@ def Projectile(
     afterimage_palmul: Optional[TupleExpression] = None,
     afterimage_timegap: Optional[ConvertibleExpression] = None,
     afterimage_framegap: Optional[ConvertibleExpression] = None,
-    afterimage_trans: Optional[ConvertibleExpression] = None, 
+    afterimage_trans: Optional[ConvertibleExpression] = None,
+    hitflag: Optional[ConvertibleExpression] = None,
+    guardflag: Optional[ConvertibleExpression] = None,
+    affectteam: Optional[ConvertibleExpression] = None,
+    animtype: Optional[ConvertibleExpression] = None,
+    air_animtype: Optional[ConvertibleExpression] = None,
+    fall_animtype: Optional[ConvertibleExpression] = None,
+    priority: Optional[TupleExpression] = None,
+    damage: Optional[ConvertibleExpression] = None,
+    pausetime: Optional[ConvertibleExpression] = None,
+    guard_pausetime: Optional[ConvertibleExpression] = None,
+    sparkno: Optional[ConvertibleExpression] = None,
+    guard_sparkno: Optional[ConvertibleExpression] = None,
+    sparkxy: Optional[TupleExpression] = None,
+    hitsound: Optional[TupleExpression] = None,
+    guardsound: Optional[TupleExpression] = None,
+    ground_type: Optional[ConvertibleExpression] = None,
+    air_type: Optional[ConvertibleExpression] = None,
+    ground_slidetime: Optional[ConvertibleExpression] = None,
+    guard_slidetime: Optional[ConvertibleExpression] = None,
+    ground_hittime: Optional[ConvertibleExpression] = None,
+    guard_hittime: Optional[ConvertibleExpression] = None,
+    air_hittime: Optional[ConvertibleExpression] = None,
+    guard_ctrltime: Optional[ConvertibleExpression] = None,
+    guard_dist: Optional[ConvertibleExpression] = None,
+    yaccel: Optional[ConvertibleExpression] = None,
+    ground_velocity: Optional[TupleExpression] = None,
+    guard_velocity: Optional[TupleExpression] = None,
+    air_velocity: Optional[TupleExpression] = None,
+    airguard_velocity: Optional[TupleExpression] = None,
+    ground_cornerpush_veloff: Optional[ConvertibleExpression] = None,
+    air_cornerpush_veloff: Optional[ConvertibleExpression] = None,
+    down_cornerpush_veloff: Optional[ConvertibleExpression] = None,
+    guard_cornerpush_veloff: Optional[ConvertibleExpression] = None,
+    airguard_cornerpush_veloff: Optional[ConvertibleExpression] = None,
+    airguard_ctrltime: Optional[ConvertibleExpression] = None,
+    air_juggle: Optional[ConvertibleExpression] = None,
+    mindist: Optional[TupleExpression] = None,
+    maxdist: Optional[TupleExpression] = None,
+    snap: Optional[TupleExpression] = None,
+    p1sprpriority: Optional[ConvertibleExpression] = None,
+    p2sprpriority: Optional[ConvertibleExpression] = None,
+    p1facing: Optional[ConvertibleExpression] = None,
+    p1getp2facing: Optional[ConvertibleExpression] = None,
+    p2facing: Optional[ConvertibleExpression] = None,
+    p1stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None,
+    p2stateno: Optional[Union[Expression, str, int, Callable[..., None | StateController]]] = None,
+    p2getp1state: Optional[ConvertibleExpression] = None,
+    forcestand: Optional[ConvertibleExpression] = None,
+    fall: Optional[ConvertibleExpression] = None,
+    fall_xvelocity: Optional[ConvertibleExpression] = None,
+    fall_yvelocity: Optional[ConvertibleExpression] = None,
+    fall_recover: Optional[ConvertibleExpression] = None,
+    fall_recovertime: Optional[ConvertibleExpression] = None,
+    fall_damage: Optional[ConvertibleExpression] = None,
+    air_fall: Optional[ConvertibleExpression] = None,
+    forcenofall: Optional[ConvertibleExpression] = None,
+    down_velocity: Optional[TupleExpression] = None,
+    down_hittime: Optional[ConvertibleExpression] = None,
+    down_bounce: Optional[ConvertibleExpression] = None,
+    chainid: Optional[ConvertibleExpression] = None,
+    nochainid: Optional[TupleExpression] = None,
+    hitonce: Optional[ConvertibleExpression] = None,
+    kill: Optional[ConvertibleExpression] = None,
+    guard_kill: Optional[ConvertibleExpression] = None,
+    fall_kill: Optional[ConvertibleExpression] = None,
+    numhits: Optional[ConvertibleExpression] = None,
+    getpower: Optional[TupleExpression] = None,
+    givepower: Optional[TupleExpression] = None,
+    palfx_time: Optional[ConvertibleExpression] = None,
+    palfx_mul: Optional[TupleExpression] = None,
+    palfx_add: Optional[TupleExpression] = None,
+    envshake_time: Optional[ConvertibleExpression] = None,
+    envshake_freq: Optional[ConvertibleExpression] = None,
+    envshake_ampl: Optional[ConvertibleExpression] = None,
+    envshake_phase: Optional[ConvertibleExpression] = None,
+    fall_envshake_time: Optional[ConvertibleExpression] = None,
+    fall_envshake_freq: Optional[ConvertibleExpression] = None,
+    fall_envshake_ampl: Optional[ConvertibleExpression] = None,
+    fall_envshake_phase: Optional[ConvertibleExpression] = None, 
 	ignorehitpause: Optional[ConvertibleExpression] = None, 
 	persistent: Optional[ConvertibleExpression] = None
 ) -> StateController:
@@ -3347,9 +3508,9 @@ state and animation data.</p>
     result = StateController()
 
     set_if(result, "projid", projid)
-    set_if(result, "projint", projint)
-    set_if(result, "projhitint", projhitint)
-    set_if(result, "projremint", projremint)
+    set_if(result, "projanim", projanim)
+    set_if(result, "projhitanim", projhitanim)
+    set_if(result, "projremanim", projremanim)
     set_if_tuple(result, "projscale", projscale, FloatPairType)
     set_if(result, "projremove", projremove)
     set_if(result, "projremovetime", projremovetime)
@@ -3380,6 +3541,88 @@ state and animation data.</p>
     set_if(result, "afterimage.timegap", afterimage_timegap)
     set_if(result, "afterimage.framegap", afterimage_framegap)
     set_if(result, "afterimage.trans", afterimage_trans)
+
+    ## from HitDef
+    set_if_tuple(result, "attr", attr, HitStringType)
+    set_if(result, "hitflag", hitflag)
+    set_if(result, "guardflag", guardflag)
+    set_if(result, "affectteam", affectteam)
+    set_if(result, "animtype", animtype)
+    set_if(result, "air.animtype", air_animtype)
+    set_if(result, "fall.animtype", fall_animtype)
+    set_if_tuple(result, "priority", priority, PriorityPairType)
+    set_if(result, "damage", damage)
+    set_if(result, "pausetime", pausetime)
+    set_if(result, "guard.pausetime", guard_pausetime)
+    set_if(result, "sparkno", sparkno)
+    set_if(result, "guard.sparkno", guard_sparkno)
+    set_if_tuple(result, "sparkxy", sparkxy, IntPairType)
+    set_if_tuple(result, "hitsound", hitsound, SoundPairType)
+    set_if_tuple(result, "guardsound", guardsound, SoundPairType)
+    set_if(result, "ground.type", ground_type)
+    set_if(result, "air.type", air_type)
+    set_if(result, "ground.slidetime", ground_slidetime)
+    set_if(result, "guard.slidetime", guard_slidetime)
+    set_if(result, "ground.hittime", ground_hittime)
+    set_if(result, "guard.hittime", guard_hittime)
+    set_if(result, "air.hittime", air_hittime)
+    set_if(result, "guard.ctrltime", guard_ctrltime)
+    set_if(result, "guard.dist", guard_dist)
+    set_if(result, "yaccel", yaccel)
+    set_if_tuple(result, "ground.velocity", ground_velocity, FloatPairType)
+    set_if_tuple(result, "guard.velocity", guard_velocity, FloatPairType)
+    set_if_tuple(result, "air.velocity", air_velocity, FloatPairType)
+    set_if_tuple(result, "airguard.velocity", airguard_velocity, FloatPairType)
+    set_if(result, "ground.cornerpush.veloff", ground_cornerpush_veloff)
+    set_if(result, "air.cornerpush.veloff", air_cornerpush_veloff)
+    set_if(result, "down.cornerpush.veloff", down_cornerpush_veloff)
+    set_if(result, "guard.cornerpush.veloff", guard_cornerpush_veloff)
+    set_if(result, "airguard.cornerpush.veloff", airguard_cornerpush_veloff)
+    set_if(result, "airguard.ctrltime", airguard_ctrltime)
+    set_if(result, "air.juggle", air_juggle)
+    set_if_tuple(result, "mindist", mindist, IntPairType)
+    set_if_tuple(result, "maxdist", maxdist, IntPairType)
+    set_if_tuple(result, "snap", snap, IntPairType)
+    set_if(result, "p1sprpriority", p1sprpriority)
+    set_if(result, "p2sprpriority", p2sprpriority)
+    set_if(result, "p1facing", p1facing)
+    set_if(result, "p1getp2facing", p1getp2facing)
+    set_if(result, "p2facing", p2facing)
+    set_stateno(result, "p1stateno", p1stateno)
+    set_stateno(result, "p2stateno", p2stateno)
+    set_if(result, "p2getp1state", p2getp1state)
+    set_if(result, "forcestand", forcestand)
+    set_if(result, "fall", fall)
+    set_if(result, "fall.xvelocity", fall_xvelocity)
+    set_if(result, "fall.yvelocity", fall_yvelocity)
+    set_if(result, "fall.recover", fall_recover)
+    set_if(result, "fall.recovertime", fall_recovertime)
+    set_if(result, "fall.damage", fall_damage)
+    set_if(result, "air.fall", air_fall)
+    set_if(result, "forcenofall", forcenofall)
+    set_if_tuple(result, "down.velocity", down_velocity, FloatPairType)
+    set_if(result, "down.hittime", down_hittime)
+    set_if(result, "down.bounce", down_bounce)
+    set_if(result, "chainid", chainid)
+    set_if_tuple(result, "nochainid", nochainid, IntPairType)
+    set_if(result, "hitonce", hitonce)
+    set_if(result, "kill", kill)
+    set_if(result, "guard.kill", guard_kill)
+    set_if(result, "fall.kill", fall_kill)
+    set_if(result, "numhits", numhits)
+    set_if_tuple(result, "getpower", getpower, IntPairType)
+    set_if_tuple(result, "givepower", givepower, IntPairType)
+    set_if(result, "palfx.time", palfx_time)
+    set_if_tuple(result, "palfx.mul", palfx_mul, ColorType)
+    set_if_tuple(result, "palfx.add", palfx_add, ColorType)
+    set_if(result, "envshake.time", envshake_time)
+    set_if(result, "envshake.freq", envshake_freq)
+    set_if(result, "envshake.ampl", envshake_ampl)
+    set_if(result, "envshake.phase", envshake_phase)
+    set_if(result, "fall.envshake.time", fall_envshake_time)
+    set_if(result, "fall.envshake.freq", fall_envshake_freq)
+    set_if(result, "fall.envshake.ampl", fall_envshake_ampl)
+    set_if(result, "fall.envshake.phase", fall_envshake_phase)
 
     return result
 
