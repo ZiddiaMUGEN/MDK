@@ -78,14 +78,20 @@ def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[t
     if target.launch_info.state != DebugProcessState.SUSPENDED_WAIT: _winapi(ctypes.windll.kernel32.ResumeThread(thread_handle), errno = -1)
 
 ## utility function to read variables from memory
-def getVariable(base_addr: int, index: int, offset: int, size: int, is_float: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
+def getVariable(base_addr: int, index: int, offset: int, size: int, is_float: bool, is_system: bool, target: DebuggerTarget, ctx: DebuggingContext) -> float:
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
     
     if is_float:
-        variable_value = get_uncached(base_addr + target.launch_info.database["fvar"] + index * 4, process_handle)
+        if is_system:
+            variable_value = get_uncached(base_addr + target.launch_info.database["sysfvar"] + index * 4, process_handle)
+        else:
+            variable_value = get_uncached(base_addr + target.launch_info.database["fvar"] + index * 4, process_handle)
         return round(struct.unpack('<f', variable_value.to_bytes(4, byteorder = 'little'))[0], 3)
     else:
-        variable_value = get_uncached(base_addr + target.launch_info.database["var"] + index * 4, process_handle)
+        if is_system:
+            variable_value = get_uncached(base_addr + target.launch_info.database["sysvar"] + index * 4, process_handle)
+        else:
+            variable_value = get_uncached(base_addr + target.launch_info.database["var"] + index * 4, process_handle)
         start_pow2 = 2 ** offset
         end_pow2 = 2 ** (offset + size)
         mask = ctypes.c_int32(end_pow2 - start_pow2)

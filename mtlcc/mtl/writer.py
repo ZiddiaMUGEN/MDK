@@ -19,11 +19,13 @@ def write_variable_table(ctx: TranslationContext) -> list[str]:
     output: list[str] = []
     for scope in ctx.allocations:
         output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][0] }, ctx.compiler_flags)
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][2] }, ctx.compiler_flags)
         for global_variable in ctx.globals:
             if global_variable.scope == scope and global_variable.type != BUILTIN_FLOAT:
                 output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable, ctx.compiler_flags)
 
         output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][1] }, ctx.compiler_flags)
+        output += debuginfo(DebugCategory.VARIABLE_TABLE, { "scope": scope, "allocations": ctx.allocations[scope][3] }, ctx.compiler_flags)
         for global_variable in ctx.globals:
             if global_variable.scope == scope and global_variable.type == BUILTIN_FLOAT:
                 output += debuginfo(DebugCategory.VARIABLE_ALLOCATION, global_variable, ctx.compiler_flags)
@@ -131,7 +133,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         if tree.operator == ":=" and isinstance(children[0], VariableExpression):
             children[0].value = f"var({children[0].allocation[0]})"
             if children[0].is_float: children[0].value = f"f{children[0].value}"
-            children[1].value = mask_write(children[0].allocation[0], children[1].value, children[0].allocation[1], children[0].type.size, children[0].type == BUILTIN_FLOAT)
+            children[1].value = mask_write(children[0].allocation[0], children[1].value, children[0].allocation[1], children[0].type.size, children[0].type == BUILTIN_FLOAT, children[0].is_system)
         ## if the trigger has a const evaluator, use it. otherwise, trust the output type.
         if match.const != None:
             return match.const(children, ctx)
@@ -193,7 +195,7 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             ## the value of the VariableExpression is the access-masked expression.
             ## if the value is being used in a VarSet (walrus operator) it will get caught in BINARY_OPERATOR
             ## and the write-masked expression will be used instead.
-            return VariableExpression(var.type, f"({mask_variable(var.allocations[0][0], var.allocations[0][1], var.type.size, var.type == BUILTIN_FLOAT)})", var.allocations[0], var.type == BUILTIN_FLOAT)
+            return VariableExpression(var.type, f"({mask_variable(var.allocations[0][0], var.allocations[0][1], var.type.size, var.type == BUILTIN_FLOAT, var.is_system)})", var.allocations[0], var.type == BUILTIN_FLOAT, var.is_system)
         elif find_type(tree.operator, ctx) != None:
             ## if a type name matches, the resulting type is just `type`
             return Expression(BUILTIN_TYPE, tree.operator)
@@ -309,7 +311,8 @@ def write_state_controller(controller: StateController, table: list[TypeParamete
             text_split = property_text.split(";")
             prop_key = f"var({allocation.allocations[0][0]})"
             if allocation.type == BUILTIN_FLOAT: prop_key = f"f{prop_key}"
-            property_text = mask_write(allocation.allocations[0][0], text_split[0], allocation.allocations[0][1], allocation.type.size, allocation.type == BUILTIN_FLOAT)
+            if allocation.is_system: prop_key = f"sys{prop_key}"
+            property_text = mask_write(allocation.allocations[0][0], text_split[0], allocation.allocations[0][1], allocation.type.size, allocation.type == BUILTIN_FLOAT, allocation.is_system)
             if len(text_split) > 1: property_text += ";" + text_split[1]
 
         output.append(f"{prop_key} = {property_text}")

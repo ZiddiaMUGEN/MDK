@@ -14,9 +14,10 @@ from mdk.utils.shared import generate_random_string, convert, format_bool
 ## generally speaking this is just treated differently so that we can
 ## detect variable initialization and scope in the state/template code.
 class VariableExpression(Expression):
-    def __init__(self, type: TypeSpecifier, scope: Optional[StateScope] = None):
+    def __init__(self, type: TypeSpecifier, scope: Optional[StateScope] = None, system: bool = False):
         self.type = type
         self.exprn = ""
+        self.system = system
 
         ## in order to determine a name for this variable, we need to walk through the backtrace
         ## and find calling code which originates from a statedef or template function, or
@@ -43,7 +44,7 @@ class VariableExpression(Expression):
                 self.exprn = frame.line.split("=")[0].strip()
                 if next(filter(lambda k: k.name == self.exprn, context.globals), None) != None:
                     raise Exception(f"Attempted to create 2 global variables with the same name {self.exprn}.")
-                context.globals.append(ParameterDefinition(self.type, self.exprn, scope))
+                context.globals.append(ParameterDefinition(self.type, self.exprn, scope = scope, is_system = self.system))
         
         ## if it could not be found, print a warning and assign a variable name.
         if context.current_state != None and self.exprn == "":

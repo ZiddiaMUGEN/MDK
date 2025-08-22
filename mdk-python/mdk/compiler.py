@@ -101,7 +101,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                         scoped = StateDefinitionScope(MtlScopeType.TARGET, None)
                     if global_variable.scope.scope == StateScopeType.HELPER:
                         scoped = StateDefinitionScope(MtlScopeType.HELPER, global_variable.scope.target)
-                project.global_forwards.append(ForwardParameter(global_variable.name, global_variable.type.name, scoped))
+                project.global_forwards.append(ForwardParameter(global_variable.name, global_variable.type.name, is_system = global_variable.is_system, scope = scoped))
             mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), target_folder), project)
 
         ## delete the output file if we're not preserving IR

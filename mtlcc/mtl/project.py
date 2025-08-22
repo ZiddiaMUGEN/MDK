@@ -90,6 +90,9 @@ def loadDefinition(file: str) -> ProjectContext:
             if property.key in ctx.global_forwards:
                 raise TranslationError(f"Global variable forward declaration with name {property.key} already exists!", property.location)
             new_forward = ForwardParameter(property.key, property.value)
+            if new_forward.name.lower().startswith("sysvar "):
+                new_forward.name = new_forward.name[7:]
+                new_forward.is_system = True
             if "=" in property.value:
                 new_forward.type = property.value.split("=")[0].strip()
                 new_forward.scope = get_scope(property.value.split("=")[1].strip(), compiler_internal(None))

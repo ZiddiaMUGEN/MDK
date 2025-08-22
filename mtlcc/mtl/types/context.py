@@ -61,7 +61,7 @@ class TranslationContext:
     templates: list[TemplateDefinition]
     statedefs: list[StateDefinition]
     globals: list[TypeParameter]
-    allocations: dict[StateDefinitionScope, tuple[AllocationTable, AllocationTable]]
+    allocations: dict[StateDefinitionScope, tuple[AllocationTable, AllocationTable, AllocationTable, AllocationTable]]
     compiler_flags: CompilerConfiguration
     debugging: DebuggingContext
 

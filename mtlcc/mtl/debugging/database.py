@@ -72,7 +72,7 @@ def addTemplatesToDatabase(ctx: TranslationContext):
 
 def addGlobalsToDatabase(ctx: TranslationContext):
     for var in ctx.globals:
-        info = DebugParameterInfo(var.name, var.type, var.scope, var.allocations)
+        info = DebugParameterInfo(var.name, var.type, var.scope, var.allocations, var.is_system)
         addStringToDatabase(var.name, ctx)
         ctx.debugging.globals.append(info)
 
@@ -83,7 +83,7 @@ def addStateDefinitionsToDatabase(ctx: TranslationContext):
         state_id = statedef.parameters.id if statedef.parameters.id != None else -4
         info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [])
         for local in statedef.locals:
-            local_info = DebugParameterInfo(local.name, local.type, statedef.scope, local.allocations)
+            local_info = DebugParameterInfo(local.name, local.type, statedef.scope, local.allocations, local.is_system)
             addStringToDatabase(local.name, ctx)
             info.locals.append(local_info)
         for controller in statedef.states:
@@ -191,6 +191,7 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
             for allocation in var.allocations:
                 write_byte(allocation[0], f)
                 write_byte(allocation[1], f)
+            write_byte(1 if var.system else 0, f)
 
         ## write state definitions
         write_integer(len(ctx.states), f)
@@ -310,7 +311,8 @@ def load(filename: str) -> DebuggingContext:
             allocations: list[tuple[int, int]] = []
             for _ in range(read_short(f)):
                 allocations.append((read_byte(f), read_byte(f)))
-            ctx.globals.append(DebugParameterInfo(name, type, StateDefinitionScope(scope, target if target != -1 else None), allocations))
+            system = True if read_byte(f) == 1 else False
+            ctx.globals.append(DebugParameterInfo(name, type, StateDefinitionScope(scope, target if target != -1 else None), allocations, system))
 
         ## read state definitions
         for _ in range(read_integer(f)):
@@ -330,7 +332,7 @@ def load(filename: str) -> DebuggingContext:
                 allocations: list[tuple[int, int]] = []
                 for _ in range(read_short(f)):
                     allocations.append((read_byte(f), read_byte(f)))
-                locals.append(DebugParameterInfo(local_name, local_type, sds, allocations))
+                locals.append(DebugParameterInfo(local_name, local_type, sds, allocations, False))
             for _ in range(read_short(f)):
                 controllers.append(Location(ctx.strings[read_integer(f)], read_integer(f)))
             ctx.states.append(DebugStateInfo(name, id, sds, is_common, Location(filename, line), locals, controllers))

@@ -352,6 +352,7 @@ def builtin_assign(exprs: list[Expression], ctx: TranslationContext) -> Expressi
     if isinstance(exprs[0], VariableExpression):
         exprs[0].value = f"var({exprs[0].allocation[0]})"
         if exprs[0].is_float: exprs[0].value = f"f{exprs[0].value}"
+        if exprs[0].is_system: exprs[0].value = f"sys{exprs[0].value}"
     exprn = builtin_binary(exprs, ctx, ":=")
     if isinstance(exprs[0], VariableExpression):
         offset = exprs[0].allocation[1]

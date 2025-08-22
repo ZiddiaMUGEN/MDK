@@ -80,7 +80,7 @@ def debuginfo_allocation(data: TypeParameter) -> list[str]:
     results: list[str] = []
     results.append(f";!mtl-debug VARIABLE_ALLOCATION {data.name} {data.type.name} {data.location}")
     for alloc in data.allocations:
-        results.append(f";!mtl-debug-next {alloc[0]} {alloc[1]} {mask_variable(alloc[0], alloc[1], data.type.size, data.type == BUILTIN_FLOAT)}")
+        results.append(f";!mtl-debug-next {alloc[0]} {alloc[1]} {mask_variable(alloc[0], alloc[1], data.type.size, data.type == BUILTIN_FLOAT, False)}")
     return results
 
 def debuginfo_statedef(data: StateDefinition) -> list[str]:

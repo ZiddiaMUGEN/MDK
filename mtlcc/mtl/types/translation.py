@@ -44,11 +44,14 @@ class TypeParameter:
     allocations: list[tuple[int, int]] = field(default_factory=lambda: [])
     ## scopes need to be baked in.
     scope: 'StateDefinitionScope' = field(default_factory=lambda: StateDefinitionScope(StateScopeType.SHARED, None))
+    ## global forwards use this to specify sysvar-level storage.
+    is_system: bool = False
 
 @dataclass
 class ForwardParameter:
     name: str
     type: str
+    is_system: bool = False
     scope: 'StateDefinitionScope' = field(default_factory=lambda: StateDefinitionScope(StateScopeType.SHARED, None))
 
 class TriggerCategory(Enum):
@@ -66,6 +69,7 @@ class Expression:
 class VariableExpression(Expression):
     allocation: tuple[int, int]
     is_float: bool
+    is_system: bool
 
 @dataclass
 class RescopeExpression(Expression):

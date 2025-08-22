@@ -16,8 +16,8 @@ from mtl.utils.debug import get_state_by_id, get_state_by_name
 
 def print_variable(base_addr: int, scope: str, var: DebugParameterInfo, debugger: DebuggerTarget, ctx: DebuggingContext):
     alloc = var.allocations[0]
-    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float")
-    target_value = process.getVariable(base_addr, alloc[0], alloc[1], var.type.size, var.type.name == "float", debugger, ctx)
+    target_name = mask_variable(alloc[0], alloc[1], var.type.size, var.type.name == "float", var.system)
+    target_value = process.getVariable(base_addr, alloc[0], alloc[1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
     ## special handling for specific types:
     ### - `bool` should display as either `true` or `false`
     ### - `state` should display the state name, if available

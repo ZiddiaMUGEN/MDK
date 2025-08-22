@@ -65,6 +65,7 @@ class ParameterDefinition:
     ## this is only supported for globals.
     ## by default globals use SHARED scope, but we should be able to specify.
     scope: Optional[StateScope] = None
+    is_system: bool = False
 
 @dataclass
 class StateDefinition:

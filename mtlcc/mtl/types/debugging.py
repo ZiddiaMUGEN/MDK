@@ -112,6 +112,7 @@ class DebugParameterInfo:
     type: Union[TypeDefinition, DebugTypeInfo]
     scope: StateDefinitionScope
     allocations: list[tuple[int, int]]
+    system: bool
 
 @dataclass
 class DebugStateInfo:

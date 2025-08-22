@@ -95,6 +95,8 @@ ADDRESS_MUGEN_11B1 = {
     "stateno": 0xCCC,
     "var": 0xF1C,
     "fvar": 0x100C,
+    "sysvar": 0x10AC,
+    "sysfvar": 0x10C0,
     "root_addr": 0x1650,
     "helperid": 0x1644,
     "triggers": {

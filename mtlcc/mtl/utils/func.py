@@ -93,11 +93,12 @@ def parse_builtin(input: str) -> Optional[Expression]:
         return Expression(BUILTIN_CINT, input)
     return None
 
-def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
+def mask_variable(index: int, offset: int, size: int, is_float: bool, is_system: bool) -> str:
     ## takes information describing the location of a variable in `var`-space,
     ## and creates a string which accesses that variable.
     result = f"var({index})"
     if is_float: result = f"f{result}"
+    if is_system: result = f"sys{result}"
 
     if offset == 0 and size == 32:
         return result
@@ -113,7 +114,7 @@ def mask_variable(index: int, offset: int, size: int, is_float: bool) -> str:
 
     return result
 
-def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -> str:
+def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool, is_system: bool) -> str:
     ## takes information describing the location of a variable in `var`-space,
     ## and modifies an expression to write to the correct location for that var.
     if offset == 0 and size == 32:
@@ -122,6 +123,7 @@ def mask_write(index: int, exprn: str, offset: int, size: int, is_float: bool) -
     ## we need to make sure the values of the var that fall outside the range are preserved.
     indexed = f"var({index})"
     if is_float: indexed = f"f{indexed}"
+    if is_system: indexed = f"sys{indexed}"
     
     ## we need to clamp the expression to `size`, then bit-shift the expression up to `offset`.
     exprn = f"((({exprn}) & {(2 ** size) - 1}) * {c_int32(2 ** offset).value})"

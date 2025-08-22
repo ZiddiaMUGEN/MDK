@@ -657,19 +657,28 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
         raise TranslationError(f"Global variable named {var.name} has an invalid type {var.type.name} which was resolved to type category {real_type.category}.", var.location)
     if real_type == BUILTIN_FLOAT:
         ## handle BUILTIN_FLOAT directly since it's the only thing that allocates to float_allocation.
-        next = allocate(real_type.size, ctx.allocations[var.scope][1])
+        if var.is_system:
+            next = allocate(32, ctx.allocations[var.scope][3])
+        else:
+            next = allocate(real_type.size, ctx.allocations[var.scope][1])
         if next == None:
             raise TranslationError(f"Ran out of floating-point variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
     elif real_type.category == TypeCategory.BUILTIN:
         ## bare BUILTIN have size specified, so allocate directly.
-        next = allocate(real_type.size, ctx.allocations[var.scope][0])
+        if var.is_system:
+            next = allocate(32, ctx.allocations[var.scope][2])
+        else:
+            next = allocate(real_type.size, ctx.allocations[var.scope][0])
         if next == None:
             raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
     elif real_type.category in [TypeCategory.ENUM, TypeCategory.FLAG]:
         ## these are just int in disguise.
-        next = allocate(BUILTIN_INT.size, ctx.allocations[var.scope][0])
+        if var.is_system:
+            next = allocate(32, ctx.allocations[var.scope][2])
+        else:
+            next = allocate(BUILTIN_INT.size, ctx.allocations[var.scope][0])
         if next == None:
             raise TranslationError(f"Ran out of integer variable space to store variable {var.name}.", var.location)
         var.allocations.append(next)
@@ -685,5 +694,5 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
             ## therefore assign ALL allocations on this structure to the parent.
             var.allocations += next_target.allocations
 
-def create_table() -> tuple[AllocationTable, AllocationTable]:
-    return (AllocationTable({}, 60), AllocationTable({}, 40))
+def create_table() -> tuple[AllocationTable, AllocationTable, AllocationTable, AllocationTable]:
+    return (AllocationTable({}, 60), AllocationTable({}, 40), AllocationTable({}, 5), AllocationTable({}, 5))

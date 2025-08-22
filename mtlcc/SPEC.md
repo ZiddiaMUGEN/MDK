@@ -282,6 +282,13 @@ myGlobal = int
 myFGlobal = float
 ```
 
+You may also specify global forwards as having sysvar storage (meaning they will be placed into `sysvar` or `sysfvar` indices during compilation) by adding the word `sysvar` before the key:
+
+```
+[Globals]
+sysvar myGlobal = int
+```
+
 ### 9. State Definition Scope
 
 To specify the scope of a state definition, use the `scope` state definition parameter:

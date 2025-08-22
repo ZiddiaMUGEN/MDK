@@ -32,6 +32,7 @@ class ParameterDefinition:
     type: TypeSpecifier
     name: str
     scope: StateScope | None = None
+    is_system: bool = False
 
 @dataclass
 class StateDefinition:

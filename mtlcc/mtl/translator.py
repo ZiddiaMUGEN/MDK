@@ -325,7 +325,7 @@ def createGlobalsTable(ctx: TranslationContext, forwards: list[ForwardParameter]
     for gv in forwards:
         if (target_type := find_type(gv.type, ctx)) == None:
             raise TranslationError(f"Failed to define forward-declared global variable {gv}: no type with name {gv.type}.", compiler_internal(ctx.compiler_flags))
-        global_list.append(TypeParameter(gv.name, target_type, None, compiler_internal(ctx.compiler_flags), scope = gv.scope))
+        global_list.append(TypeParameter(gv.name, target_type, None, compiler_internal(ctx.compiler_flags), scope = gv.scope, is_system = gv.is_system))
 
     ## iterate all translated statedefs and identify global assignments
     for statedef in ctx.statedefs:
@@ -492,14 +492,14 @@ def applyPersist(ctx: TranslationContext):
                         if var_source.type.category == TypeCategory.STRUCTURE:
                             raise TranslationError("Can't currently persist structure types.", persisted.location)
                         ## get expression representing the source
-                        mask_source = mask_variable(var_source.allocations[0][0], var_source.allocations[0][1], var_source.type.size, var_source.type == BUILTIN_FLOAT)
+                        mask_source = mask_variable(var_source.allocations[0][0], var_source.allocations[0][1], var_source.type.size, var_source.type == BUILTIN_FLOAT, var_source.is_system)
                         ## find the allocation for the persisted variable target
                         if (var_target := find(target_locals, lambda k: equals_insensitive(k.name, in_source.operator))) == None:
                             raise TranslationError(f"ChangeState persisted parameter {in_source.operator} must also exist as a local in target state {target_statedef.name}.", persisted.location)
                         mask_target = f"var({var_target.allocations[0][0]})"
                         if var_target.type == BUILTIN_FLOAT: mask_target = f"f{mask_target}"
                         ## mask source expression so it writes to the right part of mask_target
-                        mask_source = mask_write(var_target.allocations[0][0], mask_source, var_target.allocations[0][1], var_target.type.size, var_target.type == BUILTIN_FLOAT)
+                        mask_source = mask_write(var_target.allocations[0][0], mask_source, var_target.allocations[0][1], var_target.type.size, var_target.type == BUILTIN_FLOAT, var_target.is_system)
                         ## parse the expression to a trigger
                         new_trigger = parseTrigger(f"{mask_target} := ({mask_source})", persisted.location)
                         ## add a triggerall expression for this allocation.
