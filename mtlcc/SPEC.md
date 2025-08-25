@@ -12,7 +12,10 @@ This document describes the progress towards implementation of the MDK spec and 
         - There are currently no plans to expose tuples to users.
     - Custom Types - fully implemented.
     - Type Conversion Rules - fully implemented.
-    - Structures have limited support. It is currently not possible to initialize variables of structure types, but use of built-in structures (`Vel`, `Pos`) is fine.
+    - Structures - partially implemented.
+        - initialization via VarSet is supported, but initialization via `:=` is not. 
+        - assignment of individual members via `:=` is supported.
+        - nested structures are supported and can be assigned with nested statements (e.g. `myLocal = NestedStruct(1, MyStruct(2, 5.5, 9))`)
 3. Template Definitions - fully implemented, without granular scopes (locals are hoisted)
 4. Trigger Definitions - user-defined fully implemented; special types partially implemented
     - Operator Triggers - partially implemented; builtin operator triggers are supported but users cannot define operator triggers

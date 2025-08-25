@@ -416,26 +416,36 @@ def find_globals(tree: TriggerTree, locals: list[TypeParameter], scope: StateDef
 
 def get_struct_type(input: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
     ## find the type of this struct, from either triggers or locals
-    struct_name = input.children[0]
-    struct_type: Optional[TypeDefinition] = None
-    if (match := find_trigger(struct_name.operator, [], ctx, compiler_internal(ctx.compiler_flags))) != None:
-        struct_type = match.type
-    elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name.operator))) != None:
-        struct_type = var.type
-    return struct_type
+
+    ## determine the type of the field being accessed
+    if input.children[0].node == TriggerTreeNode.ATOM:
+        struct_name = input.children[0]
+        struct_type: Optional[TypeDefinition] = None
+        if (match := find_trigger(struct_name.operator, [], ctx, compiler_internal(ctx.compiler_flags))) != None:
+            struct_type = match.type
+        elif (var := find(table, lambda k: equals_insensitive(k.name, struct_name.operator))) != None:
+            struct_type = var.type
+        return struct_type
+    elif input.children[0].node == TriggerTreeNode.STRUCT_ACCESS:
+        return get_struct_type(input.children[0], table, ctx)
+    else:
+        raise TranslationError(f"Can't determine target of struct access for target with node {input.children[0].node}.", input.location)
 
 def get_struct_target(input: TriggerTree, table: list[TypeParameter], ctx: TranslationContext) -> Optional[TypeDefinition]:
-    ## first find the target at the top level
-    if (struct_type := get_struct_type(input, table, ctx)) == None:
-        return None
-    if struct_type.category not in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE]: return None
-    ## now determine the type of the field being accessed
-    if input.children[1].node == TriggerTreeNode.ATOM:
+    ## determine the type of the field being accessed
+    if input.children[0].node == TriggerTreeNode.ATOM:
+        ## if first field is an ATOM, it contains a struct variable.
+        if (struct_type := get_struct_type(input, table, ctx)) == None:
+            return None
+        if struct_type.category not in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE]: return None
         target_name = input.children[1].operator
-    elif input.children[1].node == TriggerTreeNode.STRUCT_ACCESS:
-        target_name = input.children[1].children[0].operator
+    elif input.children[0].node == TriggerTreeNode.STRUCT_ACCESS:
+        ## otherwise, it contains a sub-access, recurse to get the inner target.
+        if (struct_type := get_struct_target(input.children[0], table, ctx)) == None:
+            return None
+        target_name = input.children[1].operator
     else:
-        raise TranslationError(f"Can't determine target of struct access for target with node {input.children[1].node}.", input.location)
+        raise TranslationError(f"Can't determine target of struct access for target with node {input.children[0].node}.", input.location)
     if (target := find(struct_type.members, lambda k: equals_insensitive(k.split(":")[0], target_name))) == None:
         return None
     if (target_type := find_type(target.split(":")[1], ctx)) == None:
@@ -611,7 +621,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
     elif tree.node == TriggerTreeNode.STRUCT_ACCESS:
         ## struct access contains the access information in the operator.
         if (struct_type := get_struct_target(tree, table, ctx)) == None:
-            raise TranslationError(f"Could not determine the type of the struct member access given by {tree.operator}.", tree.location)
+            raise TranslationError(f"Could not determine the type of the struct member access given by {tree.children[0].operator}.", tree.location)
         return [TypeSpecifier(struct_type)]
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects will always have the redirect target as child 1, and the redirect expression as child 2.
@@ -727,3 +737,109 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
 
 def create_table() -> tuple[AllocationTable, AllocationTable, AllocationTable, AllocationTable]:
     return (AllocationTable({}, 60), AllocationTable({}, 40), AllocationTable({}, 5), AllocationTable({}, 5))
+
+def recursive_struct_assign(source_access: TriggerTree, member_name: str, struct_type: TypeDefinition, tree: TriggerTree, location: Location, ctx: TranslationContext) -> list[TriggerTree]:
+    ## generates one or more trigger statements for assignment of a value to a struct variable.
+
+    ## check if the member being accessed is a STRUCTURE type itself.
+    member_type = None
+    for member in struct_type.members:
+        if member.split(":")[0] == member_name:
+            if (member_type := find_type(member.split(":")[1], ctx)) == None:
+                raise TranslationError(f"Failed to find type for struct member with name {member_name}.", location)
+            if member_type != None: break
+    
+    if member_type == None:
+        raise TranslationError(f"Failed to find type for struct member with name {member_name}.", location)
+    
+    ## base case: not a nested structure, return the normal assignment.
+    if member_type.category != TypeCategory.STRUCTURE and member_type.category != TypeCategory.BUILTIN_STRUCTURE:
+        return [
+            TriggerTree(
+                TriggerTreeNode.BINARY_OP,
+                "||",
+                [
+                    TriggerTree(
+                        TriggerTreeNode.FUNCTION_CALL,
+                        "cast",
+                        [
+                            TriggerTree(
+                                TriggerTreeNode.BINARY_OP,
+                                ":=",
+                                [
+                                    TriggerTree(TriggerTreeNode.STRUCT_ACCESS, "", [
+                                        source_access,
+                                        TriggerTree(TriggerTreeNode.ATOM, member_name, [], location)
+                                    ], location),
+                                    tree
+                                ],
+                                location
+                            ),
+                            TriggerTree(TriggerTreeNode.ATOM, "bool", [], location)
+                        ],
+                        location
+                    ),
+                    TriggerTree(TriggerTreeNode.ATOM, "true", [], location)
+                ],
+                location
+            )
+        ]
+    
+    ## nested case: you need to return an assignment statement for EACH member in the nested struct.
+    if len(member_type.members) != len(tree.children):
+        raise TranslationError(f"Nested structure assignment for {member_name} must have {len(member_type.members)} parameters, not {len(tree.children)}.", location)
+
+    results: list[TriggerTree] = []
+    for subindex in range(len(member_type.members)):
+        submember_name = member_type.members[subindex].split(":")[0]
+        results += recursive_struct_assign(
+            TriggerTree(TriggerTreeNode.STRUCT_ACCESS, "", [
+                source_access,
+                TriggerTree(TriggerTreeNode.ATOM, member_name, [], location)
+            ], location),
+            submember_name, member_type, tree.children[subindex], location, ctx
+        )
+
+    return results
+
+def find_member_length(type: TypeDefinition, location: Location, ctx: TranslationContext) -> int:
+    ## finds the total length of a struct member, accounting for nested structs.
+    if type.category not in [TypeCategory.STRUCTURE, TypeCategory.BUILTIN_STRUCTURE]:
+        return 1
+    total = 0
+    for member in type.members:
+        member_typename = member.split(":")[1]
+        if (member_type := find_type(member_typename, ctx)) == None:
+            raise TranslationError(f"Could not determine type of struct member {member_typename}.", location)
+        total += find_member_length(member_type, location, ctx)
+    return total
+
+def find_struct_allocation(table: list[TypeParameter], tree: TriggerTree, target: str, ctx: TranslationContext) -> Optional[tuple[int, TypeDefinition]]:
+    ## given a struct access tree, finds the allocation offset to use for that access.
+    if tree.children[0].node == TriggerTreeNode.STRUCT_ACCESS:
+        ## for a nested access, recursively get the offset of the subaccess and add the offset to the parent access.
+        result = find_struct_allocation(table, tree.children[0], tree.children[0].children[1].operator, ctx)
+        if result == None:
+            raise TranslationError(f"Could not determine offset for struct allocation.", tree.location)
+        offset = result[0]
+        source_type = result[1]
+    elif tree.children[0].node == TriggerTreeNode.ATOM:
+        ## for a simple access (where the access source is a var name) return the index of `target` in `members`
+        if (var := find(table, lambda k: equals_insensitive(k.name, tree.children[0].operator))) == None:
+            raise TranslationError(f"Could not determine type of struct access for {tree.children[0].operator}.", tree.location)
+        source_type = var.type
+        offset = 0
+    else:
+        raise TranslationError(f"Structs must have STRUCT_ACCESS or ATOM nodes, not {tree.children[0].node}.", tree.location)
+
+    for index in range(len(source_type.members)):
+        member_name = source_type.members[index].split(":")[0]
+        member_typename = source_type.members[index].split(":")[1]
+        if (member_type := find_type(member_typename, ctx)) == None:
+            raise TranslationError(f"Could not determine type of struct member {member_name}.", tree.location)
+        if member_name == target:
+            return (offset, member_type)
+        offset += find_member_length(member_type, tree.location, ctx)
+    return None
+
+        

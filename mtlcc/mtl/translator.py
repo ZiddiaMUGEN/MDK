@@ -462,34 +462,10 @@ def replaceStructAssigns(ctx: TranslationContext):
                             for subindex in range(len(struct.members)):
                                 member = struct.members[subindex]
                                 member_name = member.split(':')[0]
-                                controller.triggers[1].triggers.append(TriggerTree(
-                                    TriggerTreeNode.BINARY_OP,
-                                    "||",
-                                    [
-                                        TriggerTree(
-                                            TriggerTreeNode.FUNCTION_CALL,
-                                            "cast",
-                                            [
-                                                TriggerTree(
-                                                    TriggerTreeNode.BINARY_OP,
-                                                    ":=",
-                                                    [
-                                                        TriggerTree(TriggerTreeNode.STRUCT_ACCESS, "", [
-                                                            TriggerTree(TriggerTreeNode.ATOM, property.key, [], property.location),
-                                                            TriggerTree(TriggerTreeNode.ATOM, member_name, [], property.location)
-                                                        ], property.location),
-                                                        property.value.children[subindex]
-                                                    ],
-                                                    property.location
-                                                ),
-                                                TriggerTree(TriggerTreeNode.ATOM, "bool", [], property.location)
-                                            ],
-                                            property.location
-                                        ),
-                                        TriggerTree(TriggerTreeNode.ATOM, "true", [], property.location)
-                                    ],
-                                    property.location
-                                ))
+                                controller.triggers[1].triggers += recursive_struct_assign(
+                                    TriggerTree(TriggerTreeNode.ATOM, property.key, [], property.location), 
+                                    member_name, struct, property.value.children[subindex], property.location, ctx
+                                )
                 controller.properties = final_properties
 
 def assignVariables(ctx: TranslationContext):

@@ -12,6 +12,13 @@ member1 = int
 member2 = float
 member3 = int
 
+[Define Structure]
+name = NestedStruct
+
+[Define Members]
+member1 = int
+member2 = MyStruct
+
 [Statedef USES_STRUCTURE]
 ;local = myLocal = MyStruct
 
@@ -24,3 +31,16 @@ myLocal = MyStruct(1, 1.1, 0)
 type = Null
 trigger1 = (myLocal member1 := 1)
 trigger1 = myLocal member2 > 1.5
+
+[Statedef USES_NESTED_STRUCTURE]
+local = myLocal = NestedStruct
+
+[State ]
+type = VarSet
+trigger1 = 1
+myLocal = NestedStruct(1, MyStruct(2, 5.5, 9))
+
+[State ]
+type = Null
+trigger1 = (myLocal member1 := 1)
+trigger1 = myLocal member2 member2 > 1.5

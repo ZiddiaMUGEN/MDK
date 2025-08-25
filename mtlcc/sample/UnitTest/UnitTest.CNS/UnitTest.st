@@ -19,6 +19,9 @@
 ;!mtl-debug-next member1:int
 ;!mtl-debug-next member2:float
 ;!mtl-debug-next member3:int
+;!mtl-debug TYPE_DEFINITION NestedStruct STRUCTURE 128 C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:15
+;!mtl-debug-next member1:int
+;!mtl-debug-next member2:MyStruct
 
 ;!mtl-debug VARIABLE_TABLE StateScopeType.SHARED None 60
 ;!mtl-debug-next 0 1
@@ -27,7 +30,7 @@
 ;!mtl-debug VARIABLE_TABLE StateScopeType.SHARED None 5
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal bool C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
 ;!mtl-debug-next 0 0 var(0) & 1
-;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
+;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
 ;!mtl-debug-next 1 0 var(1) & -1
 ;!mtl-debug-next 0 0 var(0) & -1
 ;!mtl-debug-next 2 0 var(2) & -1
@@ -41,7 +44,7 @@
 ;!mtl-debug VARIABLE_TABLE StateScopeType.PLAYER None 5
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal bool C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
 ;!mtl-debug-next 0 0 var(0) & 1
-;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
+;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
 ;!mtl-debug-next 1 0 var(1) & -1
 ;!mtl-debug-next 0 0 var(0) & -1
 ;!mtl-debug-next 2 0 var(2) & -1
@@ -55,7 +58,7 @@
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER None 5
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal bool C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
 ;!mtl-debug-next 0 0 var(0) & 1
-;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
+;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
 ;!mtl-debug-next 1 0 var(1) & -1
 ;!mtl-debug-next 0 0 var(0) & -1
 ;!mtl-debug-next 2 0 var(2) & -1
@@ -73,7 +76,7 @@
 ;!mtl-debug VARIABLE_TABLE StateScopeType.HELPER 1 5
 ;!mtl-debug VARIABLE_ALLOCATION myGlobal bool C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states0.mtl:6
 ;!mtl-debug-next 0 0 var(0) & 1
-;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
+;!mtl-debug VARIABLE_ALLOCATION myLocal MyStruct C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
 ;!mtl-debug-next 1 0 var(1) & -1
 ;!mtl-debug-next 0 0 var(0) & -1
 ;!mtl-debug-next 2 0 var(2) & -1
@@ -2155,18 +2158,40 @@ trigger1 = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTe
 
 
 ;!mtl-debug STATEDEF USES_STRUCTURE 3
-[Statedef 3];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:15
+[Statedef 3];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:22
 
-[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:18
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:25
 type = Null
-trigger1 = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:20
-trigger1 = (var(1) := 1) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
-trigger1 = (fvar(0) := 1.1) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
-trigger1 = (var(2) := 0) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:21
+trigger1 = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:27
+trigger1 = (var(1) := 1) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
+trigger1 = (fvar(0) := 1.1) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
+trigger1 = (var(2) := 0) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:28
 
-[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:23
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:30
 type = Null
-trigger1 = var(1) := 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:25
-trigger1 = (fvar(0)) > 1.5;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:26
+trigger1 = var(1) := 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:32
+trigger1 = (fvar(0)) > 1.5;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:33
+
+
+;!mtl-debug STATEDEF USES_NESTED_STRUCTURE 4
+[Statedef 4];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:35
+;!mtl-debug VARIABLE_ALLOCATION myLocal NestedStruct C:\Users\ziddi\MDK\mtlcc:0
+;!mtl-debug-next 3 0 var(3) & -1
+;!mtl-debug-next 4 0 var(4) & -1
+;!mtl-debug-next 1 0 var(1) & -1
+;!mtl-debug-next 5 0 var(5) & -1
+
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:38
+type = Null
+trigger1 = 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:40
+trigger1 = (var(3) := 1) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:41
+trigger1 = (var(4) := 2) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:41
+trigger1 = (fvar(1) := 5.5) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:41
+trigger1 = (var(5) := 9) || 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:41
+
+[State ];!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:43
+type = Null
+trigger1 = var(3) := 1;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:45
+trigger1 = (fvar(1)) > 1.5;!mtl-debug LOCATION C:\Users\ziddi\MDK\mtlcc\sample\UnitTest\UnitTest.states1.mtl:46
 
 

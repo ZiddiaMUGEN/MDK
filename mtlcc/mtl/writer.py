@@ -234,15 +234,17 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
             ## find the variable and type used for the user-defined struct member.
             if (member_type := get_struct_target(tree, table, ctx)) == None:
                 raise TranslationError(f"Could not determine the type of the struct member given by {tree.operator}.", tree.location)
-            if (source_var := find(table, lambda k: equals_insensitive(k.name, tree.children[0].operator))) == None:
-                raise TranslationError(f"Could not find a variable for struct access given by {tree.children[0].operator}.", tree.location)
-            ## now find the correct member
-            for subindex in range(len(source_var.type.members)):
-                member_name = source_var.type.members[subindex].split(":")[0]
-                if member_name == tree.children[1].operator:
-                    ## return the variable assigned to this member from the allocation table
-                    return VariableExpression(member_type, f"({mask_variable(source_var.allocations[subindex][0], source_var.allocations[subindex][1], member_type.size, member_type == BUILTIN_FLOAT, False)})", source_var.allocations[subindex], member_type == BUILTIN_FLOAT, False)
-            raise TranslationError(f"Could not determine which member to use for struct member named {tree.children[1].operator}", tree.location)
+            source_var_tree = tree.children[0]
+            while source_var_tree.node == TriggerTreeNode.STRUCT_ACCESS:
+                source_var_tree = source_var_tree.children[0]
+            if (source_var := find(table, lambda k: equals_insensitive(k.name, source_var_tree.operator))) == None:
+                raise TranslationError(f"Could not find a variable for struct access given by {source_var_tree.operator}.", tree.location)
+            ## find the allocation for the member
+            if (allocation := find_struct_allocation(table, tree, tree.children[1].operator, ctx)) == None:
+                raise TranslationError(f"Could not determine which member to use for struct member named {tree.children[1].operator}", tree.location)
+            allocation = allocation[0]
+            ## return the variable assigned to this member from the allocation table
+            return VariableExpression(member_type, f"({mask_variable(source_var.allocations[allocation][0], source_var.allocations[allocation][1], member_type.size, member_type == BUILTIN_FLOAT, False)})", source_var.allocations[allocation], member_type == BUILTIN_FLOAT, False)
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects consist of a LHS redirect target and a RHS redirect expression.
         ## the overall expression is just <target>,<expression>.
