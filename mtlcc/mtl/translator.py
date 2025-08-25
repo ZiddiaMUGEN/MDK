@@ -439,6 +439,59 @@ def replaceTriggers(ctx: TranslationContext, iterations: int = 0):
 
     if iterations == 0: print("Successfully completed trigger replacement.")
 
+def replaceStructAssigns(ctx: TranslationContext):
+    ## replace any struct assignments with unpacked assignments.
+    ## for example, a VarSet with `myVar = Vector2(1, 1)`
+    ## should become a Null with two triggers assigning `myVar x := 1` `myVar y := 1`.
+    
+    ## 2 cases: VarSet with a Struct initializer, or assignment via `:=` with a Struct initializer.
+    ### TODO: implement the `:=` assignment option. it's complicated and for now we're only implementing VarSet.
+    for statedef in ctx.statedefs:
+        for controller in statedef.states:
+            if equals_insensitive(controller.name, "VarSet"):
+                final_properties: list[StateControllerProperty] = []
+                for property in controller.properties:
+                    if property.key.lower().startswith("trigger") or includes_insensitive(property.key, ["ignorehitpause", "persistent", "type"]):
+                        final_properties.append(property)
+                    else:
+                        if property.value.node == TriggerTreeNode.FUNCTION_CALL and (struct := find_type(property.value.operator, ctx)) != None \
+                           and struct.category in [TypeCategory.BUILTIN_STRUCTURE, TypeCategory.STRUCTURE]:
+                            ## replace with Null and add assignment statements for each member.
+                            controller.name = "Null"
+                            if 1 not in controller.triggers: controller.triggers[1] = TriggerGroup([])
+                            for subindex in range(len(struct.members)):
+                                member = struct.members[subindex]
+                                member_name = member.split(':')[0]
+                                controller.triggers[1].triggers.append(TriggerTree(
+                                    TriggerTreeNode.BINARY_OP,
+                                    "||",
+                                    [
+                                        TriggerTree(
+                                            TriggerTreeNode.FUNCTION_CALL,
+                                            "cast",
+                                            [
+                                                TriggerTree(
+                                                    TriggerTreeNode.BINARY_OP,
+                                                    ":=",
+                                                    [
+                                                        TriggerTree(TriggerTreeNode.STRUCT_ACCESS, "", [
+                                                            TriggerTree(TriggerTreeNode.ATOM, property.key, [], property.location),
+                                                            TriggerTree(TriggerTreeNode.ATOM, member_name, [], property.location)
+                                                        ], property.location),
+                                                        property.value.children[subindex]
+                                                    ],
+                                                    property.location
+                                                ),
+                                                TriggerTree(TriggerTreeNode.ATOM, "bool", [], property.location)
+                                            ],
+                                            property.location
+                                        ),
+                                        TriggerTree(TriggerTreeNode.ATOM, "true", [], property.location)
+                                    ],
+                                    property.location
+                                ))
+                controller.properties = final_properties
+
 def assignVariables(ctx: TranslationContext):
     ## assign locations for each global variable.
 
@@ -719,6 +772,7 @@ def translateContext(load_ctx: LoadContext) -> TranslationContext:
     createGlobalsTable(ctx, load_ctx.global_forwards)
     fullPassTypeCheck(ctx)
     replaceTriggers(ctx)
+    replaceStructAssigns(ctx)
     checkScopes(ctx)
 
     assignVariables(ctx)

@@ -34,4 +34,5 @@ no_numeric = true
 no_implicit_bool = true
 no_implicit_enum = true
 no_changestate_expression = true
+no_compiler_internal = false
 

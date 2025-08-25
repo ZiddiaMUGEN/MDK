@@ -324,6 +324,17 @@ def replace_triggers(tree: TriggerTree, table: list[TypeParameter], ctx: Transla
         replaced = replace_triggers(tree.children[1], target_table, ctx, scope = target_scope) or replaced
         return replaced
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
+        ## it is possible for the function name to be the name of a struct type, in which case
+        ## this trigger is a struct initializer. (this syntax is only legal in the body of a VarSet or in an assignment operator).
+        if (match := find_type(tree.operator, ctx)) != None and match.category in [TypeCategory.BUILTIN_STRUCTURE, TypeCategory.STRUCTURE]:
+            ## we need to make replacements on each struct member.
+            if len(tree.children) != len(match.members):
+                raise TranslationError(f"Initializer for struct with type {tree.operator} requires {len(match.members)} parameters, not {len(tree.children)}.", tree.location)
+            for child in tree.children:
+                replaced = replace_triggers(child, table, ctx, scope = scope) or replaced
+            ## return as the struct call has been replaced
+            return replaced
+
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
         matches = fuzzy_trigger(tree.operator, table, tree.children, ctx, tree.location, scope = scope)
@@ -522,6 +533,7 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if (match := find_trigger(f"operator{tree.operator}", inputs, ctx, tree.location)) != None:
             return [TypeSpecifier(match.type)]
         ## if no match exists, the trigger does not exist.
+        print(tree)
         raise TranslationError(f"No matching operator overload was found for operator {tree.operator} and child types {', '.join([i.name for i in inputs])}", tree.location)
     elif tree.node == TriggerTreeNode.MULTIVALUE:
         ## multivalue operators can have one or more results. need to run the type check on each child,
@@ -565,6 +577,25 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
     elif tree.node == TriggerTreeNode.FUNCTION_CALL:
         ## function calls (trigger calls) have the trigger name and the parameters as children.
         ## determine the child types, then identify the trigger overload which matches it.
+
+        ## it is possible for the function name to be the name of a struct type, in which case
+        ## this trigger is a struct initializer. (this syntax is only legal in the body of a VarSet or in an assignment operator).
+        if (match := find_type(tree.operator, ctx)) != None and match.category in [TypeCategory.BUILTIN_STRUCTURE, TypeCategory.STRUCTURE]:
+            ## we need to type check the arguments to the struct initializer.
+            if len(tree.children) != len(match.members):
+                raise TranslationError(f"Initializer for struct with type {tree.operator} requires {len(match.members)} parameters, not {len(tree.children)}.", tree.location)
+            for subindex in range(len(tree.children)):
+                child = tree.children[subindex]
+                type_name = match.members[subindex].split(':')[1]
+                if (expected_subtype := find_type(type_name, ctx)) == None:
+                    raise TranslationError(f"Initializer for struct with type {tree.operator} requires unknown type {type_name} as an input.", tree.location)
+                child_type = type_check(child, table, ctx, expected = [TypeSpecifier(expected_subtype)], scope = scope, pass_through = pass_through)
+                if child_type == None or len(child_type) == 0:
+                    raise TranslationError(f"Initializer for struct with type {tree.operator} requires unknown type {type_name} as an input.", tree.location)
+                if child_type[0].type != expected_subtype:
+                    raise TranslationError(f"Initializer for struct with type {tree.operator} requires parameter with type {type_name}, not {child_type[0].type.name}.", tree.location)
+            ## return the struct type
+            return [TypeSpecifier(match)]
 
         ## we need to identify all overloads which CAN match this call, because at this point the child types are not known
         ## (and it's not trivial to infer since CNS allows enums to be specified without any indication of their type...)
@@ -688,7 +719,7 @@ def create_allocation(var: TypeParameter, ctx: TranslationContext):
             if (member_type := find_type(member.split(":")[1], ctx)) == None:
                 raise TranslationError(f"Could not determine the final type of member {member} on structure {var.type}.", var.location)
             ## allocate space for this structure member
-            next_target = TypeParameter(member.split(":")[0], member_type)
+            next_target = TypeParameter(member.split(":")[0], member_type, scope = var.scope)
             create_allocation(next_target, ctx)
             ## keep in mind this member could have ALSO been a structure.
             ## therefore assign ALL allocations on this structure to the parent.

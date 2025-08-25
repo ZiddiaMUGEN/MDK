@@ -229,11 +229,20 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         if struct_type.category == TypeCategory.BUILTIN_STRUCTURE:
             if (member_type := get_struct_target(tree, table, ctx)) == None:
                 raise TranslationError(f"Could not determine the type of the struct member given by {tree.operator}.", tree.location)
-            ## TODO: this needs to be done recursively for struct->struct->struct->...
             return Expression(member_type, f"{tree.children[0].operator} {tree.children[1].operator}")
         else:
-            ## TODO: this needs to determine the VariableExpression represented by the struct access.
-            raise TranslationError("I was too lazy to finish struct implementation!", tree.location)
+            ## find the variable and type used for the user-defined struct member.
+            if (member_type := get_struct_target(tree, table, ctx)) == None:
+                raise TranslationError(f"Could not determine the type of the struct member given by {tree.operator}.", tree.location)
+            if (source_var := find(table, lambda k: equals_insensitive(k.name, tree.children[0].operator))) == None:
+                raise TranslationError(f"Could not find a variable for struct access given by {tree.children[0].operator}.", tree.location)
+            ## now find the correct member
+            for subindex in range(len(source_var.type.members)):
+                member_name = source_var.type.members[subindex].split(":")[0]
+                if member_name == tree.children[1].operator:
+                    ## return the variable assigned to this member from the allocation table
+                    return VariableExpression(member_type, f"({mask_variable(source_var.allocations[subindex][0], source_var.allocations[subindex][1], member_type.size, member_type == BUILTIN_FLOAT, False)})", source_var.allocations[subindex], member_type == BUILTIN_FLOAT, False)
+            raise TranslationError(f"Could not determine which member to use for struct member named {tree.children[1].operator}", tree.location)
     elif tree.node == TriggerTreeNode.REDIRECT:
         ## redirects consist of a LHS redirect target and a RHS redirect expression.
         ## the overall expression is just <target>,<expression>.
