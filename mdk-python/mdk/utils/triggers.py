@@ -22,7 +22,7 @@ def TriggerAnd(*exprs_: Expression | bool):
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to AND statement to be convertible to an Expression, but found {type(expr)}.")
         if expr.type not in [BoolType, IntType, ShortType, ByteType, StateNoType]:
-            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.user_defined:
+            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.register:
                 raise Exception(f"Expected input to AND statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " && ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])
@@ -41,7 +41,7 @@ def TriggerOr(*exprs_: Expression | bool):
         if not isinstance(expr, Expression):
             raise Exception(f"Expected input to OR statement to be convertible to an Expression, but found {type(expr)}.")
         if expr.type not in [BoolType, IntType, ShortType, ByteType, StateNoType]:
-            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.user_defined:
+            if (not isinstance(expr.type, EnumType) and not isinstance(expr.type, FlagType)) or not expr.type.register:
                 raise Exception(f"Expected input to OR statement to be an Expression with type `bool` or an equivalent type, not {expr.type.name}.")
         
     expr_string = " || ".join([expr.exprn for expr in exprs if isinstance(expr, Expression)])

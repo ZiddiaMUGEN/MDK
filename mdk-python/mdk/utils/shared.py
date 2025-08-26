@@ -4,6 +4,7 @@ import string
 import sys
 from typing import Union, Callable
 from functools import partial
+from enum import Enum, Flag
 
 from mdk.types.errors import CompilationException
 from mdk.types.context import CompilerContext, StateController
@@ -11,7 +12,7 @@ from mdk.types.expressions import Expression, TupleExpression
 from mdk.types.builtins import BoolType, IntType, FloatType, StringType, StateNoType
 from mdk.types.defined import TupleType
 
-def convert(input: Union[Expression, str, int, float, bool, Callable[..., StateController]]) -> Expression:
+def convert(input: Union[Expression, Enum, Flag, str, int, float, bool, Callable[..., StateController]]) -> Expression:
     if isinstance(input, Expression):
         return input
     elif isinstance(input, partial):
@@ -26,6 +27,23 @@ def convert(input: Union[Expression, str, int, float, bool, Callable[..., StateC
         return Expression(str(input), FloatType)
     elif type(input) == bool:
         return Expression("true" if input else "false", BoolType)
+    elif isinstance(input, Enum):
+        ctx = CompilerContext.instance()
+        for typename in ctx.typedefs:
+            typedef = ctx.typedefs[typename]
+            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
+                return Expression(f"{typedef.name}.{input.name}", typedef)
+        raise Exception(f"Could not determine the MTL type to use for enum type {type(input)}.")
+    elif isinstance(input, Flag):
+        ctx = CompilerContext.instance()
+        for typename in ctx.typedefs:
+            typedef = ctx.typedefs[typename]
+            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
+                result = ""
+                for member in input:
+                    result += member.name # type: ignore
+                return Expression(f"{typedef.name}.{result}", typedef)
+        raise Exception(f"Could not determine the MTL type to use for flag type {type(input)}.")
     else:
         raise Exception(f"Attempted to convert from unsupported builtin type {type(input)}.")
 

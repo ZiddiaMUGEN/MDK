@@ -2,8 +2,9 @@ from mdk.types.builtins import *
 from dataclasses import dataclass
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeCategory, TypeSpecifier
+from enum import Enum, Flag
 
-__all__ = ['StructureMember', 'StructureType', 'EnumType', 'FlagType', 'TupleType', 'StateType', 'MoveType', 'PhysicsType', 'ColorType', 'ColorMultType', 'TransType', 'AssertType', 'FloatPairType', 'WaveType', 'HelperType', 'HitFlagType', 'GuardFlagType', 'TeamType', 'HitAnimType', 'AttackType', 'PriorityType', 'PosType', 'FloatPosType', 'IntPairType', 'WaveTupleType', 'HitType', 'HitAttr', 'HitStringType', 'PriorityPairType', 'SoundPairType', 'PeriodicColorType', 'BoolPairType', 'SpaceType']
+__all__ = ['StructureMember', 'StructureType', 'EnumType', 'FlagType', 'TupleType', 'StateTypeT', 'MoveTypeT', 'PhysicsTypeT', 'ColorType', 'ColorMultType', 'TransTypeT', 'AssertTypeT', 'FloatPairType', 'WaveTypeT', 'HelperTypeT', 'HitFlagTypeF', 'GuardFlagTypeF', 'TeamTypeT', 'HitAnimTypeT', 'AttackTypeT', 'PriorityTypeT', 'PosTypeT', 'FloatPosType', 'IntPairType', 'WaveTupleType', 'HitTypeF', 'HitAttrF', 'HitStringType', 'PriorityPairType', 'SoundPairType', 'PeriodicColorType', 'BoolPairType', 'SpaceTypeT']
 
 @dataclass
 class StructureMember:
@@ -14,24 +15,27 @@ class StructureType(TypeSpecifier):
     members: list[StructureMember]
     name: str
     category: TypeCategory
-    def __init__(self, name: str, members: list[StructureMember]) -> None: ...
+    register: bool
+    def __init__(self, name: str, members: list[StructureMember], register: bool = True, library: str | None = None) -> None: ...
 
 class EnumType(TypeSpecifier):
     members: list[str]
     name: str
     category: TypeCategory
-    user_defined: bool
+    register: bool
     library: str | None
-    def __init__(self, name: str, members: list[str], register: bool = True, library: str | None = None) -> None: ...
+    inner_type: type[Enum] | None
+    def __init__(self, name: str, members: list[str] | type[Enum], register: bool = True, library: str | None = None) -> None: ...
     def __getattr__(self, name: str) -> Expression: ...
 
 class FlagType(TypeSpecifier):
     members: list[str]
     name: str
     category: TypeCategory
-    user_defined: bool
+    register: bool
     library: str | None
-    def __init__(self, name: str, members: list[str], register: bool = True, library: str | None = None) -> None: ...
+    inner_type: type[Flag] | None
+    def __init__(self, name: str, members: list[str] | type[Flag], register: bool = True, library: str | None = None) -> None: ...
     def __getattr__(self, name: str) -> Expression: ...
 
 class TupleType(TypeSpecifier):
@@ -40,24 +44,24 @@ class TupleType(TypeSpecifier):
     category: TypeCategory
     def __init__(self, name: str, category: TypeCategory, members: list[TypeSpecifier]) -> None: ...
 
-StateType: EnumType
-MoveType: EnumType
-PhysicsType: EnumType
-HitType: FlagType
-HitAttr: FlagType
-TransType: EnumType
-AssertType: EnumType
-WaveType: EnumType
-HelperType: EnumType
-TeamType: EnumType
-HitAnimType: EnumType
-AttackType: EnumType
-PriorityType: EnumType
-PosType: EnumType
-SpaceType: EnumType
-TeamModeType: EnumType
-HitFlagType: FlagType
-GuardFlagType: FlagType
+StateTypeT: EnumType
+MoveTypeT: EnumType
+PhysicsTypeT: EnumType
+HitTypeF: FlagType
+HitAttrF: FlagType
+TransTypeT: EnumType
+AssertTypeT: EnumType
+WaveTypeT: EnumType
+HelperTypeT: EnumType
+TeamTypeT: EnumType
+HitAnimTypeT: EnumType
+AttackTypeT: EnumType
+PriorityTypeT: EnumType
+PosTypeT: EnumType
+SpaceTypeT: EnumType
+TeamModeTypeT: EnumType
+HitFlagTypeF: FlagType
+GuardFlagTypeF: FlagType
 ColorType: TupleType
 ColorMultType: TupleType
 FloatPairType: TupleType

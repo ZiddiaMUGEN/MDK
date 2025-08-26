@@ -1,5 +1,6 @@
 import functools
 from typing import Union, Callable
+from enum import Enum, Flag
 
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType
@@ -9,7 +10,7 @@ from mdk.utils.expressions import check_types_assignable
 
 ## this is just the 'convert' function from mdk.utils.shared,
 ## but copied here to avoid circular imports.
-def _convert(input: Union['Expression', str, int, float, bool, Callable[..., StateController]]) -> 'Expression':
+def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, Callable[..., StateController]]) -> 'Expression':
     if isinstance(input, Expression):
         return input
     elif isinstance(input, functools.partial):
@@ -24,6 +25,23 @@ def _convert(input: Union['Expression', str, int, float, bool, Callable[..., Sta
         return Expression(str(input), FloatType)
     elif type(input) == bool:
         return Expression("true" if input else "false", BoolType)
+    elif isinstance(input, Enum):
+        ctx = CompilerContext.instance()
+        for typename in ctx.typedefs:
+            typedef = ctx.typedefs[typename]
+            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
+                return Expression(f"{typedef.name}.{input.name}", typedef)
+        raise Exception(f"Could not determine the MTL type to use for enum type {type(input)}.")
+    elif isinstance(input, Flag):
+        ctx = CompilerContext.instance()
+        for typename in ctx.typedefs:
+            typedef = ctx.typedefs[typename]
+            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
+                result = ""
+                for member in input:
+                    result += member.name # type: ignore
+                return Expression(f"{typedef.name}.{result}", typedef)
+        raise Exception(f"Could not determine the MTL type to use for flag type {type(input)}.")
     else:
         raise Exception(f"Attempted to convert from unsupported builtin type {type(input)}.")
 
@@ -216,7 +234,7 @@ class Expression:
 IntExpression = functools.partial(Expression, type = IntType)
 
 ## type hint for a tuple with variable length
-type ConvertibleExpression = Union[Expression, str, int, float, bool]
+type ConvertibleExpression = Union[Expression, str, int, float, bool, Enum, Flag]
 type TupleExpression = tuple[ConvertibleExpression, ...]
 
 __all__ = ["Expression", "IntExpression", "ConvertibleExpression", "TupleExpression"]

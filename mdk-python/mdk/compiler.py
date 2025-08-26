@@ -14,7 +14,7 @@ from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
 from mdk.types.builtins import IntType, StateNoType
-from mdk.types.defined import StateType, MoveType, PhysicsType, FloatPairType, EnumType, FlagType
+from mdk.types.defined import StateType, StateTypeT, MoveType, MoveTypeT, PhysicsType, PhysicsTypeT, FloatPairType, EnumType, FlagType
 
 from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
 from mdk.utils.compiler import write_controller, rewrite_function
@@ -159,6 +159,8 @@ def library(inputs: list[Callable[..., None] | TypeSpecifier], dirname: str = ""
 
         for typedef in context.typedefs:
             definition = context.typedefs[typedef]
+            if not definition.register:
+                continue
             if not isinstance(definition, EnumType) and not isinstance(definition, FlagType):
                 raise CompilationException(f"Can only emit type declarations for EnumType and FlagType, not {type(definition)}.")
             if definition.library == None and output != None and definition.fn in inputs:
@@ -235,9 +237,9 @@ def statefunc(fn: Callable[..., None]) -> Callable[..., None]:
     return new_fn
 
 def statedef(
-    type: Optional[Expression] = None,
-    movetype: Optional[Expression] = None,
-    physics: Optional[Expression] = None,
+    type: Optional[StateType] = None,
+    movetype: Optional[MoveType] = None,
+    physics: Optional[PhysicsType] = None,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -259,9 +261,9 @@ def statedef(
 ## but can also be used by character developers to create statedefs ad-hoc (e.g. in a loop).
 def create_statedef(
     fn: Callable[[], None],
-    type: Optional[Expression] = None,
-    movetype: Optional[Expression] = None,
-    physics: Optional[Expression] = None,
+    type: Optional[StateType] = None,
+    movetype: Optional[MoveType] = None,
+    physics: Optional[PhysicsType] = None,
     anim: Optional[int] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
@@ -283,14 +285,11 @@ def create_statedef(
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
     if type != None:
-        if type.type == StateType: statedef.params["type"] = type
-        else: raise Exception(f"Expression type of statedef parameter `type` must be StateType, not {type.type.name}")
+        statedef.params["type"] = Expression(type.name, StateTypeT)
     if movetype != None:
-        if movetype.type == MoveType: statedef.params["movetype"] = movetype
-        else: raise Exception(f"Expression type of statedef parameter `movetype` must be MoveType, not {movetype.type.name}")
+        statedef.params["movetype"] = Expression(movetype.name, MoveTypeT)
     if physics != None:
-        if physics.type == PhysicsType: statedef.params["physics"] = physics
-        else: raise Exception(f"Expression type of statedef parameter `type` must be PhysicsType, not {physics.type.name}")
+        statedef.params["physics"] = Expression(physics.name, PhysicsTypeT)
     if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
     if velset != None: statedef.params["velset"] = convert_tuple(velset, FloatPairType)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)

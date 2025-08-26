@@ -1,4 +1,5 @@
 from typing import Callable, Optional, Union
+from enum import Enum, Flag
 import copy
 import functools
 import traceback
@@ -34,6 +35,8 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
         if name in kwargs:
             input_expression = kwargs[name]
             if type(input_expression) in [int, str, float, bool]:
+                input_expression = convert(input_expression)
+            elif isinstance(input_expression, Flag) or isinstance(input_expression, Enum):
                 input_expression = convert(input_expression)
             if isinstance(input_expression, Expression):
                 input_type = input_expression.type

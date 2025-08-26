@@ -76,7 +76,7 @@ def set_stateno(ctrl: StateController, name: str, val: Optional[Union[Expression
     palmul = [ColorMultType, None],
     timegap = [IntType, None],
     framegap = [IntType, None],
-    trans = [TransType, None]
+    trans = [TransTypeT, None]
 )
 def AfterImage(
     time: Optional[ConvertibleExpression] = None, 
@@ -333,7 +333,7 @@ def AppendToClipboard(text: ConvertibleExpression, params: Optional[TupleExpress
 
     return result
 
-@controller(flag = [AssertType], flag2 = [AssertType, None], flag3 = [AssertType, None])
+@controller(flag = [AssertTypeT], flag2 = [AssertTypeT, None], flag3 = [AssertTypeT, None])
 def AssertSpecial(flag: ConvertibleExpression, flag2: Optional[ConvertibleExpression] = None, flag3: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>AssertSpecial</h2>
@@ -868,8 +868,8 @@ the default phase offset is 90.</dd>
     anim = [AnimType],
     id = [IntType, None],
     pos = [FloatPairType, None],
-    postype = [PosType, None],
-    space = [SpaceType, None],
+    postype = [PosTypeT, None],
+    space = [SpaceTypeT, None],
     facing = [IntType, None],
     vfacing = [IntType, None],
     bindtime = [IntType, None],
@@ -887,7 +887,7 @@ the default phase offset is 90.</dd>
     ownpal = [BoolType, None],
     removeongethit = [BoolType, None],
     ignorehitpause = [BoolType, None],
-    trans = [TransType, None],
+    trans = [TransTypeT, None],
     angle = [IntType, None],
     alpha = [IntPairType, None]
 )
@@ -1215,7 +1215,7 @@ indefinitely or until another controller changes the bindtime.</dd>
     return result
 
 @controller(
-    waveform = [WaveType, None],
+    waveform = [WaveTypeT, None],
     time = [IntType, None],
     freq = [WaveTupleType, None],
     ampl = [WaveTupleType, None],
@@ -1340,11 +1340,11 @@ def Gravity(ignorehitpause: Optional[ConvertibleExpression] = None, persistent: 
     return result
 
 @controller(
-    helpertype = [HelperType, None],
+    helpertype = [HelperTypeT, None],
     name = [StringType, None],
     id = [IntType, None],
     pos = [FloatPairType, None],
-    postype = [PosType, None],
+    postype = [PosTypeT, None],
     facing = [IntType, None],
     stateno = [StateNoType, IntType, StringType, None],
     keyctrl = [BoolType, None],
@@ -1609,12 +1609,12 @@ those hit attributes which appear in the HitBy attribute string.</dd>
 
 @controller(
     attr = [HitStringType],
-    hitflag = [HitFlagType, None],
-    guardflag = [GuardFlagType, None],
-    affectteam = [TeamType, None],
-    animtype = [HitAnimType, None],
-    air_animtype = [HitAnimType, None],
-    fall_animtype = [HitAnimType, None],
+    hitflag = [HitFlagTypeF, None],
+    guardflag = [GuardFlagTypeF, None],
+    affectteam = [TeamTypeT, None],
+    animtype = [HitAnimTypeT, None],
+    air_animtype = [HitAnimTypeT, None],
+    fall_animtype = [HitAnimTypeT, None],
     priority = [PriorityPairType, None],
     damage = [IntPairType, None],
     pausetime = [IntPairType, None],
@@ -1624,8 +1624,8 @@ those hit attributes which appear in the HitBy attribute string.</dd>
     sparkxy = [IntPairType, None],
     hitsound = [SoundPairType, None],
     guardsound = [SoundPairType, None],
-    ground_type = [AttackType, None],
-    air_type = [AttackType, None],
+    ground_type = [AttackTypeT, None],
+    air_type = [AttackTypeT, None],
     ground_slidetime = [IntType, None],
     guard_slidetime = [IntType, None],
     ground_hittime = [IntType, None],
@@ -2472,7 +2472,7 @@ cloud of dust every third frame. spacing should be 1 or greater.</dd>
 @controller(
     id = [IntType],
     pos = [FloatPairType, None],
-    postype = [PosType, None],
+    postype = [PosTypeT, None],
     facing = [IntType, None],
     vfacing = [IntType, None],
     bindtime = [IntType, None],
@@ -2491,7 +2491,7 @@ cloud of dust every third frame. spacing should be 1 or greater.</dd>
     removeongethit = [BoolType, None],
     alpha = [IntPairType, None],
     ignorehitpause = [BoolType, None],
-    trans = [TransType, None]
+    trans = [TransTypeT, None]
 )
 def ModifyExplod(
     id: ConvertibleExpression, 
@@ -3132,7 +3132,7 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
     projstagebound = [IntType, None],
     projheightbound = [IntPairType, None],
     offset = [IntPairType, None],
-    postype = [PosType, None],
+    postype = [PosTypeT, None],
     projshadow = [BoolType, None],
     supermovetime = [IntType, None],
     pausemovetime = [IntType, None],
@@ -3147,14 +3147,14 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
     afterimage_palmul = [ColorMultType, None],
     afterimage_timegap = [IntType, None],
     afterimage_framegap = [IntType, None],
-    afterimage_trans = [TransType, None],
+    afterimage_trans = [TransTypeT, None],
     attr = [HitStringType],
-    hitflag = [HitFlagType, None],
-    guardflag = [GuardFlagType, None],
-    affectteam = [TeamType, None],
-    animtype = [HitAnimType, None],
-    air_animtype = [HitAnimType, None],
-    fall_animtype = [HitAnimType, None],
+    hitflag = [HitFlagTypeF, None],
+    guardflag = [GuardFlagTypeF, None],
+    affectteam = [TeamTypeT, None],
+    animtype = [HitAnimTypeT, None],
+    air_animtype = [HitAnimTypeT, None],
+    fall_animtype = [HitAnimTypeT, None],
     priority = [PriorityPairType, None],
     damage = [IntPairType, None],
     pausetime = [IntPairType, None],
@@ -3164,8 +3164,8 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
     sparkxy = [IntPairType, None],
     hitsound = [SoundPairType, None],
     guardsound = [SoundPairType, None],
-    ground_type = [AttackType, None],
-    air_type = [AttackType, None],
+    ground_type = [AttackTypeT, None],
+    air_type = [AttackTypeT, None],
     ground_slidetime = [IntType, None],
     guard_slidetime = [IntType, None],
     ground_hittime = [IntType, None],
@@ -3821,7 +3821,7 @@ def SprPriority(value: ConvertibleExpression, ignorehitpause: Optional[Convertib
 
     return result
 
-@controller(statetype = [StateType, None], movetype = [MoveType, None], physics = [PhysicsType, None])
+@controller(statetype = [StateTypeT, None], movetype = [MoveTypeT, None], physics = [PhysicsTypeT, None])
 def StateTypeSet(statetype: Optional[ConvertibleExpression] = None, movetype: Optional[ConvertibleExpression] = None, physics: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>StateTypeSet</h2>
@@ -4234,7 +4234,7 @@ target ID will be affected. Defaults to -1 (affects all targets.)</dd>
 
     return result
 
-@controller(trans = [TransType], alpha = [IntPairType, None])
+@controller(trans = [TransTypeT], alpha = [IntPairType, None])
 def Trans(trans: ConvertibleExpression, alpha: Optional[TupleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>Trans</h2>

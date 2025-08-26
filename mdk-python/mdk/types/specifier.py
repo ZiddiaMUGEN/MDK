@@ -22,7 +22,9 @@ class TypeSpecifier:
     name: str
     category: TypeCategory
     library: Optional[str]
-    def __init__(self, name: str, category: TypeCategory):
+    register: bool
+    def __init__(self, name: str, category: TypeCategory, register: bool = True):
         self.name = name
         self.category = category
         self.library = None
+        self.register = register

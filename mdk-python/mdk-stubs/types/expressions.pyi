@@ -1,5 +1,6 @@
 from typing import NoReturn, Literal
 from typing import Callable
+from enum import Enum, Flag
 
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.context import StateController
@@ -52,5 +53,5 @@ class Expression:
     def __bool__(self) -> Literal[True]: ...
 
 IntExpression: Expression
-type ConvertibleExpression = Expression | str | int | float | bool | Callable[..., StateController]
+type ConvertibleExpression = Expression | str | int | float | bool | Callable[..., StateController] | Enum | Flag
 type TupleExpression = tuple[ConvertibleExpression, ...]

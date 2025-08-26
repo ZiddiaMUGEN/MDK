@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mtl-mugen"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
     "psutil>=6.1.1",
     "pyreadline3>=3.5.4"
