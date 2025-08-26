@@ -1,5 +1,22 @@
 from enum import Enum, EnumType, Flag, auto
 
+class CompositeFlag(EnumType):
+    def __getattr__(cls, name: str) -> 'CompositeFlag':
+        if name in cls.__members__:
+            return cls.__members__[name]
+        result = None
+        for character in name:
+            if character in cls.__members__:
+                if result == None:
+                    result = cls.__members__[character]
+                else:
+                    result = result | cls.__members__[character]
+            else:
+                raise AttributeError(f"Could not find member {character} on flag type {cls}.")
+        if result == None:
+            raise AttributeError(f"Could not find any members from {name} on flag type {cls}.")
+        return result # type: ignore
+
 class StateType(Enum):
     """State type defined in statedef properties."""
     S = 0
@@ -23,13 +40,13 @@ class PhysicsType(Enum):
     N = 3
     U = 4
 
-class HitType(Flag):
+class HitType(Flag, metaclass=CompositeFlag):
     """Hit type as defined in e.g. a HitDef attr block."""
     S = 1
     C = auto()
     A = auto()
 
-class HitAttr(Flag):
+class HitAttr(Flag, metaclass=CompositeFlag):
     """Hit type as defined in e.g. a HitDef attr block."""
     N = 1
     S = auto()
@@ -131,7 +148,7 @@ class TeamModeType(Enum):
     Simul = 1
     Turns = 2
 
-class HitFlagType(Flag):
+class HitFlagType(Flag, metaclass=CompositeFlag):
     """Used for a hitflag in a HitDef controller."""
     H = 1
     L = auto()
@@ -140,7 +157,7 @@ class HitFlagType(Flag):
     D = auto()
     M = auto()
 
-class GuardFlagType(Flag):
+class GuardFlagType(Flag, metaclass=CompositeFlag):
     """Used for a guardflag in a HitDef controller."""
     H = 1
     L = auto()
@@ -150,5 +167,6 @@ class GuardFlagType(Flag):
 __all__ = [
     "StateType", "MoveType", "PhysicsType", "HitType", "HitAttr", "TransType", "AssertType",
     "WaveType", "HelperType", "TeamType", "HitAnimType", "AttackType", "PriorityType", "PosType",
-    "SpaceType", "TeamModeType", "HitFlagType", "GuardFlagType"
+    "SpaceType", "TeamModeType", "HitFlagType", "GuardFlagType",
+    "CompositeFlag"
 ]

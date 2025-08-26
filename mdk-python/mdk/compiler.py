@@ -52,6 +52,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                 lib_groups.add(context.triggers[t].library)
         if not skip_templates and len(context.typedefs) != 0:
             for t in context.typedefs:
+                if not context.typedefs[t].register: continue
                 lib_targets.append(context.typedefs[t])
                 if context.typedefs[t].library == None:
                     context.typedefs[t].library = output + ".inc"

@@ -3694,6 +3694,7 @@ removes all explods owned by the player.</dd>
 
 @controller(
     reversal_attr = [HitStringType],
+    hitflag = [HitFlagTypeF, None],
     pausetime = [IntPairType, None],
     sparkno = [SpriteType, IntType, None],
     guard_sparkno = [SpriteType, IntType, None],
@@ -3707,6 +3708,7 @@ removes all explods owned by the player.</dd>
 )
 def ReversalDef(
     reversal_attr: TupleExpression, 
+    hitflag: Optional[ConvertibleExpression] = None,
     pausetime: Optional[TupleExpression] = None, 
     sparkno: Optional[ConvertibleExpression] = None,
     guard_sparkno: Optional[ConvertibleExpression] = None, 
@@ -3744,6 +3746,7 @@ means stand+air, normal attack, special attack.</dd>
     result = StateController()
 
     set_if_tuple(result, "reversal.attr", reversal_attr, HitStringType)
+    set_if(result, "hitflag", hitflag)
     set_if_tuple(result, "pausetime", pausetime, IntPairType)
     set_if(result, "sparkno", sparkno)
     set_if(result, "guard.sparkno", guard_sparkno)

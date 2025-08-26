@@ -1,13 +1,13 @@
 from typing import Optional, Callable
 
 from mdk.types.context import CompilerContext
-from mdk.types.expressions import Expression
+from mdk.types.expressions import Expression, ConvertibleExpression
 import mdk.stdlib.triggers as triggers
 
 from mdk.utils.shared import convert
 
 class RedirectTarget:
-    def __init__(self, target: str, expr: Optional[Expression] = None):
+    def __init__(self, target: str, expr: Optional[ConvertibleExpression] = None):
         self.target = target
         self.expr = convert(expr) if expr != None else None
 
@@ -118,8 +118,8 @@ class RedirectTarget:
             raise Exception(f"No variable exists with name {name} for redirect {self.target}.")
         return Expression(f"{self.__repr__()},{name}", var.type)
 
-def RedirectTargetBuilder(target: str) -> Callable[[Optional[Expression]], RedirectTarget]:
-    def _redirect(id: Optional[Expression] = None) -> RedirectTarget:
+def RedirectTargetBuilder(target: str) -> Callable[[Optional[ConvertibleExpression]], RedirectTarget]:
+    def _redirect(id: Optional[ConvertibleExpression] = None) -> RedirectTarget:
         return RedirectTarget(target, id)
     return _redirect
 

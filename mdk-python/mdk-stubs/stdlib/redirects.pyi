@@ -1,4 +1,4 @@
-from mdk.types.expressions import Expression
+from mdk.types.expressions import Expression, ConvertibleExpression
 from mdk.stdlib.triggers import PositionExpression
 from typing import Callable, Optional, Protocol
 
@@ -87,9 +87,10 @@ class RedirectTarget:
     WinPerfect: Expression
     WinTime: Expression
     def __init__(self, target: str, expr: Expression | None = None) -> None: ...
+    def __getattr__(self, name: str) -> Expression: ...
 
 class RedirectFunction(Protocol):
-    def __call__(self, id: Optional[Expression] = ..., /) -> RedirectTarget:
+    def __call__(self, id: Optional[ConvertibleExpression] = ..., /) -> RedirectTarget:
         ...
 
 

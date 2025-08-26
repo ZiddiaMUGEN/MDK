@@ -55,7 +55,7 @@ class VariableExpression(Expression):
     def __bool__(self) -> Literal[True]: ...
 
 class VariableType(Protocol):
-    def __call__(self, /, scope: Optional[StateScope] = ...) -> VariableExpression:
+    def __call__(self, /, scope: Optional[StateScope] = ..., system: bool = ...) -> VariableExpression:
         ...
 
 IntVar: VariableType

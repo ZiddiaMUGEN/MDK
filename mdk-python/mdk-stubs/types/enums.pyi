@@ -1,10 +1,20 @@
 from enum import Enum, Flag, auto, EnumType
+from typing import TypeVar
 
 __all__ = [
     "StateType", "MoveType", "PhysicsType", "HitType", "HitAttr", "TransType", "AssertType",
     "WaveType", "HelperType", "TeamType", "HitAnimType", "AttackType", "PriorityType", "PosType",
-    "SpaceType", "TeamModeType", "HitFlagType", "GuardFlagType"
+    "SpaceType", "TeamModeType", "HitFlagType", "GuardFlagType",
+    "CompositeFlag"
 ]
+
+## this TypeVar is a cute falsehood for the type checker.
+## in implementation this takes no generic and __getattr__ returns a CompositeFlag.
+## however, this results in usage of the flag having type complaints (because e.g. HitType.SCA returns a CompositeFlag which is wrong).
+## therefore the `.pyi` uses a generic for the return type to 'trick' the type checker.
+T = TypeVar('T', bound=Flag)
+class CompositeFlag[T](EnumType):
+    def __getattr__(self, name: str) -> T: ...
 
 class StateType(Enum):
     """State type defined in statedef properties."""
@@ -29,14 +39,13 @@ class PhysicsType(Enum):
     N = 3
     U = 4
 
-class HitType(Flag):
+class HitType(Flag, metaclass=CompositeFlag['HitType']):
     """Hit type as defined in e.g. a HitDef attr block."""
     S = 1
     C = auto()
     A = auto()
-    def __getattr__(self, name: str) -> HitType: ...
 
-class HitAttr(Flag):
+class HitAttr(Flag, metaclass=CompositeFlag['HitAttr']):
     """Hit type as defined in e.g. a HitDef attr block."""
     N = 1
     S = auto()
@@ -44,7 +53,6 @@ class HitAttr(Flag):
     A = auto()
     T = auto()
     P = auto()
-    def __getattr__(self, name: str) -> HitAttr: ...
 
 class TransType(Enum):
     """Type of transparency to apply in a visual display."""
@@ -139,7 +147,7 @@ class TeamModeType(Enum):
     Simul = 1
     Turns = 2
 
-class HitFlagType(Flag):
+class HitFlagType(Flag, metaclass=CompositeFlag['HitFlagType']):
     """Used for a hitflag in a HitDef controller."""
     H = 1
     L = auto()
@@ -147,12 +155,10 @@ class HitFlagType(Flag):
     F = auto()
     D = auto()
     M = auto()
-    def __getattr__(self, name: str) -> HitFlagType: ...
 
-class GuardFlagType(Flag):
+class GuardFlagType(Flag, metaclass=CompositeFlag['GuardFlagType']):
     """Used for a guardflag in a HitDef controller."""
     H = 1
     L = auto()
     A = auto()
     M = auto()
-    def __getattr__(self, name: str) -> GuardFlagType: ...

@@ -25,13 +25,6 @@ def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, Calla
         return Expression(str(input), FloatType)
     elif type(input) == bool:
         return Expression("true" if input else "false", BoolType)
-    elif isinstance(input, Enum):
-        ctx = CompilerContext.instance()
-        for typename in ctx.typedefs:
-            typedef = ctx.typedefs[typename]
-            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
-                return Expression(f"{typedef.name}.{input.name}", typedef)
-        raise Exception(f"Could not determine the MTL type to use for enum type {type(input)}.")
     elif isinstance(input, Flag):
         ctx = CompilerContext.instance()
         for typename in ctx.typedefs:
@@ -42,6 +35,13 @@ def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, Calla
                     result += member.name # type: ignore
                 return Expression(f"{typedef.name}.{result}", typedef)
         raise Exception(f"Could not determine the MTL type to use for flag type {type(input)}.")
+    elif isinstance(input, Enum):
+        ctx = CompilerContext.instance()
+        for typename in ctx.typedefs:
+            typedef = ctx.typedefs[typename]
+            if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
+                return Expression(f"{typedef.name}.{input.name}", typedef)
+        raise Exception(f"Could not determine the MTL type to use for enum type {type(input)}.")
     else:
         raise Exception(f"Attempted to convert from unsupported builtin type {type(input)}.")
 
