@@ -67,8 +67,13 @@ class VariableExpression(Expression):
         new_controller.type = "VarSet"
         new_controller.params = {}
         new_controller.params[self.exprn] = new_value
-        if len(context.trigger_stack) != 0:
+        if len(context.trigger_stack) != 0 or len(context.if_stack) != 0:
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
+            if len(context.if_stack) != 0:
+                new_controller.triggers.append(Expression(f"mdk_internalTrigger = {context.if_stack[-1]}", BoolType))
+            if len(context.check_stack) != 0:
+                new_controller.triggers = copy.deepcopy(context.check_stack) + new_controller.triggers
+                context.check_stack = []
         else:
             new_controller.triggers = [format_bool(True)]
         ## i believe this should always be right, since it flows from <callsite> -> .set
@@ -90,8 +95,13 @@ class VariableExpression(Expression):
         new_controller.type = "VarAdd"
         new_controller.params = {}
         new_controller.params[self.exprn] = new_value
-        if len(context.trigger_stack) != 0:
+        if len(context.trigger_stack) != 0 or len(context.if_stack) != 0:
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
+            if len(context.if_stack) != 0:
+                new_controller.triggers.append(Expression(f"mdk_internalTrigger = {context.if_stack[-1]}", BoolType))
+            if len(context.check_stack) != 0:
+                new_controller.triggers = copy.deepcopy(context.check_stack) + new_controller.triggers
+                context.check_stack = []
         else:
             new_controller.triggers = [format_bool(True)]
         ## i believe this should always be right, since it flows from <callsite> -> .set

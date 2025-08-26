@@ -70,6 +70,7 @@ class CompilerContext:
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
     format_params: list[Expression]
+    if_stack: list[int]
     def __init__(self) -> None: ...
     @classmethod
     def instance(cls) -> CompilerContext: ...

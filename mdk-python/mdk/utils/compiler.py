@@ -4,7 +4,7 @@ import ast
 import types
 from typing import Callable, Optional
 
-from mdk.types.context import StateController
+from mdk.types.context import StateController, StateScope, StateScopeType
 
 from mdk.utils.shared import format_bool
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop, TriggerPrint
@@ -21,7 +21,7 @@ def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool
         f.write(f"mtl.location.file = {ctrl.location[0]}\n")
         f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 
-def rewrite_function(fn: Callable[..., None], overload_print: bool = True) -> Callable[..., None]:
+def rewrite_function(fn: Callable[..., None], overload_print: bool = True, scope: Optional[StateScope] = None) -> Callable[..., None]:
     # get effective source code of the decorated function
     source, line_number = inspect.getsourcelines(fn)
     location = inspect.getsourcefile(fn)
@@ -32,7 +32,7 @@ def rewrite_function(fn: Callable[..., None], overload_print: bool = True) -> Ca
     # parse AST from the decorated function
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators(overload_print).visit(old_ast)
+    new_ast = ReplaceLogicalOperators(overload_print, is_target = (scope == None or scope.scope == StateScopeType.TARGET)).visit(old_ast)
     ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
@@ -57,8 +57,10 @@ def rewrite_function(fn: Callable[..., None], overload_print: bool = True) -> Ca
     return new_fn
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
-    def __init__(self, prints: bool):
+    def __init__(self, prints: bool, is_target: bool = False):
         self.prints = prints
+        self.if_depth = 0
+        self.is_target = is_target
         super().__init__()
 
     def visit_Call(self, node: ast.Call):
@@ -128,17 +130,20 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             col_offset=node.col_offset
         )
     
-    def visit_If(self, node: ast.If):
-        results: list[ast.If] = []
+    def doIf_Target(self, node: ast.If):
         # recursively inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
+
+        results: list[ast.stmt] = []
 
         # append a call to mdk.impl.TriggerPush at the start of the block,
         # and append a call to mdk.impl.TriggerPop at the end of the block.
         node.body.insert(0, ast.Expr(
             value=ast.Call(
                 func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[],
+                args=[
+                    ast.Constant(value=None, lineno=node.lineno, col_offset=0)
+                ],
                 keywords=[],
                 lineno=node.lineno,
                 col_offset=node.col_offset
@@ -149,7 +154,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         node.body.insert(len(node.body), ast.Expr(
             value=ast.Call(
                 func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                args=[],
+                args=[
+                    ast.Constant(value=None, lineno=node.lineno, col_offset=0)
+                ],
                 keywords=[],
                 lineno=node.lineno,
                 col_offset=node.col_offset
@@ -187,7 +194,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             new_node.body.insert(0, ast.Expr(
                 value=ast.Call(
                     func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[],
+                    args=[
+                        ast.Constant(value=None, lineno=node.lineno, col_offset=0)
+                    ],
                     keywords=[],
                     lineno=node.lineno,
                     col_offset=node.col_offset
@@ -198,7 +207,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             new_node.body.insert(len(new_node.body), ast.Expr(
                 value=ast.Call(
                     func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
-                    args=[],
+                    args=[
+                        ast.Constant(value=None, lineno=node.lineno, col_offset=0)
+                    ],
                     keywords=[],
                     lineno=node.lineno,
                     col_offset=node.col_offset
@@ -210,3 +221,59 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             node.orelse = []
 
         return results
+    
+    def doIf_Normal(self, node: ast.If):
+        self.if_depth += 1
+        results: list[ast.stmt] = []
+        # recursively inspect child nodes.
+        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
+
+        # append a call to mdk.impl.TriggerPush at the start of the block,
+        # and append a call to mdk.impl.TriggerPop at the end of the block.
+        node.body.insert(0, ast.Expr(
+            value=ast.Call(
+                func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
+                args=[
+                    ast.Constant(value=self.if_depth, lineno=node.lineno, col_offset=0)
+                ],
+                keywords=[],
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ),
+            lineno=node.lineno,
+            col_offset=node.col_offset
+        ))
+        node.body.insert(len(node.body), ast.Expr(
+            value=ast.Call(
+                func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
+                args=[
+                    ast.Constant(value=self.if_depth, lineno=node.lineno, col_offset=0)
+                ],
+                keywords=[],
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ),
+            lineno=node.lineno,
+            col_offset=node.col_offset
+        ))
+
+        results.append(node)
+
+        ## flatten tree
+        ### TODO: `node.orelse` contains either ast.If or other statements.
+        ### other statements need to be bundled and dropped into an ast.If as well.
+        results += node.orelse
+        node.orelse = []
+
+        self.if_depth -= 1
+        return results
+    
+    def visit_If(self, node: ast.If):
+        ## if the input function is scoped to TARGET, or is a library (template/trigger) function,
+        ## use the safe (non-variable-based) conditional expansion.
+        if self.is_target:
+            return self.doIf_Target(node)
+        else:
+            return self.doIf_Normal(node)
+
+        

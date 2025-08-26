@@ -1,12 +1,12 @@
 import ast
 import io
-from mdk.types.context import StateController as StateController
+from mdk.types.context import StateController as StateController, StateScope as StateScope
 from mdk.utils.shared import format_bool as format_bool
 from mdk.utils.triggers import TriggerAnd as TriggerAnd, TriggerAssign as TriggerAssign, TriggerNot as TriggerNot, TriggerOr as TriggerOr, TriggerPop as TriggerPop, TriggerPush as TriggerPush
 from typing import Callable
 
 def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool): ...
-def rewrite_function(fn: Callable[..., None]) -> Callable[..., None]: ...
+def rewrite_function(fn: Callable[..., None], overload_print: bool = True, scope: StateScope | None = None) -> Callable[..., None]: ...
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
     location: str

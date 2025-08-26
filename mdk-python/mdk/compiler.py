@@ -13,7 +13,7 @@ from mdk.types.context import StateDefinition, TemplateDefinition, StateControll
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
-from mdk.types.builtins import IntType, StateNoType
+from mdk.types.builtins import IntType, StateNoType, BoolType
 from mdk.types.defined import StateType, StateTypeT, MoveType, MoveTypeT, PhysicsType, PhysicsTypeT, FloatPairType, EnumType, FlagType
 
 from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
@@ -103,6 +103,8 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
                     if global_variable.scope.scope == StateScopeType.HELPER:
                         scoped = StateDefinitionScope(MtlScopeType.HELPER, global_variable.scope.target)
                 project.global_forwards.append(ForwardParameter(global_variable.name, global_variable.type.name, is_system = global_variable.is_system, scope = scoped))
+            ## system globals
+            project.global_forwards.append(ForwardParameter("mdk_internalTrigger", "int", is_system = False, scope = StateDefinitionScope(MtlScopeType.SHARED, None)))
             mtlcc.runCompilerFromDef(def_file, os.path.join(os.path.abspath(os.path.dirname(def_file)), target_folder), project)
 
         ## delete the output file if we're not preserving IR
@@ -231,11 +233,15 @@ def library(inputs: list[Callable[..., None] | TypeSpecifier], dirname: str = ""
     
 ## very simple decorator to ensure a function called from a statedef
 ## can also have triggers applied correctly.
-def statefunc(fn: Callable[..., None]) -> Callable[..., None]:
-    ctx = CompilerContext.instance()
-    new_fn = rewrite_function(fn)
-    ctx.statefuncs.append(fn.__name__)
-    return new_fn
+def statefunc(scope: Optional[StateScope] = None) -> Callable[[Callable[..., None]], Callable[..., None]]:
+    def wrapped(fn: Callable[..., None]) -> Callable[..., None]:
+        ctx = CompilerContext.instance()
+        new_fn = rewrite_function(fn, scope = scope)
+        ctx.statefuncs.append(fn.__name__)
+        def inner(*args, **kwargs):
+            new_fn(*args, **kwargs)
+        return inner
+    return wrapped
 
 def statedef(
     type: Optional[StateType] = None,
@@ -280,7 +286,7 @@ def create_statedef(
 ) -> Callable[..., StateController]:
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
-    new_fn = rewrite_function(fn)
+    new_fn = rewrite_function(fn, scope = scope)
     statedef = StateDefinition(new_fn, {}, [], [], scope)
 
     # apply each parameter
@@ -334,8 +340,13 @@ def do_template(name: str, validator: Optional[Callable[..., dict[str, Expressio
                 new_controller.params[arg] = Expression(next_arg.__name__, StateNoType)
             else:
                 new_controller.params[arg] = kwargs[arg]
-        if len(context.trigger_stack) != 0:
+        if len(context.trigger_stack) != 0 or len(context.if_stack) != 0:
             new_controller.triggers = copy.deepcopy(context.trigger_stack)
+            if len(context.if_stack) != 0:
+                new_controller.triggers.append(Expression(f"mdk_internalTrigger = {context.if_stack[-1]}", BoolType))
+            if len(context.check_stack) != 0:
+                new_controller.triggers = copy.deepcopy(context.check_stack) + new_controller.triggers
+                context.check_stack = []
         else:
             new_controller.triggers = [format_bool(True)]
         ## i believe this should always be right, since it flows from <callsite> -> do_template -> generic_template
