@@ -80,6 +80,8 @@ def myHelperState():
 
 - The `mode` parameter is used to determine the trigger translation mode to use in the statedef. The default translation mode (`TranslationMode.STANDARD`) is sufficient for most cases; the variable translation mode (`TranslationMode.VARIABLE`) uses a more complicated translation method which increases file size and trigger count. The main difference is that the variable translation mode works better if you are modifying variables inside `if` conditionals which depend on those variables (so if you are seeing odd behaviour and you are doing something that sounds like this, you may want to try the variable mode).
 
+Note that mixing translation modes between `statedef` and any `statefunc` or `template` called by that statedef is likely to break, so if your statedef uses any statefunc or template definitions, try to stick to STANDARD translation mode.
+
 All of the built-in CNS triggers and state controllers are exposed in the `mdk.stdlib` package.
 
 ## Creating Variables
