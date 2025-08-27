@@ -4,6 +4,10 @@ from mdk.types.expressions import Expression as Expression
 from mdk.types.specifier import TypeSpecifier as TypeSpecifier
 from typing import Callable, Optional
 
+class TranslationMode(Enum):
+    STANDARD = 0
+    VARIABLE = 1
+
 class StateScopeType(Enum):
     SHARED = 0
     PLAYER = 1

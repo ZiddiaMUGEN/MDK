@@ -2,9 +2,9 @@ import io
 import inspect
 import ast
 import types
-from typing import Callable, Optional
+from typing import Callable
 
-from mdk.types.context import StateController, StateScope, StateScopeType
+from mdk.types.context import StateController, TranslationMode
 
 from mdk.utils.shared import format_bool
 from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop, TriggerPrint
@@ -21,7 +21,7 @@ def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool
         f.write(f"mtl.location.file = {ctrl.location[0]}\n")
         f.write(f"mtl.location.line = {ctrl.location[1]}\n")
 
-def rewrite_function(fn: Callable[..., None], overload_print: bool = True, scope: Optional[StateScope] = None) -> Callable[..., None]:
+def rewrite_function(fn: Callable[..., None], overload_print: bool = True, mode: TranslationMode = TranslationMode.STANDARD) -> Callable[..., None]:
     # get effective source code of the decorated function
     source, line_number = inspect.getsourcelines(fn)
     location = inspect.getsourcefile(fn)
@@ -32,7 +32,7 @@ def rewrite_function(fn: Callable[..., None], overload_print: bool = True, scope
     # parse AST from the decorated function
     old_ast = ast.parse(source)
     # use a node transformer to replace any operators we can't override behaviour of (e.g. `and`, `or`, `not`) with function calls
-    new_ast = ReplaceLogicalOperators(overload_print, is_target = (scope == None or scope.scope == StateScopeType.TARGET)).visit(old_ast)
+    new_ast = ReplaceLogicalOperators(overload_print, mode = mode).visit(old_ast)
     ast.increment_lineno(new_ast, line_number)
     # compile the updated AST to a function and use it as the resulting wrapped function.
     new_code_obj = compile(new_ast, fn.__code__.co_filename, 'exec')
@@ -57,10 +57,10 @@ def rewrite_function(fn: Callable[..., None], overload_print: bool = True, scope
     return new_fn
 
 class ReplaceLogicalOperators(ast.NodeTransformer):
-    def __init__(self, prints: bool, is_target: bool = False):
+    def __init__(self, prints: bool, mode: TranslationMode):
         self.prints = prints
         self.if_depth = 0
-        self.is_target = is_target
+        self.mode = mode
         super().__init__()
 
     def visit_Call(self, node: ast.Call):
@@ -130,7 +130,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
             col_offset=node.col_offset
         )
     
-    def doIf_Target(self, node: ast.If):
+    def doIf_Standard(self, node: ast.If):
         # recursively inspect child nodes.
         node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
 
@@ -222,7 +222,7 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
 
         return results
     
-    def doIf_Normal(self, node: ast.If):
+    def doIf_Variable(self, node: ast.If):
         self.if_depth += 1
         results: list[ast.stmt] = []
         # recursively inspect child nodes.
@@ -271,9 +271,9 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
     def visit_If(self, node: ast.If):
         ## if the input function is scoped to TARGET, or is a library (template/trigger) function,
         ## use the safe (non-variable-based) conditional expansion.
-        if self.is_target:
-            return self.doIf_Target(node)
-        else:
-            return self.doIf_Normal(node)
+        if self.mode == TranslationMode.VARIABLE:
+            return self.doIf_Variable(node)
+        elif self.mode == TranslationMode.STANDARD:
+            return self.doIf_Standard(node)
 
         

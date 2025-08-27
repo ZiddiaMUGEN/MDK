@@ -9,7 +9,7 @@ import mtl.project
 from mtl.types.translation import ForwardParameter, StateDefinitionScope, StateScopeType as MtlScopeType
 import mtlcc
 
-from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition, StateScopeType
+from mdk.types.context import StateDefinition, TemplateDefinition, StateController, CompilerContext, StateScope, TriggerDefinition, StateScopeType, TranslationMode
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.errors import CompilationException
 from mdk.types.expressions import Expression
@@ -233,10 +233,10 @@ def library(inputs: list[Callable[..., None] | TypeSpecifier], dirname: str = ""
     
 ## very simple decorator to ensure a function called from a statedef
 ## can also have triggers applied correctly.
-def statefunc(scope: Optional[StateScope] = None) -> Callable[[Callable[..., None]], Callable[..., None]]:
+def statefunc(mode: TranslationMode = TranslationMode.STANDARD) -> Callable[[Callable[..., None]], Callable[..., None]]:
     def wrapped(fn: Callable[..., None]) -> Callable[..., None]:
         ctx = CompilerContext.instance()
-        new_fn = rewrite_function(fn, scope = scope)
+        new_fn = rewrite_function(fn, mode = mode)
         ctx.statefuncs.append(fn.__name__)
         def inner(*args, **kwargs):
             new_fn(*args, **kwargs)
@@ -258,10 +258,11 @@ def statedef(
     hitcountpersist: Optional[bool] = None,
     sprpriority: Optional[int] = None,
     stateno: Optional[int] = None,
-    scope: Optional[StateScope] = None
+    scope: Optional[StateScope] = None,
+    mode: TranslationMode = TranslationMode.STANDARD
 ) -> Callable[[Callable[[], None]], Callable[..., StateController]]:
     def decorator(fn: Callable[[], None]) -> Callable[..., StateController]:
-        return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno, scope)
+        return create_statedef(fn, type, movetype, physics, anim, velset, ctrl, poweradd, juggle, facep2, hitdefpersist, movehitpersist, hitcountpersist, sprpriority, stateno, scope, mode)
     return decorator
 
 ## used by the @statedef decorator to create new statedefs,
@@ -282,11 +283,12 @@ def create_statedef(
     hitcountpersist: Optional[bool] = None,
     sprpriority: Optional[int] = None,
     stateno: Optional[int] = None,
-    scope: Optional[StateScope] = None
+    scope: Optional[StateScope] = None,
+    mode: TranslationMode = TranslationMode.STANDARD
 ) -> Callable[..., StateController]:
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
-    new_fn = rewrite_function(fn, scope = scope)
+    new_fn = rewrite_function(fn, mode = mode)
     statedef = StateDefinition(new_fn, {}, [], [], scope)
 
     # apply each parameter

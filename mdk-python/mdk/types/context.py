@@ -10,6 +10,10 @@ from mdk.types.specifier import TypeSpecifier
 if TYPE_CHECKING:
     from mdk.types.expressions import Expression
 
+class TranslationMode(Enum):
+    STANDARD = 0
+    VARIABLE = 1
+
 class StateScopeType(Enum):
     SHARED = 0
     PLAYER = 1
