@@ -1,4 +1,6 @@
-from mdk.types.context import CompilerContext
+from typing import Optional
+
+from mdk.types.context import CompilerContext, StateController
 from mdk.types.expressions import Expression
 from mdk.types.variables import VariableExpression
 from mdk.types.builtins import BoolType, IntType, ShortType, ByteType
@@ -72,19 +74,45 @@ def TriggerAssign(expr1: Expression, expr2: Expression):
 
     return expr1.make_expression(f"({expr1.exprn} := {expr2.exprn})")
 
-def TriggerPush():
+def TriggerPush(depth: Optional[int]):
     ctx = CompilerContext.instance()
     if not isinstance(ctx.current_trigger, Expression):
         ## it's legal for current_trigger to be None, it means the controller was called outside of an `if`.
         ## (i don't think it's possible for TriggerPush to invoke in this case, but better for safety).
         ctx.current_trigger = format_bool(True)
-    ctx.trigger_stack.append(ctx.current_trigger)
+    
+    if depth == None:
+        ctx.trigger_stack.append(ctx.current_trigger)
+    else:
+        check_val = 0 if len(ctx.if_stack) == 0 else ctx.if_stack[-1]
+        ## if check_val is 0, and depth is 1, we can reset mdk_internalTrigger
+        ## as we know this is the opening of a new block.
+        if check_val == 0 and depth == 1:
+            ctx.check_stack.append(Expression(f"(mdk_internalTrigger := 0) || true", BoolType))
+        else:
+            ctx.check_stack.append(Expression(f"mdk_internalTrigger = {check_val}", BoolType))
+        ctx.check_stack.append(ctx.current_trigger)
+        ctx.check_stack.append(Expression(f"(mdk_internalTrigger := {depth}) || true", BoolType))
+        ctx.if_stack.append(depth)
 
-def TriggerPop():
+def TriggerPop(depth: Optional[int]):
     ctx = CompilerContext.instance()
-    if len(ctx.trigger_stack) == 0:
-        raise Exception(f"Tried to pop triggers from an empty trigger stack.")
-    ctx.trigger_stack.pop()
+    if depth == None:
+        if len(ctx.trigger_stack) == 0:
+            raise Exception(f"Tried to pop triggers from an empty trigger stack.")
+        ctx.trigger_stack.pop()
+    else:
+        if len(ctx.if_stack) == 0: raise Exception(f"Tried to pop triggers from an empty trigger stack.")
+        if len(ctx.if_stack) == 1: ctx.if_stack.pop()
+        if len(ctx.if_stack) > 1:
+            target = ctx.current_state
+            if target == None: target = ctx.current_template
+            if target == None: raise Exception(f"Trigger conditional applied outside of context.")
+
+            if len(target.controllers) == 0: raise Exception(f"Trigger conditional applied with no state controllers.")
+
+            target.controllers[-1].triggers.append(Expression(f"mdk_internalTrigger := {ctx.if_stack[-2]}", BoolType))
+            ctx.if_stack.pop()
 
 ## this function is used if a bare `print` statement is found inside a `statedef`, `statefunc`, or `template`.
 ## it replaces the `print` with an appropriate `DisplayToClipboard`.

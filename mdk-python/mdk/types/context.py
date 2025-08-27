@@ -10,6 +10,10 @@ from mdk.types.specifier import TypeSpecifier
 if TYPE_CHECKING:
     from mdk.types.expressions import Expression
 
+class TranslationMode(Enum):
+    STANDARD = 0
+    VARIABLE = 1
+
 class StateScopeType(Enum):
     SHARED = 0
     PLAYER = 1
@@ -101,10 +105,12 @@ class CompilerContext:
     current_template: Optional[TemplateDefinition]
     current_trigger: Optional[Expression]
     trigger_stack: list[Expression]
+    check_stack: list[Expression]
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
     statefuncs: list[str]
     format_params: list[Expression]
+    if_stack: list[int]
 
     def __init__(self):
         self.statedefs = {}
@@ -115,10 +121,12 @@ class CompilerContext:
         self.current_template = None
         self.current_trigger = None
         self.trigger_stack = []
+        self.check_stack = []
         self.globals = []
         self.default_state = (None, None)
         self.statefuncs = []
         self.format_params = []
+        self.if_stack = []
     
     @classmethod
     def instance(cls):

@@ -4,6 +4,10 @@ from mdk.types.expressions import Expression as Expression
 from mdk.types.specifier import TypeSpecifier as TypeSpecifier
 from typing import Callable, Optional
 
+class TranslationMode(Enum):
+    STANDARD = 0
+    VARIABLE = 1
+
 class StateScopeType(Enum):
     SHARED = 0
     PLAYER = 1
@@ -70,6 +74,7 @@ class CompilerContext:
     globals: list[ParameterDefinition]
     default_state: tuple[Expression | None, Expression | None]
     format_params: list[Expression]
+    if_stack: list[int]
     def __init__(self) -> None: ...
     @classmethod
     def instance(cls) -> CompilerContext: ...

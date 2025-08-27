@@ -6,7 +6,7 @@ import traceback
 
 from mdk.types.context import StateController, CompilerContext
 from mdk.types.expressions import Expression, TupleExpression
-from mdk.types.builtins import IntType, StateNoType, AnyType
+from mdk.types.builtins import IntType, StateNoType, AnyType, BoolType
 from mdk.types.defined import TupleType
 from mdk.types.specifier import TypeSpecifier
 
@@ -73,6 +73,11 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
         raise Exception("Attempted to call a state controller outside of a statedef function.")
     
     ctrl.triggers = copy.deepcopy(ctx.trigger_stack)
+    if len(ctx.if_stack) != 0:
+        ctrl.triggers.append(Expression(f"mdk_internalTrigger = {ctx.if_stack[-1]}", BoolType))
+    if len(ctx.check_stack) != 0:
+        ctrl.triggers = copy.deepcopy(ctx.check_stack) + ctrl.triggers
+        ctx.check_stack = []
     ctx.current_trigger = None
 
     ## i believe this should always be right, since it flows from <callsite> -> decorated -> make_controller
