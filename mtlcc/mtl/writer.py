@@ -283,8 +283,8 @@ def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: Translation
     debug = debug[0] if len(debug) > 0 else ""
     output = emit_trigger_recursive(tree, table, ctx, expected, scope)
     ## BUILTIN_ANY is used in multivalue, don't strip those.
-    if output.value.startswith("(") and output.value.endswith(")") and (expected == None or len(expected) == 1):
-        output.value = output.value[1:-1]
+    #if output.value.startswith("(") and output.value.endswith(")") and (expected == None or len(expected) == 1):
+    #    output.value = output.value[1:-1]
     return f"{output.value}{debug}"
 
 def write_state_controller(controller: StateController, table: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[str]:
