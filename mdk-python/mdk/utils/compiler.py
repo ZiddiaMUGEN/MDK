@@ -262,7 +262,44 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         ## flatten tree
         ### TODO: `node.orelse` contains either ast.If or other statements.
         ### other statements need to be bundled and dropped into an ast.If as well.
-        results += node.orelse
+        else_stmt = []
+        for stmt in node.orelse:
+            if isinstance(stmt, ast.If):
+                results.append(stmt)
+            else:
+                else_stmt.append(stmt)
+
+        if len(else_stmt) > 0:
+            results.append(ast.Expr(
+                value=ast.Call(
+                    func=ast.Name(id="mdk.impl.TriggerPush", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
+                    args=[
+                        ast.Constant(value=-1, lineno=node.lineno, col_offset=0)
+                    ],
+                    keywords=[],
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
+                ),
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ))
+
+            results += else_stmt
+
+            results.append(ast.Expr(
+                value=ast.Call(
+                    func=ast.Name(id="mdk.impl.TriggerPop", ctx=ast.Load(), lineno=node.lineno, col_offset=0),
+                    args=[
+                        ast.Constant(value=None, lineno=node.lineno, col_offset=0)
+                    ],
+                    keywords=[],
+                    lineno=node.lineno,
+                    col_offset=node.col_offset
+                ),
+                lineno=node.lineno,
+                col_offset=node.col_offset
+            ))
+
         node.orelse = []
 
         self.if_depth -= 1

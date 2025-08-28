@@ -91,9 +91,15 @@ def TriggerPush(depth: Optional[int]):
             ctx.check_stack.append(Expression(f"(mdk_internalTrigger := 0) || true", BoolType))
         else:
             ctx.check_stack.append(Expression(f"mdk_internalTrigger = {check_val}", BoolType))
-        ctx.check_stack.append(ctx.current_trigger)
-        ctx.check_stack.append(Expression(f"(mdk_internalTrigger := {depth}) || true", BoolType))
-        ctx.if_stack.append(depth)
+
+        if depth != -1:
+            ctx.check_stack.append(ctx.current_trigger)
+            ctx.check_stack.append(Expression(f"(mdk_internalTrigger := {depth}) || true", BoolType))
+            ctx.if_stack.append(depth)
+        else:
+            ctx.trigger_stack.append(Expression(f"mdk_internalTrigger = {check_val}", BoolType))
+            ctx.if_stack = []
+            ctx.check_stack = []
 
 def TriggerPop(depth: Optional[int]):
     ctx = CompilerContext.instance()
