@@ -466,6 +466,8 @@ def replaceStructAssigns(ctx: TranslationContext):
                                     TriggerTree(TriggerTreeNode.ATOM, property.key, [], property.location), 
                                     member_name, struct, property.value.children[subindex], property.location, ctx
                                 )
+                        else:
+                            final_properties.append(property)
                 controller.properties = final_properties
 
 def assignVariables(ctx: TranslationContext):
