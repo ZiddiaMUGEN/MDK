@@ -137,6 +137,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("MoveGuarded", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("MoveHit", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("MoveReversed", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
+        TriggerDefinition("MoveType", BUILTIN_MOVETYPE, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("Name", BUILTIN_STRING, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumEnemy", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("NumExplod", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
