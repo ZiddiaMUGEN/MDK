@@ -113,6 +113,7 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("GetHitVar", BUILTIN_FLOAT, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE_FLOAT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("GetHitVar", BUILTIN_BOOL, None, [TypeParameter("param_name", BUILTIN_HITVARTYPE_BOOL)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitCount", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
+        TriggerDefinition("HitDefAttr", BUILTIN_ANY, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitFall", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitOver", BUILTIN_BOOL, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("HitPauseTime", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),

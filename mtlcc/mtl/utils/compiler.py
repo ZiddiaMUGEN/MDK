@@ -531,14 +531,19 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
                         maybe_expected = child_type
             except TranslationError:
                 continue
+        is_hitdefattr = tree.children[0].node == TriggerTreeNode.ATOM and tree.children[0].operator.lower() == "hitdefattr"
+        is_hitdefattr = is_hitdefattr or (tree.children[0].node == TriggerTreeNode.REDIRECT and tree.children[0].children[1].operator.lower() == "hitdefattr")
         for child in tree.children:
             # if any child fails type checking, bubble that up
             if (child_type := type_check(child, table, ctx, scope = scope, expected = maybe_expected, pass_through = pass_through)) == None:
                 raise TranslationError(f"Could not determine the type of subexpression from operator {tree.operator}.", tree.location)
             # the result of `type_check` could be a multi-value type specifier list, but triggers cannot accept these types
             # as parameters. so simplify here.
-            if len(child_type) != 1: return None
-            inputs.append(child_type[0].type)
+            if len(child_type) != 1:
+                if is_hitdefattr: inputs.append(BUILTIN_ANY)
+                else: return None
+            else:
+                inputs.append(child_type[0].type)
         ## now try to find a trigger which matches the child types.
         if (match := find_trigger(f"operator{tree.operator}", inputs, ctx, tree.location)) != None:
             return [TypeSpecifier(match.type)]

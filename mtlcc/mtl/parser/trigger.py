@@ -187,8 +187,13 @@ def parseBinary(line: str, index: int, location: Location, lhs: TriggerTree, nes
         new_root = TriggerTree(TriggerTreeNode.BINARY_OP, nextExprn.operator, [new_child, nextExprn.children[1]], location)
         return (index, new_root)
     elif nextExprn.node == TriggerTreeNode.MULTIVALUE:
-        new_child = TriggerTree(TriggerTreeNode.BINARY_OP, operator, [lhs, nextExprn.children[0]], location)
-        new_root = TriggerTree(TriggerTreeNode.MULTIVALUE, nextExprn.operator, [new_child] + nextExprn.children[1:], location)
+        if lhs.node == TriggerTreeNode.ATOM and lhs.operator.lower() == "hitdefattr":
+            ## special case: this is the ONLY builtin trigger which returns a tuple.
+            ## if we ever implement user-defined triggers which return a tuple, something smarter will need to be added.
+            return (index, TriggerTree(TriggerTreeNode.BINARY_OP, operator, [lhs, nextExprn], location))
+        else:
+            new_child = TriggerTree(TriggerTreeNode.BINARY_OP, operator, [lhs, nextExprn.children[0]], location)
+            new_root = TriggerTree(TriggerTreeNode.MULTIVALUE, nextExprn.operator, [new_child] + nextExprn.children[1:], location)
         return (index, new_root)
 
     return (index, TriggerTree(TriggerTreeNode.BINARY_OP, operator, [lhs, nextExprn], location))

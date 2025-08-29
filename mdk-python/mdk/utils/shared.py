@@ -9,16 +9,21 @@ from enum import Enum, Flag
 from mdk.types.errors import CompilationException
 from mdk.types.context import CompilerContext, StateController
 from mdk.types.expressions import Expression, TupleExpression
-from mdk.types.builtins import BoolType, IntType, FloatType, StringType, StateNoType
+from mdk.types.builtins import BoolType, IntType, FloatType, StringType, StateNoType, AnyType
 from mdk.types.defined import TupleType
 
-def convert(input: Union[Expression, Enum, Flag, str, int, float, bool, Callable[..., StateController]]) -> Expression:
+def convert(input: Union[Expression, Enum, Flag, str, int, float, bool, tuple, Callable[..., StateController]]) -> Expression:
     if isinstance(input, Expression):
         return input
     elif isinstance(input, partial):
         return Expression(input.keywords["value"], StateNoType)
     elif isinstance(input, Callable):
         return Expression(input.__name__, StateNoType)
+    elif isinstance(input, tuple):
+        elements: list[str] = []
+        for elem in input:
+            elements.append(convert(elem).exprn)
+        return Expression(", ".join(elements), AnyType)
     elif type(input) == str:
         return Expression(input, StringType)
     elif type(input) == int:

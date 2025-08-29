@@ -3,20 +3,25 @@ from typing import Union, Callable
 from enum import Enum, Flag
 
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType
+from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType, AnyType
 from mdk.types.context import CompilerContext, StateController
 
 from mdk.utils.expressions import check_types_assignable
 
 ## this is just the 'convert' function from mdk.utils.shared,
 ## but copied here to avoid circular imports.
-def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, Callable[..., StateController]]) -> 'Expression':
+def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, tuple, Callable[..., StateController]]) -> 'Expression':
     if isinstance(input, Expression):
         return input
     elif isinstance(input, functools.partial):
         return Expression(input.keywords["value"], StateNoType)
     elif isinstance(input, Callable):
         return Expression(input.__name__, StateNoType)
+    elif isinstance(input, tuple):
+        elements: list[str] = []
+        for elem in input:
+            elements.append(_convert(elem).exprn)
+        return Expression(", ".join(elements), AnyType)
     elif type(input) == str:
         return Expression(input, StringType)
     elif type(input) == int:
