@@ -25,6 +25,7 @@ class RedirectTarget:
         self.BackEdgeDist = self._redirect_atom(triggers.BackEdgeDist)
         self.CanRecover = self._redirect_atom(triggers.CanRecover)
         self.Command = self._redirect_atom(triggers.Command)
+        self.Cond: Callable[..., Expression] = self._redirect_function(triggers.Cond)
         self.Const: Callable[..., Expression] = self._redirect_function(triggers.Const)  # type: ignore
         self.Ctrl = self._redirect_atom(triggers.Ctrl)
         self.DrawGame = self._redirect_atom(triggers.DrawGame)

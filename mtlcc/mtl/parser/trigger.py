@@ -240,7 +240,12 @@ def parseMultiValue(line: str, index: int, location: Location, lhs: TriggerTree,
             return (index, TriggerTree(TriggerTreeNode.REDIRECT, "", [lhs, nextExprn], location))
         elif nextExprn.node == TriggerTreeNode.BINARY_OP:
             redirected = TriggerTree(TriggerTreeNode.REDIRECT, "", [lhs, nextExprn.children[0]], location)
-            return (index, TriggerTree(TriggerTreeNode.BINARY_OP, nextExprn.operator, [redirected, nextExprn.children[1]], location))
+            return (index, TriggerTree(TriggerTreeNode.BINARY_OP, nextExprn.operator, [redirected] + nextExprn.children[1:], location))
+        elif nextExprn.node == TriggerTreeNode.MULTIVALUE:
+            ## this can happen in e.g. a Cond expression:
+            ## Cond(NumHelper(16000), Helper(16000),SpyStorage_AnimationSearchState, -1)
+            redirected = TriggerTree(TriggerTreeNode.REDIRECT, "", [lhs, nextExprn.children[0]], location)
+            return (index, TriggerTree(TriggerTreeNode.MULTIVALUE, "", [redirected] + nextExprn.children[1:], location))
         else:
             raise Exception(f"Target of trigger redirection must be function, atom, or binary operator, not {nextExprn.node}")
     

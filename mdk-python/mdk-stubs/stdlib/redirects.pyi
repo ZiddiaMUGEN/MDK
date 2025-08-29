@@ -19,6 +19,7 @@ class RedirectTarget:
     BackEdgeDist: Expression
     CanRecover: Expression
     Command: Expression
+    Cond: Callable[..., Expression]
     Const: Callable[..., Expression]
     Ctrl: Expression
     DrawGame: Expression

@@ -50,6 +50,9 @@ class EnumType(TypeSpecifier):
 
         self.library = library
 
+    def __deepcopy__(self, memo):
+        return self
+
     def __getattr__(self, name: str) -> Expression:
         for member in self.members:
             if member == name: return Expression(f"{self.name}.{member}", self)
@@ -75,6 +78,9 @@ class FlagType(TypeSpecifier):
         context.typedefs[self.name] = self
 
         self.library = library
+
+    def __deepcopy__(self, memo):
+        return self
 
     def __getattr__(self, name: str) -> Expression:
         all_members: list[str] = []
