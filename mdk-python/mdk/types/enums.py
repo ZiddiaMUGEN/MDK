@@ -1,21 +1,28 @@
 from enum import Enum, EnumType, Flag, auto
 
+from mdk.types.context import CompilerContext
+from mdk.types.expressions import Expression
+
 class CompositeFlag(EnumType):
-    def __getattr__(cls, name: str) -> 'CompositeFlag':
+    def __getattr__(cls, name: str) -> Expression:
+        ctx = CompilerContext.instance()
+
+        ## find the FlagType which owns this Flag enum
+        target_type = None
+        for type_name in ctx.typedefs:
+            typedef = ctx.typedefs[type_name]
+            if hasattr(typedef, 'inner_type') and typedef.inner_type == cls: # type: ignore
+                target_type = typedef
+                break
+        if target_type == None:
+            raise Exception(f"Could not determine the type definition to use for composite flag type {cls.__name__}.")
+
         if name in cls.__members__:
-            return cls.__members__[name]
-        result = None
+            return Expression(f"{target_type.name}.{name}", target_type)
         for character in name:
-            if character in cls.__members__:
-                if result == None:
-                    result = cls.__members__[character]
-                else:
-                    result = result | cls.__members__[character]
-            else:
+            if character not in cls.__members__:
                 raise AttributeError(f"Could not find member {character} on flag type {cls}.")
-        if result == None:
-            raise AttributeError(f"Could not find any members from {name} on flag type {cls}.")
-        return result # type: ignore
+        return Expression(f"{target_type.name}.{name}", target_type)
 
 class StateType(Enum):
     """State type defined in statedef properties."""
