@@ -32,6 +32,7 @@ class RedirectTarget:
         self.Facing = self._redirect_atom(triggers.Facing)
         self.FrontEdgeBodyDist = self._redirect_atom(triggers.FrontEdgeBodyDist)
         self.FrontEdgeDist = self._redirect_atom(triggers.FrontEdgeDist)
+        self.GetHitVar: Callable[..., Expression] = self._redirect_function(triggers.GetHitVar)
         self.HitCount = self._redirect_atom(triggers.HitCount)
         self.HitDefAttr = self._redirect_atom(triggers.HitDefAttr)
         self.HitFall = self._redirect_atom(triggers.HitFall)

@@ -328,6 +328,8 @@ def parseExpression(line: str, location: Location, index: int = 0, nested: bool 
 
         # skip to next token
         index = consumeWhitespace(line, index)
-    if len(stack) != 1:
+    if len(stack) > 1:
         raise TranslationError("Trigger parser failed to resolve a single trigger.", location)
+    if len(stack) == 0:
+        stack.append(TriggerTree(TriggerTreeNode.ATOM, "", [], location))
     return (index, stack.pop())

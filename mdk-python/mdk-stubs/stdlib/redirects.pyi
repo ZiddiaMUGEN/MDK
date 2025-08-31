@@ -26,6 +26,7 @@ class RedirectTarget:
     Facing: Expression
     FrontEdgeBodyDist: Expression
     FrontEdgeDist: Expression
+    GetHitVar: Callable[..., Expression]
     HitCount: Expression
     HitDefAttr: Expression
     HitFall: Expression

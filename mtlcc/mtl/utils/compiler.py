@@ -514,6 +514,8 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         elif find_statedef(tree.operator, ctx) != None:
             ## match against statedef names explicitly
             return [TypeSpecifier(BUILTIN_STATE)]
+        elif tree.operator == "":
+            return [TypeSpecifier(BUILTIN_ANY)]
         else:
             ## in other cases the token was not recognized, so we return None.
             raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)

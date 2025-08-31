@@ -1700,8 +1700,8 @@ def HitDef(
     fall_animtype: Optional[ConvertibleExpression] = None,
     priority: Optional[TupleExpression] = None,
     damage: Optional[ConvertibleExpression] = None,
-    pausetime: Optional[ConvertibleExpression] = None,
-    guard_pausetime: Optional[ConvertibleExpression] = None,
+    pausetime: Optional[TupleExpression] = None, 
+    guard_pausetime: Optional[TupleExpression] = None, 
     sparkno: Optional[ConvertibleExpression] = None,
     guard_sparkno: Optional[ConvertibleExpression] = None,
     sparkxy: Optional[TupleExpression] = None,
@@ -2156,8 +2156,8 @@ state and animation data.</dd>
     set_if(result, "fall.animtype", fall_animtype)
     set_if_tuple(result, "priority", priority, PriorityPairType)
     set_if(result, "damage", damage)
-    set_if(result, "pausetime", pausetime)
-    set_if(result, "guard.pausetime", guard_pausetime)
+    set_if_tuple(result, "pausetime", pausetime, IntPairType)
+    set_if_tuple(result, "guard.pausetime", guard_pausetime, IntPairType)
     set_if(result, "sparkno", sparkno)
     set_if(result, "guard.sparkno", guard_sparkno)
     set_if_tuple(result, "sparkxy", sparkxy, IntPairType)

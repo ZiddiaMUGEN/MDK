@@ -218,6 +218,8 @@ def emit_trigger_recursive(tree: TriggerTree, table: list[TypeParameter], ctx: T
         elif (state := find_statedef(tree.operator, ctx)) != None:
             ## if a statedef name matches, we emit a BUILTIN_STATE with the statedef number as the expression.
             return Expression(BUILTIN_STATE, str(state.parameters.id))
+        elif tree.operator == "":
+            return Expression(BUILTIN_ANY, "")
         else:
             ## in other cases the token was not recognized, so we return None.
             raise TranslationError(f"Could not determine the type of subexpression {tree.operator}", tree.location)
