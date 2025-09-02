@@ -84,6 +84,19 @@ Note that mixing translation modes between `statedef` and any `statefunc` or `te
 
 All of the built-in CNS triggers and state controllers are exposed in the `mdk.stdlib` package.
 
+## Empty Expressions
+
+Sometimes you will need to pass an empty value to a property for a state controller. For example, when you run a state definition with `hitdefpersist` set to `True`, you may want to run a `HitDef` with the `attr` property empty to unset a HitDef when it's no longer needed. In these cases, you can use `mdk.stdlib.EmptyExpression` and `mdk.stdlib.EmptyTuple`:
+
+```
+from mdk.compiler import statedef
+from mdk.stdlib import HitDef, EmptyTuple
+
+@statedef()
+def myState():
+    HitDef(attr = EmptyTuple)
+```
+
 ## Creating Variables
 
 In mdk-python, there is no need to use the `var` or `fvar` triggers or to remember variable indices. Instead you use the built-in variable classes to create variables. When MTL is compiling the output of your code, it assigns free variable indices to each variable you created.

@@ -1,7 +1,7 @@
 from typing import Callable
 from mdk.types.expressions import Expression
 from mdk.types.specifier import TypeSpecifier
-from mdk.types.builtins import IntType, BoolType, FloatType, UStringType, StringType
+from mdk.types.builtins import IntType, BoolType, FloatType, UStringType, StringType, AnyType
 from mdk.types.defined import HitStringType
 import mdk.types.defined as defined
 
@@ -198,6 +198,9 @@ WinKO = Expression("WinKO", BoolType)
 WinTime = Expression("WinTime", BoolType)
 WinPerfect = Expression("WinPerfect", BoolType)
 
+EmptyExpression = Expression("", AnyType)
+EmptyTuple = (EmptyExpression, )
+
 __all__ = [
     "Abs", "Acos", "AiLevel", "Alive", "Anim", "AnimElemNo", "AnimElemTime", "AnimExist", "AnimTime", "Asin", "Atan",
     "AuthorName", "BackEdgeBodyDist", "BackEdgeDist", "CanRecover", "Ceil", "Command", "Const", "Const240p", "Const480p",
@@ -210,5 +213,5 @@ __all__ = [
     "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect",
     "HitDefAttr", "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType",
     "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel",
-    "ifelse", "Cond"
+    "ifelse", "Cond", "EmptyExpression", "EmptyTuple"
 ]
