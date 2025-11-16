@@ -287,6 +287,9 @@ def emit_trigger(tree: TriggerTree, table: list[TypeParameter], ctx: Translation
     ## BUILTIN_ANY is used in multivalue, don't strip those.
     #if output.value.startswith("(") and output.value.endswith(")") and (expected == None or len(expected) == 1):
     #    output.value = output.value[1:-1]
+    ## unique case for the F trigger (not a real trigger but hard to handle)
+    if output.value.startswith("(F(") and output.value.endswith(")"):
+        output.value = output.value[1:-1]
     return f"{output.value}{debug}"
 
 def write_state_controller(controller: StateController, table: list[TypeParameter], scope: StateDefinitionScope, ctx: TranslationContext) -> list[str]:
