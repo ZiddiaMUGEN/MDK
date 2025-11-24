@@ -59,6 +59,8 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
         for index in range(len(params)):
             ## this is to help handle automatic enum matching.
             next_expected = [TypeSpecifier(match.params[index].type)]
+            ## keep this in, this triggers an earlier error message for failed trigger match
+            type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)
             ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
             try:
                 if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)) == None:
@@ -492,6 +494,12 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         if (parsed := parse_builtin(tree.operator)) != None:
             ## handle the case where the token is a built-in type
             return [TypeSpecifier(parsed.type)]
+        elif not ctx.compiler_flags.no_implicit_enum and expected != None and len(expected) == 1 \
+             and expected[0].type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG] \
+             and (result_type := match_enum(tree.operator, expected[0].type)) != None:
+            ## if an expected type was passed, and the type is ENUM or FLAG,
+            ## attempt to match the value to enum constants.
+            return result_type
         elif (trigger := find_trigger(tree.operator, [], ctx, tree.location)) != None:
             ## if a trigger name matches, and the trigger has an overload which takes no parameters, accept it.
             return [TypeSpecifier(trigger.type)]
@@ -501,12 +509,6 @@ def type_check(tree: TriggerTree, table: list[TypeParameter], ctx: TranslationCo
         elif (type := find_type(tree.operator, ctx)) != None:
             ## if a type name matches, the resulting type is just `type`
             return [TypeSpecifier(BUILTIN_TYPE)]
-        elif not ctx.compiler_flags.no_implicit_enum and expected != None and len(expected) == 1 \
-             and expected[0].type.category in [TypeCategory.ENUM, TypeCategory.FLAG, TypeCategory.STRING_ENUM, TypeCategory.STRING_FLAG] \
-             and (result_type := match_enum(tree.operator, expected[0].type)) != None:
-            ## if an expected type was passed, and the type is ENUM or FLAG,
-            ## attempt to match the value to enum constants.
-            return result_type
         elif "." in tree.operator:
             ## might be an explicit enum type, extract enum typename and match on it
             return match_enum_parts(tree.operator, ctx)
@@ -850,3 +852,4 @@ def find_struct_allocation(table: list[TypeParameter], tree: TriggerTree, target
 
 
         
+
