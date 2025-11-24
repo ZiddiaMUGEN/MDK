@@ -2174,7 +2174,7 @@ state and animation data.</dd>
     set_if(result, "guard.dist", guard_dist)
     set_if(result, "yaccel", yaccel)
     set_if_tuple(result, "ground.velocity", ground_velocity, FloatPairType)
-    set_if(result, "guard.velocity", guard_velocity, FloatType)
+    set_if(result, "guard.velocity", guard_velocity)
     set_if_tuple(result, "air.velocity", air_velocity, FloatPairType)
     set_if_tuple(result, "airguard.velocity", airguard_velocity, FloatPairType)
     set_if(result, "ground.cornerpush.veloff", ground_cornerpush_veloff)
