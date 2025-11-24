@@ -59,7 +59,6 @@ def fuzzy_trigger(trigger_name: str, table: list[TypeParameter], params: list[Tr
         for index in range(len(params)):
             ## this is to help handle automatic enum matching.
             next_expected = [TypeSpecifier(match.params[index].type)]
-            type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)
             ## check if the child type even resolves - if not, there may be an unidentified global or an unmatched automatic enum.
             try:
                 if (child_type := type_check(params[index], table + match.params, ctx, expected = next_expected, scope = scope, pass_through = pass_through)) == None:
@@ -848,5 +847,6 @@ def find_struct_allocation(table: list[TypeParameter], tree: TriggerTree, target
             return (offset, member_type)
         offset += find_member_length(member_type, tree.location, ctx)
     return None
+
 
         
