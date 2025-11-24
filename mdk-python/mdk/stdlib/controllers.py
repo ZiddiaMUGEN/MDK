@@ -1634,7 +1634,7 @@ those hit attributes which appear in the HitBy attribute string.</dd>
     guard_ctrltime = [IntType, None],
     guard_dist = [IntType, None],
     yaccel = [FloatType, None],
-    ground_velocity = [FloatType, None],
+    ground_velocity = [FloatPairType, None],
     guard_velocity = [FloatType, None],
     air_velocity = [FloatPairType, None],
     airguard_velocity = [FloatPairType, None],
@@ -1718,7 +1718,7 @@ def HitDef(
     guard_dist: Optional[ConvertibleExpression] = None,
     yaccel: Optional[ConvertibleExpression] = None,
     ground_velocity: Optional[TupleExpression] = None,
-    guard_velocity: Optional[TupleExpression] = None,
+    guard_velocity: Optional[Expression] = None,
     air_velocity: Optional[TupleExpression] = None,
     airguard_velocity: Optional[TupleExpression] = None,
     ground_cornerpush_veloff: Optional[ConvertibleExpression] = None,
@@ -2174,7 +2174,7 @@ state and animation data.</dd>
     set_if(result, "guard.dist", guard_dist)
     set_if(result, "yaccel", yaccel)
     set_if_tuple(result, "ground.velocity", ground_velocity, FloatPairType)
-    set_if_tuple(result, "guard.velocity", guard_velocity, FloatPairType)
+    set_if(result, "guard.velocity", guard_velocity, FloatType)
     set_if_tuple(result, "air.velocity", air_velocity, FloatPairType)
     set_if_tuple(result, "airguard.velocity", airguard_velocity, FloatPairType)
     set_if(result, "ground.cornerpush.veloff", ground_cornerpush_veloff)
