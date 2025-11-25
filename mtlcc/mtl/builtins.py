@@ -180,6 +180,8 @@ def getBaseTriggers() -> list[TriggerDefinition]:
         TriggerDefinition("RoundsExisted", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("RoundState", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("ScreenPos", BUILTIN_VECTOR, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
+        TriggerDefinition("ScreenWidth", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
+        TriggerDefinition("ScreenHeight", BUILTIN_INT, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("SelfAnimExist", BUILTIN_BOOL, None, [TypeParameter("exprn", BUILTIN_INT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("sin", BUILTIN_FLOAT, None, [TypeParameter("exprn", BUILTIN_FLOAT)], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),
         TriggerDefinition("StateNo", BUILTIN_STATE, None, [], None, Location("mtl/builtins.py", line_number()), "", category = TriggerCategory.BUILTIN),

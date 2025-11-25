@@ -198,6 +198,10 @@ WinKO = Expression("WinKO", BoolType)
 WinTime = Expression("WinTime", BoolType)
 WinPerfect = Expression("WinPerfect", BoolType)
 
+AnimElem = Expression("AnimElem", IntType)
+ScreenWidth = Expression("ScreenWidth", IntType)
+ScreenHeight = Expression("ScreenHeight", IntType)
+
 EmptyExpression = Expression("", AnyType)
 EmptyTuple = (EmptyExpression, )
 
@@ -213,5 +217,5 @@ __all__ = [
     "SelfAnimExist", "Sin", "StateNo", "StageVar", "Tan", "TeamSide", "TicksPerSecond", "Time", "Win", "WinKO", "WinTime", "WinPerfect",
     "HitDefAttr", "StateType", "MoveType", "TeamMode", "P2MoveType", "P2StateType",
     "HitVel", "P2BodyDist", "P2Dist", "ParentDist", "Pos", "RootDist", "ScreenPos", "Vel",
-    "ifelse", "Cond", "EmptyExpression", "EmptyTuple"
+    "ifelse", "Cond", "EmptyExpression", "EmptyTuple", "AnimElem", "ScreenWidth", "ScreenHeight"
 ]
