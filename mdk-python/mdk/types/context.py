@@ -9,6 +9,7 @@ from mdk.types.specifier import TypeSpecifier
 ## an ugly hack, necessary due to circular import.
 if TYPE_CHECKING:
     from mdk.types.expressions import Expression
+    from mdk.stdlib.animation import Animation
 
 class TranslationMode(Enum):
     STANDARD = 0
@@ -111,6 +112,7 @@ class CompilerContext:
     statefuncs: list[str]
     format_params: list[Expression]
     if_stack: list[int]
+    animations: list[Animation]
 
     def __init__(self):
         self.statedefs = {}
@@ -127,9 +129,21 @@ class CompilerContext:
         self.statefuncs = []
         self.format_params = []
         self.if_stack = []
+        self.animations = []
     
     @classmethod
     def instance(cls):
         if not hasattr(cls, '_instance'):
             cls._instance = CompilerContext()
         return cls._instance
+    
+    def get_next_anim_id(self) -> int:
+        """Gets the next free animation number, starting from 0."""
+        index = 0
+        ls = sorted([a for a in self.animations if a._id != None], key = lambda x: x._id or 0)
+        for anim in ls:
+            if anim._id == index:
+                index += 1
+            else:
+                return index
+        return index

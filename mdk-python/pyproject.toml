@@ -4,20 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mdk-mugen"
-version = "0.1.6"
+version = "0.2.0"
 readme = "README.md"
 dependencies = [
-    "mtl-mugen>=0.1.6"
+    "mtl-mugen>=0.2.0"
 ]
 
 [tool.hatch.build.targets.wheel]
-include = ["mdk", "mdk-stubs"]
+include = ["mdk", "mdk-stubs", "mdkair.py"]
 
 [tool.hatch.build.targets.wheel.sources]
 "mdk-stubs" = "mdk"
 
 [tool.hatch.build.targets.sdist]
-include = ["mdk", "mdk-stubs"]
+include = ["mdk", "mdk-stubs", "mdkair.py"]
 
 [tool.hatch.build.targets.sdist.sources]
 "mdk-stubs" = "mdk"
+
+[project.scripts]
+mdkair = "mdkair:launch"

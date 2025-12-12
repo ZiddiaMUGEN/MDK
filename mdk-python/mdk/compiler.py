@@ -18,6 +18,7 @@ from mdk.types.defined import StateType, StateTypeT, MoveType, MoveTypeT, Physic
 
 from mdk.utils.shared import convert, convert_tuple, format_bool, create_compiler_error
 from mdk.utils.compiler import write_controller, rewrite_function
+from mdk.utils.animation import read_animations
 
 from mdk.stdlib.controllers import ChangeState
 
@@ -26,6 +27,32 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
     try:
         output_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), output)
         print(f"Will build state definitions to output path {output_path}.")
+        # load the DEF file early for anim loading.
+        project = mtl.project.loadDefinition(def_file)
+        ## load animations
+        if project.anim_file != "":
+            anim_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), project.anim_file)
+            print(f"Loading external animations from source animation file {anim_path}")
+            old_animations = copy.deepcopy(context.animations)
+            new_animations = read_animations(anim_path)
+            ## we need to connect the external-marked anims in `old_animations` to their definitions in `new_animations`,
+            ## and remove those from `new_animations`.
+            for anim in old_animations:
+                matches = [x for x in new_animations if x._id == anim._id]
+                if anim._external and len(matches) == 1:
+                    anim._frames = copy.deepcopy(matches[0]._frames)
+                    anim._external = False
+                    new_animations = [x for x in new_animations if x._id != anim._id]
+                elif anim._external and len(matches) != 1:
+                    raise Exception(f"Error while identifying externally-linked animation with ID {anim._id}; found {len(matches)} matching animations in AIR file")
+            context.animations = old_animations + new_animations
+        project.anim_file = output_path + ".air"
+        with open(output_path + ".air", mode="w") as f:
+            for anim in context.animations:
+                if not anim._external:
+                    f.write(anim.compile())
+                    f.write("\n")
+
         ## builds the character from the input data.
         for state in context.statedefs:
             definition = context.statedefs[state]
@@ -91,7 +118,6 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         ## then re-export the DEF file.
         if run_mtl:
             print(f"Preparing to run MTL compiler for input project {def_file}.")
-            project = mtl.project.loadDefinition(def_file)
             project.source_files.append(output)
             for global_variable in context.globals:
                 scoped = StateDefinitionScope(MtlScopeType.SHARED, None)
