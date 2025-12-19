@@ -12,6 +12,15 @@ class AnimationTrans(Enum):
     ADD = 1
     SUB = 2
 
+class Clsn:
+    _xmin: int
+    _ymin: int
+    _xmax: int
+    _ymax: int
+    _default: bool
+
+    def __init__(self, xmin: int, ymin: int, xmax: int, ymax: int, default: bool = False): ...
+
 class Frame:
     _group: int
     _index: int
@@ -30,6 +39,10 @@ class Frame:
         ...
 
     def compile(self) -> str: ...
+
+    def clsn1(self, clsn: Clsn) -> Frame: ...
+    def clsn2(self, clsn: Clsn) -> Frame: ...
+    def default(self) -> Frame: ...
 
     def seq(self) -> Sequence: ...
     def length(self, length: int) -> Frame: ...

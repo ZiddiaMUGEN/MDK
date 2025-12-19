@@ -38,7 +38,7 @@ class Clsn:
     _ymax: int
     _default: bool
 
-    def __init__(self, xmin: int, ymin: int, xmax: int, ymax: int, default: bool):
+    def __init__(self, xmin: int, ymin: int, xmax: int, ymax: int, default: bool = False):
         self._xmin = xmin
         self._ymin = ymin
         self._xmax = xmax
@@ -126,21 +126,21 @@ class Frame:
     
     def clsn1(self, clsn: Clsn) -> Frame:
         """Attaches a Clsn1 (hitbox) to the character."""
-        self._clsn1.append(clsn)
-        self._last_clsn = clsn
+        self._clsn1.append(deepcopy(clsn))
+        self._last_clsn = self._clsn1[-1]
         return self
     
     def clsn2(self, clsn: Clsn) -> Frame:
         """Attaches a Clsn2 (hurtbox) to the character."""
-        self._clsn2.append(clsn)
-        self._last_clsn = clsn
+        self._clsn2.append(deepcopy(clsn))
+        self._last_clsn = self._clsn2[-1]
         return self
     
-    def default(self, default: bool) -> Frame:
+    def default(self) -> Frame:
         """Makes the most recently applied Clsn into a default Clsn."""
         if self._last_clsn == None:
             raise Exception("Can only call `default` if a Clsn has been defined!")
-        self._last_clsn._default = default
+        self._last_clsn._default = True
         return self
     
     def length(self, length: int) -> Frame:
@@ -433,7 +433,7 @@ class Animation:
     @property
     def sequence(self):
         """Returns a modifiable Sequence object which can be used to transform and obtain a new Sequence."""
-        return self._frames.frames if self._frames != None else Sequence([])
+        return deepcopy(self._frames).frames if self._frames != None else Sequence([])
 
     def compile(self):
         """Compiles the animation, returning a string in AIR format."""
