@@ -5,13 +5,12 @@ from enum import Enum, Flag
 from mdk.types.specifier import TypeSpecifier
 from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType, AnyType
 from mdk.types.context import CompilerContext, StateController
-from mdk.resources.animation import Animation
 
 from mdk.utils.expressions import check_types_assignable
 
 ## this is just the 'convert' function from mdk.utils.shared,
 ## but copied here to avoid circular imports.
-def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, tuple, Animation, Callable[..., StateController]]) -> 'Expression':
+def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, tuple, Callable[..., StateController]]) -> 'Expression':
     if isinstance(input, Expression):
         return input
     elif isinstance(input, functools.partial):
@@ -23,10 +22,11 @@ def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, tuple
         for elem in input:
             elements.append(_convert(elem).exprn)
         return Expression(", ".join(elements), AnyType)
-    elif isinstance(input, Animation):
-        if input._id == None:
+    ## cursed check to avoid circular import on Animation
+    elif type(input).__name__ == "Animation":
+        if input._id == None: # type: ignore
             raise Exception("Animation without an assigned ID cannot be used as an Expression! (Did you try to use an automatic-numbered Animation in global state?)")
-        return Expression(str(input._id), IntType)
+        return Expression(str(input._id), IntType) # type: ignore
     elif type(input) == str:
         return Expression(input, StringType)
     elif type(input) == int:

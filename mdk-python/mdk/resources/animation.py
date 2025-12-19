@@ -120,6 +120,28 @@ class Frame:
         result += f", {self._rotate}"
         return result
     
+    def python(self, indent: int = 0) -> str:
+        indents = "    " * (indent + 1)
+
+        result = f"Frame({self._group}, {self._index}, length = {self._length})"
+
+        if self._offset != (0, 0): result += f"\n{indents}.offset({self._offset})"
+        if self._flip != AnimationFlip.NONE: result += f"\n{indents}.flip({self._flip})"
+        if self._trans != AnimationTrans.NONE: result += f"\n{indents}.trans({self._trans})"
+        if self._scale != (1, 1): result += f"\n{indents}.scale({self._scale})"
+        if self._rotate != 0: result += f"\n{indents}.rotate({self._rotate})"
+        if self._loopstart: result += f"\n{indents}.loop()"
+        
+        for clsn in self._clsn1:
+            result += f"\n{indents}.clsn1(Clsn({clsn._xmin}, {clsn._ymin}, {clsn._xmax}, {clsn._ymax}))"
+            if clsn._default: result += ".default()"
+
+        for clsn in self._clsn2:
+            result += f"\n{indents}.clsn2(Clsn({clsn._xmin}, {clsn._ymin}, {clsn._xmax}, {clsn._ymax}))"
+            if clsn._default: result += ".default()"
+
+        return result
+    
     def seq(self) -> Sequence:
         """Converts this Frame into a Sequence containing the frame."""
         return Sequence([self])
@@ -190,6 +212,9 @@ class SequenceModifier:
     def __init__(self, frames: list[Frame], prop: str):
         self._frames = deepcopy(frames)
         self._prop = prop
+
+    def python(self, name: str | None = None):
+        return self.seq().python(name)
 
     def seq(self):
         """Converts this modified Sequence into a real Sequence object."""
@@ -371,6 +396,19 @@ class Sequence:
             result += frame.compile() + "\n"
         return result
     
+    def python(self, name: str | None = None) -> str:
+        if name == None:
+            name = "(Anonymous Member)"
+
+        result = f"{name} = Sequence([\n"
+
+        for frame in self._frames:
+            result += f"        {frame.python(2)},\n"
+
+        result += "])"
+        
+        return result
+    
     def extend(self, frames: Frame | list[Frame] | Sequence | SequenceModifier | FrameSequenceModifier | TupleSequenceModifier) -> Sequence:
         """Adds the provided frame or frames to this Sequence and returns a new Sequence containing those frames."""
         newframes = deepcopy(self._frames)
@@ -480,6 +518,24 @@ class Animation:
         ## build the AIR output from the animation ID and the contained sequence
         result = f"[Begin Action {self._id}]\n"
         result += self._frames.compile() if self._frames != None else ""
+
+        return result
+    
+    def python(self, name: str | None = None) -> str:
+        if name == None:
+            name = "(Anonymous Member)"
+        
+        result = f"{name} = Animation(\n"
+        if self._id != None:
+            result += f"    id = {self._id},\n"
+        result += f"    frames = Sequence([\n"
+
+        if self._frames != None:
+            for frame in self._frames._frames:
+                result += f"        {frame.python(2)},\n"
+
+        result += "    ])\n"
+        result += ")"
 
         return result
     
