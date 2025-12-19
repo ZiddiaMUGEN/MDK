@@ -124,6 +124,10 @@ class Frame:
         """Converts this Frame into a Sequence containing the frame."""
         return Sequence([self])
     
+    def dup(self) -> Frame:
+        """Returns a new Frame which is a duplicate of this Frame."""
+        return deepcopy(self)
+    
     def clsn1(self, clsn: Clsn) -> Frame:
         """Attaches a Clsn1 (hitbox) to the character."""
         self._clsn1.append(deepcopy(clsn))
@@ -222,8 +226,13 @@ class SequenceModifier:
         """Adds the provided frame or frames to this Sequence and returns a new Sequence containing those frames."""
         return self.seq().extend(frames)
     
-    def __getitem__(self, key: int) -> Frame:
-        return deepcopy(self._frames[key])
+    def __getitem__(self, key: int | slice) -> Sequence:
+        if type(key) == slice:
+            if key.step != None:
+                raise Exception("Can only handle simple slices in Sequence.")
+            return Sequence(deepcopy(self._frames[key.start:key.stop]))
+        else:
+            return Sequence([deepcopy(self._frames[key])])
     
     ### below this is all the Sequence properties re-applied here. this is for convenience to avoid needing to call `seq()` every time.
     def compile(self):
@@ -325,6 +334,27 @@ class FrameSequenceModifier(SequenceModifier):
         """Applies the provided transformation function to all Frames in the sequence, updating the Frames with the returned value."""
         self._frames = [transformer(frame) for frame in self._frames]
         return self
+    
+    def clsn1(self, clsn: Clsn, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
+        """Applies the provided Clsn1 box to all frames which match the provided filter."""
+        for frame in self._frames:
+            if filter == None or filter(frame):
+                frame.clsn1(clsn)
+        return self
+    
+    def clsn2(self, clsn: Clsn, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
+        """Applies the provided Clsn1 box to all frames which match the provided filter."""
+        for frame in self._frames:
+            if filter == None or filter(frame):
+                frame.clsn2(clsn)
+        return self
+    
+    def default(self, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
+        """Makes the most recently applied Clsn box default for all frames which match the provided filter."""
+        for frame in self._frames:
+            if filter == None or filter(frame):
+                frame.default()
+        return self
 
 class Sequence:
     """Represents a sequence of animation elements (or Frames).
@@ -358,8 +388,13 @@ class Sequence:
             return self.extend(frames.seq())
         raise Exception(f"Unexpected input type {type(frames)} to Sequence extension")
     
-    def __getitem__(self, key: int) -> Frame:
-        return deepcopy(self._frames[key])
+    def __getitem__(self, key: int | slice) -> Sequence:
+        if type(key) == slice:
+            if key.step != None:
+                raise Exception("Can only handle simple slices in Sequence.")
+            return Sequence(deepcopy(self._frames[key.start:key.stop]))
+        else:
+            return Sequence([deepcopy(self._frames[key])])
     
     @property
     def frames(self):

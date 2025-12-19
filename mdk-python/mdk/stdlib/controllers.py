@@ -10,6 +10,8 @@ from mdk.types.builtins import *
 from mdk.types.defined import *
 from mdk.types.expressions import Expression, TupleExpression, ConvertibleExpression
 
+from mdk.resources.animation import Animation
+
 def set_if(ctrl: StateController, name: str, val: Optional[ConvertibleExpression]):
     """
     Internal method used to set a property on a controller if the input value is not None.
@@ -20,6 +22,21 @@ def set_if(ctrl: StateController, name: str, val: Optional[ConvertibleExpression
         if not isinstance(val, Expression):
             val = convert(val)
         ctrl.params[name] = val
+
+def set_if_anim(ctrl: StateController, name: str, val: Optional[ConvertibleExpression | Animation]):
+    """
+    Internal method used to set a property on a controller if the input value is not None.
+
+    The input value is converted to an Expression before being assigned.
+
+    This variant of set_if accepts an Animation as a value.
+    """
+    if val != None:
+        if isinstance(val, Animation):
+            if val._id == None:
+                raise Exception("Animation without an assigned ID cannot be used in a Controller! (Did you try to use an automatic-numbered Animation in global state?)")
+            val = val._id
+        set_if(ctrl, name, val)
 
 def set_if_tuple(ctrl: StateController, name: str, val: Optional[TupleExpression], type: TypeSpecifier):
     """
@@ -616,7 +633,7 @@ def BGPalFX(
     return result
 
 @controller(value = [IntType], elem = [IntType, None])
-def ChangeAnim(value: ConvertibleExpression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def ChangeAnim(value: ConvertibleExpression | Animation, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>ChangeAnim</h2>
 <p>Changes the action number of the player's animation.</p>
@@ -638,26 +655,26 @@ to start from.</dd>
     """
     result = StateController()
 
-    set_if(result, "value", value)
+    set_if_anim(result, "value", value)
     set_if(result, "elem", elem)
 
     return result
 
 @controller(value = [IntType], elem = [IntType, None])
-def ChangeAnim2(value: ConvertibleExpression, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def ChangeAnim2(value: ConvertibleExpression | Animation, elem: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>ChangeAnim2</h2>
 <p>Like ChangeAnim, except this controller should be used if you have placed P2 in a custom state via a hit and wish to change P2's animation to one specified in P1's air file. For example, when making throws, use this to change P2 to a being-thrown animation.</p>
     """
     result = StateController()
 
-    set_if(result, "value", value)
+    set_if_anim(result, "value", value)
     set_if(result, "elem", elem)
 
     return result
 
 @controller(value = [StateNoType, IntType, StringType], ctrl = [None, BoolType], anim = [None, IntType])
-def ChangeState(value: Union[Expression, str, int, Callable[..., None | StateController]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def ChangeState(value: Union[Expression, str, int, Callable[..., None | StateController]], ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression | Animation] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>ChangeState</h2>
 <p>Changes the state number of the player.</p>
@@ -685,7 +702,7 @@ the player's animation will remain unchanged.</dd>
     set_stateno(result, "value", value)
 
     set_if(result, "ctrl", ctrl)
-    set_if(result, "anim", anim)
+    set_if_anim(result, "anim", anim)
 
     return result
 
@@ -892,7 +909,7 @@ the default phase offset is 90.</dd>
     alpha = [IntPairType, None]
 )
 def Explod(
-    anim: ConvertibleExpression, 
+    anim: ConvertibleExpression | Animation, 
     id: Optional[ConvertibleExpression] = None, 
     pos: Optional[TupleExpression] = None, 
     postype: Optional[ConvertibleExpression] = None,
@@ -1155,7 +1172,7 @@ actual screen position will be 165,0.</p>
     """
     result = StateController()
 
-    set_if(result, "anim", anim)
+    set_if_anim(result, "anim", anim)
     set_if(result, "id", id)
     set_if_tuple(result, "pos", pos, FloatPairType)
     set_if(result, "postype", postype)
@@ -3233,9 +3250,9 @@ def PowerSet(value: ConvertibleExpression, ignorehitpause: Optional[ConvertibleE
 def Projectile(
     attr: TupleExpression,
     projid: Optional[ConvertibleExpression] = None,
-    projanim: Optional[ConvertibleExpression] = None,
-    projhitanim: Optional[ConvertibleExpression] = None,
-    projremanim: Optional[ConvertibleExpression] = None,
+    projanim: Optional[ConvertibleExpression | Animation] = None,
+    projhitanim: Optional[ConvertibleExpression | Animation] = None,
+    projremanim: Optional[ConvertibleExpression | Animation] = None,
     projscale: Optional[TupleExpression] = None,
     projremove: Optional[ConvertibleExpression] = None,
     projremovetime: Optional[ConvertibleExpression] = None,
@@ -3508,9 +3525,9 @@ state and animation data.</p>
     result = StateController()
 
     set_if(result, "projid", projid)
-    set_if(result, "projanim", projanim)
-    set_if(result, "projhitanim", projhitanim)
-    set_if(result, "projremanim", projremanim)
+    set_if_anim(result, "projanim", projanim)
+    set_if_anim(result, "projhitanim", projhitanim)
+    set_if_anim(result, "projremanim", projremanim)
     set_if_tuple(result, "projscale", projscale, FloatPairType)
     set_if(result, "projremove", projremove)
     set_if(result, "projremovetime", projremovetime)
@@ -3789,7 +3806,7 @@ the x direction and in the y direction, respectively. Defaults to
     return result
 
 @controller(value = [StateNoType, StringType, IntType], ctrl = [BoolType, None], anim = [IntType, None])
-def SelfState(value: ConvertibleExpression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
+def SelfState(value: ConvertibleExpression, ctrl: Optional[ConvertibleExpression] = None, anim: Optional[ConvertibleExpression | Animation] = None, ignorehitpause: Optional[ConvertibleExpression] = None, persistent: Optional[ConvertibleExpression] = None) -> StateController:
     """
 <h2>SelfState</h2>
 <p>Like ChangeState, except that this changes a player back to a state in his own state data. Use this when you have placed an opponent player in a custom state via an attack, and wish to restore the opponent to his own states.</p>
@@ -3798,7 +3815,7 @@ def SelfState(value: ConvertibleExpression, ctrl: Optional[ConvertibleExpression
 
     set_if(result, "value", value)
     set_if(result, "ctrl", ctrl)
-    set_if(result, "anim", anim)
+    set_if_anim(result, "anim", anim)
 
     return result
 

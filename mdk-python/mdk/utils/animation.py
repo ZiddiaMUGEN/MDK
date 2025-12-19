@@ -1,4 +1,4 @@
-from mdk.stdlib.animation import Animation, Sequence, Frame, AnimationFlip, Clsn
+from mdk.resources.animation import Animation, Sequence, Frame, AnimationFlip, Clsn
 
 def read_animations(anim_path: str) -> list[Animation]:
     animations: list[Animation] = []

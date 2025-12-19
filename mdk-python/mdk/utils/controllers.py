@@ -13,6 +13,8 @@ from mdk.types.specifier import TypeSpecifier
 from mdk.utils.shared import format_bool, format_tuple, convert
 from mdk.utils.expressions import check_any_assignable
 
+from mdk.resources.animation import Animation
+
 # decorator which provides a wrapper around each controller.
 # this adds some extra debugging info, and also simplifies adding triggers to controllers and handling controller insertion into the active statedef.
 def controller(**typeinfo) -> Callable[[Callable[..., StateController]], Callable[..., StateController]]:
@@ -38,6 +40,10 @@ def make_controller(fn, *args, typeinfo: dict[str, list[Optional[TypeSpecifier]]
                 input_expression = convert(input_expression)
             elif isinstance(input_expression, Flag) or isinstance(input_expression, Enum):
                 input_expression = convert(input_expression)
+            elif isinstance(input_expression, Animation):
+                if input_expression._id == None:
+                    raise Exception("Animation without an assigned ID cannot be used as a Controller parameter! (Did you try to use an automatic-numbered Animation in global state?)")
+                input_expression = convert(input_expression._id)
             if isinstance(input_expression, Expression):
                 input_type = input_expression.type
                 if check_any_assignable(input_type, valid_no_none) == None:

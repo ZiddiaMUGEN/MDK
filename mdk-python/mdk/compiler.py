@@ -21,6 +21,7 @@ from mdk.utils.compiler import write_controller, rewrite_function
 from mdk.utils.animation import read_animations
 
 from mdk.stdlib.controllers import ChangeState
+from mdk.resources.animation import Animation
 
 def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False, preserve_ir: bool = False, target_folder: str = "mdk-out") -> None:
     context = CompilerContext.instance()
@@ -33,7 +34,7 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         if project.anim_file != "":
             anim_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), project.anim_file)
             print(f"Loading external animations from source animation file {anim_path}")
-            old_animations = copy.deepcopy(context.animations)
+            old_animations = context.animations
             new_animations = read_animations(anim_path)
             ## we need to connect the external-marked anims in `old_animations` to their definitions in `new_animations`,
             ## and remove those from `new_animations`.
@@ -56,6 +57,12 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
         ## builds the character from the input data.
         for state in context.statedefs:
             definition = context.statedefs[state]
+            ## if an Animation object is forward-declared, read its assigned ID here
+            ## and put it in the statedef's params.
+            if definition._fwd_animation != None:
+                if "anim" in definition.params and definition.params["anim"] != None:
+                    raise Exception(f"Attempted to use an Animation object for state {definition} but an animation ID is already assigned!")
+                definition.params["anim"] = Expression(str(definition._fwd_animation._id), IntType)
             context.current_state = definition
             try:
                 definition.fn() # this call registers the controllers in the statedef with the statedef itself.
@@ -273,7 +280,7 @@ def statedef(
     type: Optional[StateType] = None,
     movetype: Optional[MoveType] = None,
     physics: Optional[PhysicsType] = None,
-    anim: Optional[int] = None,
+    anim: Optional[int | Animation] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
     poweradd: Optional[int] = None,
@@ -298,7 +305,7 @@ def create_statedef(
     type: Optional[StateType] = None,
     movetype: Optional[MoveType] = None,
     physics: Optional[PhysicsType] = None,
-    anim: Optional[int] = None,
+    anim: Optional[int | Animation] = None,
     velset: Optional[tuple[float, float]] = None,
     ctrl: Optional[bool] = None,
     poweradd: Optional[int] = None,
@@ -315,7 +322,7 @@ def create_statedef(
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
     new_fn = rewrite_function(fn, mode = mode)
-    statedef = StateDefinition(new_fn, {}, [], [], scope)
+    statedef = StateDefinition(new_fn, {}, [], [], scope, None)
 
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
@@ -325,7 +332,16 @@ def create_statedef(
         statedef.params["movetype"] = Expression(movetype.name, MoveTypeT)
     if physics != None:
         statedef.params["physics"] = Expression(physics.name, PhysicsTypeT)
-    if anim != None: statedef.params["anim"] = Expression(str(anim), IntType)
+    if anim != None: 
+        ## anim can be an Animation, in which case the `anim` param should be set to the Animation's ID.
+        ## however, this step of statedef loading occurs pre-compilation for animations, so the Animation object
+        ## may not have an assigned ID yet.
+        ## in this case, we store the Animation in the `_fwd_animation` property, and when the state is compiled,
+        ## the ID gets read and set.
+        if isinstance(anim, Animation):
+            statedef._fwd_animation = anim
+        else:
+            statedef.params["anim"] = Expression(str(anim), IntType)
     if velset != None: statedef.params["velset"] = convert_tuple(velset, FloatPairType)
     if ctrl != None: statedef.params["ctrl"] = format_bool(ctrl)
     if poweradd != None: statedef.params["poweradd"] = Expression(str(poweradd), IntType)

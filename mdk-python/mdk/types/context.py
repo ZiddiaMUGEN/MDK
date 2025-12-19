@@ -9,7 +9,7 @@ from mdk.types.specifier import TypeSpecifier
 ## an ugly hack, necessary due to circular import.
 if TYPE_CHECKING:
     from mdk.types.expressions import Expression
-    from mdk.stdlib.animation import Animation
+    from mdk.resources.animation import Animation
 
 class TranslationMode(Enum):
     STANDARD = 0
@@ -79,6 +79,7 @@ class StateDefinition:
     controllers: list[StateController]
     locals: list[ParameterDefinition]
     scope: Optional[StateScope]
+    _fwd_animation: Optional[Animation]
 
 @dataclass
 class TemplateDefinition:
