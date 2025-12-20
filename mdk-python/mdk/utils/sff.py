@@ -1,5 +1,6 @@
 ## utilities for loading sprite data from SFF files.
 ## leaning heavily on the reference in https://github.com/bitcraft/mugen-tools/blob/master/libmugen/sff.py as SFF's implementation of some things is wonky
+## thanks also to https://sourceforge.net/projects/nomeneditor/ for RLE5 and LZ5 implementations.
 from __future__ import annotations
 
 from io import BufferedReader
@@ -67,7 +68,7 @@ class SFFPalette:
     data_length: int
 
     buffer: BufferedReader
-    _cache: list[tuple[int, int, int]] | None = None
+    _cache: list[tuple[int, int, int, int]] | None = None
 
     @classmethod
     def load(cls, io: BufferedReader, header: SFFHeader, member: int) -> SFFPalette:
@@ -88,18 +89,20 @@ class SFFPalette:
         )
     
     @property
-    def data(self) -> list[tuple[int, int, int]]:
+    def data(self) -> list[tuple[int, int, int, int]]:
         if self._cache != None:
             return self._cache
 
         ## palette data sits in the ldata chunk
-        result: list[tuple[int, int, int]] = []
+        result: list[tuple[int, int, int, int]] = []
         self.buffer.seek(self.data_offset)
 
+        index = 0
         while self.buffer.tell() < self.data_offset + self.data_length:
-            colors = (readbyte(self.buffer), readbyte(self.buffer), readbyte(self.buffer))
+            colors = (readbyte(self.buffer), readbyte(self.buffer), readbyte(self.buffer), 0 if index == 0 else 255)
             _ = readbyte(self.buffer)
             result.append(colors)
+            index += 1
 
         self._cache = result
         return result
@@ -181,7 +184,7 @@ class SFFSprite:
         
         return self._cache
     
-    def palette(self, pal: SFFPalette) -> list[tuple[int, int, int]]:
+    def palette(self, pal: SFFPalette) -> bytes:
         ## this function expects the output from `self.data` to be palette-indexed colors.
         colors = pal.data
         indexes = self.data
@@ -190,17 +193,116 @@ class SFFSprite:
         if self.format == 0 and self.depth != 8:
             raise Exception("Raw-format image cannot have a palette applied unless it uses color depth of 8.")
         
-        return [colors[pixel] for pixel in indexes]
+        ## get the pixel data into an array
+        pixels = [color for pixel in indexes for color in colors[pixel]]
+        
+        return bytes(pixels)
         
     def rle8(self, raw: bytes, size: int) -> bytes:
         ## this function produces a block of bytes without paletting applied.
-        pass
+        result = bytearray()
+
+        index = 0
+        while index < len(raw):
+            ch = raw[index]
+            ## if ch & 0xC0 == 0x40, then (ch & 0x3F) encodes the runlength, and the next byte encodes the color.
+            if (ch & 0xC0) == 0x40:
+                index += 1
+                color = raw[index]
+                for _ in range(ch & 0x3F): result.append(color)
+            else:
+                result.append(ch)
+            index += 1
+
+        return bytes(result)
 
     def rle5(self, raw: bytes, size: int) -> bytes:
-        pass
+        ## this function produces a block of bytes without paletting applied.
+        result = bytearray()
+
+        index = 0
+        while index < len(raw):
+            run = raw[index]
+            proc = raw[index + 1]
+            index += 2
+
+            switch = (proc & 0x80) / 0x80
+            data = (proc & 0x7F)
+
+            if switch == 1:
+                color = raw[index]
+                index += 1
+            else:
+                color = 0
+
+            for _ in range(run): result.append(color)
+            for _ in range(data):
+                b = raw[index]
+                index += 1
+                color = b & 0x1F
+                run = b >> 5
+                for _ in range(run): result.append(color)
+
+        return bytes(result)
 
     def lz5(self, raw: bytes, size: int) -> bytes:
-        pass
+        ## this function produces a block of bytes without paletting applied.
+        result = bytearray()
+
+        index = 0
+        packcnt = 0
+        recycle = 0
+        while index < len(raw):
+            ## read control packet
+            control = raw[index]
+            index += 1
+
+            ## read 8 packets, following flags from the control packet
+            for cnt in range(8):
+                if index >= len(raw): break
+                mask = 2 ** cnt
+                use_lz = (control & mask) != 0
+                if use_lz:
+                    ## LZ encoded
+                    byte1 = raw[index]
+                    index += 1
+                    if (byte1 & 0x3F) == 0:
+                        ## long LZ
+                        byte2 = raw[index]
+                        byte3 = raw[index + 1]
+                        index += 2
+                        offset = ((byte1 & 0xC0) << 2) + (byte2 + 1)
+                        length = byte3 + 3
+                    else:
+                        ## short LZ
+                        length = (byte1 & 0x3F) + 1
+                        packcnt += 1
+                        recycle = (recycle << 2) + ((byte1 & 0xC0) >> 6)
+                        if packcnt % 4 == 0:
+                            offset = recycle + 1
+                            recycle = 0
+                        else:
+                            byte2 = raw[index]
+                            index += 1
+                            offset = byte2 + 1
+                    begin = len(result) - offset
+                    for i in range(length):
+                        result.append(result[begin + i])
+                else:
+                    ## RLE encoded
+                    byte1 = raw[index]
+                    index += 1
+                    value = (byte1 & 0x1F)
+                    count = (byte1 & 0xE0) >> 5
+                    if count == 0:
+                        ## long RLE
+                        byte2 = raw[index]
+                        index += 1
+                        count = byte2 + 8
+                    for _ in range(count):
+                        result.append(value)
+
+        return result
 
 @dataclass
 class SFF:
@@ -227,3 +329,18 @@ class SFF:
             sprites,
             io
         )
+    
+    def find_sprite(self, group: int, index: int) -> SFFSprite | None:
+        for sprite in self.sprites:
+            if sprite.groupno == group and sprite.itemno == index:
+                ## handle linked sprites
+                if sprite.data_length == 0:
+                    return self.sprites[sprite.index]
+                return sprite
+        return None
+    
+    def find_palette(self, group: int, index: int) -> SFFPalette | None:
+        for palette in self.palettes:
+            if palette.groupno == group and palette.itemno == index:
+                return palette
+        return None

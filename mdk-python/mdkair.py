@@ -1,16 +1,17 @@
 ## this is a utility for viewing animations built via MDK (code-based animations).
 import os
 import sys
+import math
 import importlib.util
 from pathlib import Path
 
 from mdk.types.context import CompilerContext
-from mdk.resources.animation import Animation, Sequence, SequenceModifier
+from mdk.resources.animation import Animation, Sequence, SequenceModifier, Frame
 
 from mdk.utils.sff import SFF
 
 from PyQt6.QtCore import Qt, QFileSystemWatcher
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QImage, QPixmap, QTransform
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -20,13 +21,15 @@ from PyQt6.QtWidgets import (
     QLabel,
     QTabWidget,
     QTextEdit,
-    QPushButton
+    QPushButton,
+    QSlider
 )
 
 class MainWindow(QMainWindow):
-    def __init__(self, input_file: str, sprites: SFF):
+    def __init__(self, input_file: str, sff: SFF):
         super().__init__()
         self._loaded = False
+        self.sff = sff
 
         directory = os.path.dirname(os.path.abspath(input_file))
         ## this is hacky, but i guess most venv will follow this name?
@@ -41,7 +44,7 @@ class MainWindow(QMainWindow):
         self.components = recurse_animations(self.module, [])
 
         self.setWindowTitle("MDK Animation Viewer")
-        self.resize(800, 600)
+        self.resize(1200, 800)
 
         center = QWidget()
         self.setCentralWidget(center)
@@ -50,15 +53,15 @@ class MainWindow(QMainWindow):
         center.setLayout(self.gridLayout)
 
         ## upper left: display image
-        self.image = QImage(400, 600, QImage.Format.Format_ARGB32)
-        self.image.fill(Qt.GlobalColor.black)
+        image = QImage(400, 400, QImage.Format.Format_RGBA8888)
+        image.fill(Qt.GlobalColor.black)
 
-        self.pixmap = QPixmap.fromImage(self.image)
+        pixmap = QPixmap.fromImage(image)
 
         self.imageLabel = QLabel()
-        self.imageLabel.setPixmap(self.pixmap)
+        self.imageLabel.setPixmap(pixmap)
 
-        self.gridLayout.addWidget(self.imageLabel, 0, 0, 3, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.gridLayout.addWidget(self.imageLabel, 0, 0, 5, 1, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         ## upper right: select component
         self.componentSwitch = QComboBox()
@@ -72,6 +75,16 @@ class MainWindow(QMainWindow):
         reload.setText("Reload")
         self.gridLayout.addWidget(reload, 1, 1)
 
+        ## middle right: frame select
+        self.slider = QSlider(Qt.Orientation.Horizontal)
+        self.slider.valueChanged.connect(self.onFrameSelected)
+        self.gridLayout.addWidget(self.slider, 2, 1)
+
+        ## middle right: frame number, total frames, animation length
+        self.animtext = QLabel()
+        self.animtext.setText("Loading...")
+        self.gridLayout.addWidget(self.animtext, 3, 1)
+
         ## lower right: infobox
         self.infobox = QTabWidget()
         self.pythonContent = QTextEdit()
@@ -80,7 +93,7 @@ class MainWindow(QMainWindow):
         self.cnsContent.setReadOnly(True)
         self.infobox.addTab(self.pythonContent, "Python (Decompiled)")
         self.infobox.addTab(self.cnsContent, "AIR (Output)")
-        self.gridLayout.addWidget(self.infobox, 2, 1)
+        self.gridLayout.addWidget(self.infobox, 4, 1)
 
         ## trigger onAnimSelected once to preload python/CNS/sprites
         self.onAnimSelected()
@@ -88,10 +101,13 @@ class MainWindow(QMainWindow):
         self._loaded = True
 
     def onAnimSelected(self):
+        ## disconnect the slider events first!
+        self.slider.valueChanged.disconnect(self.onFrameSelected)
+
         ## note the weird try/excepts here are to preserve id of None
         ## (since `Animation.compile()` assigns IDs to animations in the context)
         component = self.components[self.componentSwitch.currentIndex()]['name']
-        script = self.components[self.componentSwitch.currentIndex()]['obj']
+        script: Animation = self.components[self.componentSwitch.currentIndex()]['obj']
 
         content = script.python(component)
         self.pythonContent.setText(content)
@@ -110,6 +126,47 @@ class MainWindow(QMainWindow):
             script._id = original_id # type: ignore
         except:
             pass
+
+        self.frames: list[Frame] = script.sequence._frames if isinstance(script, Animation) else script._frames
+
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(len(self.frames) - 1)
+        self.slider.setValue(0)
+
+        self.onFrameSelected()
+
+        self.slider.valueChanged.connect(self.onFrameSelected)
+
+    def onFrameSelected(self):
+        frame = self.slider.value()
+        sum_len = sum([x._length for x in self.frames])
+        sum_now = sum([x._length for x in self.frames[:frame]])
+        self.reload_sprite(frame, 0)
+        self.animtext.setText(f"Frame {frame + 1} / {len(self.frames)}: tick {sum_now} / {sum_len}, length {self.frames[frame]._length}")
+    
+    def reload_sprite(self, index: int, palette: int):
+        sprite = self.sff.find_sprite(self.frames[index]._group, self.frames[index]._index)
+        if sprite != None:
+            temp_paletted = sprite.palette(self.sff.palettes[palette])
+            scale_ratio =  self.frames[index]._scale[0] / self.frames[index]._scale[1]
+            if scale_ratio > 0:
+                scale_width = 400
+                scale_height = math.ceil(400 / scale_ratio)
+            else:
+                scale_width = math.ceil(400 / scale_ratio)
+                scale_height = 400
+            image = QImage(temp_paletted, sprite.width, sprite.height, QImage.Format.Format_RGBA8888).scaled(scale_width, scale_height)
+            if self.frames[index]._rotate != 0:
+                transform = QTransform()
+                transform.rotate(self.frames[index]._rotate * -1)
+                image = image.transformed(transform).scaled(scale_width, scale_height)
+            pixmap = QPixmap.fromImage(image)
+            self.imageLabel.setPixmap(pixmap)
+        else:
+            image = QImage(400, 400, QImage.Format.Format_RGBA8888)
+            image.fill(Qt.GlobalColor.black)
+            pixmap = QPixmap.fromImage(image)
+            self.imageLabel.setPixmap(pixmap)
 
     def onModuleUpdated(self):
         selection = self.components[self.componentSwitch.currentIndex()]
@@ -137,6 +194,7 @@ class MainWindow(QMainWindow):
                 self.componentSwitch.setCurrentIndex(idx)
             else:
                 self.componentSwitch.setCurrentIndex(0)
+            self.reload_sprite(0, 0)
         except Exception as exc:
             self.cnsContent.setText(f"Failed to load module!\n{exc}")
             self.pythonContent.setText(f"Failed to load module!\n{exc}")
@@ -177,15 +235,14 @@ def launch():
     input_file = sys.argv[1]
     sff_file = sys.argv[2]
 
+    ## the window falls in this context manager because `sff_file` needs to stay open.
     with open(sff_file, mode='rb') as f:
-        sprites = SFF.load(f)
-        #print(sprites.palettes[0].data)
-        #print(sprites.sprites[0].data)
+        sff = SFF.load(f)
 
-    app = QApplication(sys.argv)
-    window = MainWindow(input_file, sprites)
-    window.show()
-    app.exec()
+        app = QApplication(sys.argv)
+        window = MainWindow(input_file, sff)
+        window.show()
+        app.exec()
 
 if __name__ == "__main__":
     launch()

@@ -519,7 +519,7 @@ class Animation:
     @property
     def sequence(self):
         """Returns a modifiable Sequence object which can be used to transform and obtain a new Sequence."""
-        return deepcopy(self._frames).frames if self._frames != None else Sequence([])
+        return deepcopy(self._frames) if self._frames != None else Sequence([])
 
     def compile(self):
         """Compiles the animation, returning a string in AIR format."""
