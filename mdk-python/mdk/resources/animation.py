@@ -208,10 +208,12 @@ class SequenceModifier:
     """A special class used to modify properties across a range of Frames."""
     _frames: list[Frame]
     _prop: str
+    _slice: slice
     
-    def __init__(self, frames: list[Frame], prop: str):
+    def __init__(self, frames: list[Frame], prop: str, sl: slice | None = None):
         self._frames = deepcopy(frames)
         self._prop = prop
+        self._slice = sl if sl != None else slice(0, len(frames))
 
     def python(self, name: str | None = None):
         return self.seq().python(name)
@@ -220,30 +222,30 @@ class SequenceModifier:
         """Converts this modified Sequence into a real Sequence object."""
         return Sequence(self._frames)
     
-    def set(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def set(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         """Sets the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 setattr(frame, self._prop, val)
         return self
     
-    def add(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def add(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         """Adds the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 setattr(frame, self._prop, getattr(frame, self._prop) + val)
         return self
     
-    def mul(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def mul(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         """Multiplies the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 setattr(frame, self._prop, getattr(frame, self._prop) * val)
         return self
     
     def transform(self, transformer: Callable[[Frame, int], int]) -> SequenceModifier:
         """Uses the provided transformer function to transform the property on all frames."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             setattr(frame, self._prop, transformer(frame, getattr(frame, self._prop)))
         return self
     
@@ -251,13 +253,13 @@ class SequenceModifier:
         """Adds the provided frame or frames to this Sequence and returns a new Sequence containing those frames."""
         return self.seq().extend(frames)
     
-    def __getitem__(self, key: int | slice) -> Sequence:
+    def __getitem__(self, key: int | slice) -> SequenceModifier:
         if type(key) == slice:
-            if key.step != None:
-                raise Exception("Can only handle simple slices in Sequence.")
-            return Sequence(deepcopy(self._frames[key.start:key.stop]))
+            self._slice = key
+            return self
         else:
-            return Sequence([deepcopy(self._frames[key])])
+            self._slice = slice(key, key + 1)
+            return self
     
     ### below this is all the Sequence properties re-applied here. this is for convenience to avoid needing to call `seq()` every time.
     def compile(self):
@@ -266,51 +268,56 @@ class SequenceModifier:
     @property
     def frames(self):
         """Returns a modifiable Sequence which can apply generic transformations across all contained frames."""
-        return self.seq().frames
+        return FrameSequenceModifier(self._frames, self._slice)
         
     @property
     def group(self):
         """Returns a modifiable Sequence which can apply transformations to the `group` property of all contained frames."""
-        return self.seq().group
+        return SequenceModifier(self._frames, "_group", self._slice)
     
     @property
     def index(self):
         """Returns a modifiable Sequence which can apply transformations to the `index` property of all contained frames."""
-        return self.seq().index
+        return SequenceModifier(self._frames, "_index", self._slice)
     
     @property
     def length(self):
         """Returns a modifiable Sequence which can apply transformations to the `length` property of all contained frames."""
-        return self.seq().length
+        return SequenceModifier(self._frames, "_length", self._slice)
     
     @property
     def rotation(self):
         """Returns a modifiable Sequence which can apply transformations to the `rotate` property of all contained frames."""
-        return self.seq().rotation
+        return SequenceModifier(self._frames, "_rotate", self._slice)
     
     @property
     def offset(self):
         """Returns a modifiable Sequence which can apply transformations to the `offset` property of all contained frames."""
-        return self.seq().offset
+        return TupleSequenceModifier(self._frames, "_offset", self._slice)
     
     @property
     def scale(self):
         """Returns a modifiable Sequence which can apply transformations to the `scale` property of all contained frames."""
-        return self.seq().scale
+        return TupleSequenceModifier(self._frames, "_scale", self._slice)
+    
+    @property
+    def flip(self):
+        """Returns a modifiable Sequence which can apply transformations to the `flip` property of all contained frames."""
+        return SequenceModifier(self._frames, "_flip", self._slice)
     
 class TupleSequenceModifier(SequenceModifier):
     """A custom SequenceModifier used to apply transformations to the tuple fields, offset and scale."""
 
     def set(self, val: tuple[int, int], filter: Callable[[Frame], bool] | None = None) -> TupleSequenceModifier: # type: ignore
         """Sets the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 setattr(frame, self._prop, val)
         return self
     
     def add(self, val: tuple[int, int], filter: Callable[[Frame], bool] | None = None) -> TupleSequenceModifier: # type: ignore
         """Adds the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 current: tuple[int, int] = getattr(frame, self._prop)
                 setattr(frame, self._prop, (current[0] + val[0], current[1] + val[1]))
@@ -318,7 +325,7 @@ class TupleSequenceModifier(SequenceModifier):
     
     def mul(self, val: tuple[int, int], filter: Callable[[Frame], bool] | None = None) -> TupleSequenceModifier: # type: ignore
         """Multiplies the provided value to the target property on all frames (or frames which pass the provided filter function)."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 current: tuple[int, int] = getattr(frame, self._prop)
                 setattr(frame, self._prop, (current[0] * val[0], current[1] * val[1]))
@@ -326,57 +333,58 @@ class TupleSequenceModifier(SequenceModifier):
     
     def transform(self, transformer: Callable[[Frame, tuple[int, int]], tuple[int, int]]) -> TupleSequenceModifier: # type: ignore
         """Uses the provided transformer function to transform the property on all frames."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             setattr(frame, self._prop, transformer(frame, getattr(frame, self._prop)))
         return self
     
 class FrameSequenceModifier(SequenceModifier):
     """A custom SequenceModifier used to apply transformations across the frame sequence, instead of to frame properties."""
 
-    def __init__(self, frames: list[Frame]):
+    def __init__(self, frames: list[Frame], sl: slice | None = None):
         self._frames = deepcopy(frames)
+        self._slice = sl if sl != None else slice(0, len(frames))
 
-    def set(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def set(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         raise Exception("SequenceModifier `set` cannnot be used for the `frames` modifiable sequence.")
-    def add(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def add(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         raise Exception("SequenceModifier `add` cannnot be used for the `frames` modifiable sequence.")
-    def mul(self, val: int, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
+    def mul(self, val: int | Enum, filter: Callable[[Frame], bool] | None = None) -> SequenceModifier:
         raise Exception("SequenceModifier `mul` cannnot be used for the `frames` modifiable sequence.")
     
     def reverse(self) -> FrameSequenceModifier:
-        """Reverses the Frames contained in this modifiable Sequence."""
+        """Reverses the Frames contained in this modifiable Sequence.
+        This function does not consider the current slice, and will reverse ALL frames in the sequence."""
         self._frames = list(reversed(self._frames))
-        return self
-    
-    def flip(self, flip: AnimationFlip, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
-        """Flips the Frames contained in this modifiable Sequence by the provided flip type."""
-        for frame in self._frames:
-            if filter == None or filter(frame):
-                frame.flip(flip)
         return self
     
     def transform(self, transformer: Callable[[Frame], Frame]) -> FrameSequenceModifier: # type: ignore
         """Applies the provided transformation function to all Frames in the sequence, updating the Frames with the returned value."""
-        self._frames = [transformer(frame) for frame in self._frames]
+        newframes: list[Frame] = []
+        for frame in self._frames:
+            if frame in self._frames[self._slice]:
+                newframes.append(transformer(frame))
+            else:
+                newframes.append(frame)
+        self._frames = newframes
         return self
     
     def clsn1(self, clsn: Clsn, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
         """Applies the provided Clsn1 box to all frames which match the provided filter."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 frame.clsn1(clsn)
         return self
     
     def clsn2(self, clsn: Clsn, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
         """Applies the provided Clsn1 box to all frames which match the provided filter."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 frame.clsn2(clsn)
         return self
     
     def default(self, filter: Callable[[Frame], bool] | None = None) -> FrameSequenceModifier:
         """Makes the most recently applied Clsn box default for all frames which match the provided filter."""
-        for frame in self._frames:
+        for frame in self._frames[self._slice]:
             if filter == None or filter(frame):
                 frame.default()
         return self
@@ -468,6 +476,11 @@ class Sequence:
     def scale(self):
         """Returns a modifiable Sequence which can apply transformations to the `scale` property of all contained frames."""
         return TupleSequenceModifier(self._frames, "_scale")
+    
+    @property
+    def flip(self):
+        """Returns a modifiable Sequence which can apply transformations to the `flip` property of all contained frames."""
+        return SequenceModifier(self._frames, "_flip")
 
 class Animation:
     """Represents an animation in a character's AIR file.

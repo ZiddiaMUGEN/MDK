@@ -2,9 +2,12 @@
 import os
 import sys
 import importlib.util
+from pathlib import Path
 
 from mdk.types.context import CompilerContext
 from mdk.resources.animation import Animation, Sequence, SequenceModifier
+
+from mdk.utils.sff import SFF
 
 from PyQt6.QtCore import Qt, QFileSystemWatcher
 from PyQt6.QtGui import QImage, QPixmap
@@ -21,19 +24,21 @@ from PyQt6.QtWidgets import (
 )
 
 class MainWindow(QMainWindow):
-    def __init__(self, input_file):
+    def __init__(self, input_file: str, sprites: SFF):
         super().__init__()
         self._loaded = False
 
-        self.watcher = QFileSystemWatcher([os.path.abspath(input_file)])
+        directory = os.path.dirname(os.path.abspath(input_file))
+        ## this is hacky, but i guess most venv will follow this name?
+        watches = [str(file) for file in Path(directory).rglob("*.py") if file.is_file() and "venv" not in str(file.parent)]
+        print(f"Watching files for modifications: {watches}")
+        self.watcher = QFileSystemWatcher(watches)
         self.watcher.fileChanged.connect(self.onModuleUpdated)
 
         self.path = input_file
+        self.packages = [k for k in sys.modules]
         self.module = isolate(self.path)
-        self.components = []
-        for key in self.module.__dict__:
-            if isinstance(self.module.__dict__[key], Animation) or isinstance(self.module.__dict__[key], Sequence) or isinstance(self.module.__dict__[key], SequenceModifier):
-                self.components.append(key)
+        self.components = recurse_animations(self.module, [])
 
         self.setWindowTitle("MDK Animation Viewer")
         self.resize(800, 600)
@@ -57,7 +62,7 @@ class MainWindow(QMainWindow):
 
         ## upper right: select component
         self.componentSwitch = QComboBox()
-        self.componentSwitch.addItems(self.components)
+        self.componentSwitch.addItems([c['name'] for c in self.components])
         self.componentSwitch.currentIndexChanged.connect(self.onAnimSelected)
         self.gridLayout.addWidget(self.componentSwitch, 0, 1)
 
@@ -85,8 +90,8 @@ class MainWindow(QMainWindow):
     def onAnimSelected(self):
         ## note the weird try/excepts here are to preserve id of None
         ## (since `Animation.compile()` assigns IDs to animations in the context)
-        component = self.components[self.componentSwitch.currentIndex()]
-        script = self.module.__dict__[component]
+        component = self.components[self.componentSwitch.currentIndex()]['name']
+        script = self.components[self.componentSwitch.currentIndex()]['obj']
 
         content = script.python(component)
         self.pythonContent.setText(content)
@@ -114,23 +119,31 @@ class MainWindow(QMainWindow):
             ## remove the old context, since it will contain a full list of animations from prior loads.
             del CompilerContext._instance
             self.module = isolate(self.path)
-            self.components = []
-            for key in self.module.__dict__:
-                if isinstance(self.module.__dict__[key], Animation) or isinstance(self.module.__dict__[key], Sequence) or isinstance(self.module.__dict__[key], SequenceModifier):
-                    self.components.append(key)
+            reloads: list[str] = []
+            for k in sys.modules:
+                if k not in self.packages:
+                    print(f"Hot reload dynamic module {k}")
+                    reloads.append(k)
+            for k in reloads:
+                importlib.reload(sys.modules[k])
+            self.components = recurse_animations(self.module, [])
+
+            self.componentSwitch.currentIndexChanged.disconnect()
+            self.componentSwitch.clear()
+            self.componentSwitch.addItems([c['name'] for c in self.components])
+            self.componentSwitch.currentIndexChanged.connect(self.onAnimSelected)
+            idx = next((index for index, d in enumerate(self.components) if d["name"] == selection['name']), None)
+            if idx != None:
+                self.componentSwitch.setCurrentIndex(idx)
+            else:
+                self.componentSwitch.setCurrentIndex(0)
         except Exception as exc:
             self.cnsContent.setText(f"Failed to load module!\n{exc}")
             self.pythonContent.setText(f"Failed to load module!\n{exc}")
 
-        self.componentSwitch.clear()
-        self.componentSwitch.addItems(self.components)
-        if selection in self.components:
-            self.componentSwitch.setCurrentIndex(self.components.index(selection))
-        else:
-            self.componentSwitch.setCurrentIndex(0)
-
-
 def isolate(path):
+    if not os.path.dirname(os.path.abspath(path)) in sys.path:
+        sys.path.append(os.path.dirname(os.path.abspath(path)))
     # isolated namespace
     spec = importlib.util.spec_from_file_location("isolate", path)
     if spec is None or spec.loader is None:
@@ -144,13 +157,33 @@ def isolate(path):
     
     return module
 
+def recurse_animations(module, visited: list[str] = []):
+    components = []
+    for key in module.__dict__:
+        if isinstance(module.__dict__[key], Animation) or isinstance(module.__dict__[key], Sequence) or isinstance(module.__dict__[key], SequenceModifier):
+            if not any([x for x in components if x['name'] == key]):
+                components.append({ "name": key, "obj": module.__dict__[key] })
+        elif type(module.__dict__[key]).__name__ == "module" and key not in visited:
+            visited.append(key)
+            for c in recurse_animations(module.__dict__[key], visited):
+                if not any([x for x in components if x['name'] == c['name']]):
+                    components.append(c)
+
+    return components
+
 def launch():
-    if len(sys.argv) < 2:
-        raise Exception("Usage: mdkair <animation script>")
+    if len(sys.argv) < 3:
+        raise Exception("Usage: mdkair <build script> <sff file>")
     input_file = sys.argv[1]
+    sff_file = sys.argv[2]
+
+    with open(sff_file, mode='rb') as f:
+        sprites = SFF.load(f)
+        #print(sprites.palettes[0].data)
+        #print(sprites.sprites[0].data)
 
     app = QApplication(sys.argv)
-    window = MainWindow(input_file)
+    window = MainWindow(input_file, sprites)
     window.show()
     app.exec()
 

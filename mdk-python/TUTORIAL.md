@@ -272,6 +272,145 @@ def myCustomState():
     separatedLogic()
 ```
 
+## Code-backed Animations
+
+In a traditional MUGEN character, animations are written in an INI-syntax file following the AIR format. This format is outlined by Elecbyte in the MUGEN documentation, here: https://www.elecbyte.com/mugendocs-11b1/air.html
+
+Because it is difficult to understand how an animation would look from the way it's shown in the AIR file, most authors use external tools (such as Fighter Factory) which can display animations and offer a graphical experience to adding and removing frames, boxes, etc.
+
+In MDK, these options are still available to the character author. It is expected that most authors will want to continue to use the AIR file format backed by existing tools as they offer a smooth developer experience. However, we also provide the option to develop animations in code. During compilation, any animations defined in code are merged with existing animations in the AIR file to provide a single, unified animation file for the character.
+
+Some of the advantages of this include:
+
+- Automatic assignment of animation numbers, removing overhead for the developer to remember which animation maps to which ID
+- Option to utilize animations by name in code (both in state definitions and in controller code), improving code readability
+- Option to build animations using Python syntax (e.g. loops, list comprehensions)
+- Option to create reusable sequences of animation frames, reducing the amount of code required to create animations with shared frame data
+
+For comprehensive details on how to use this, refer to the `Animation Library Reference` section below.
+
+Here's a quick example of how you can use this functionality to reduce on code. In this case, I have 10 frames for my walk anim which share common attributes, and my walk back animation is just the walk animation played in reverse.
+
+```
+from mdk.resources.animations import Animation, Sequence, Frame
+
+WALK_ANIM = Animation(id = 20, frames = [Frame(20, index, length = 2) for index in range(10)]).frames.clsn2(Clsn2(0, 0, 10, 10))
+WALK_BACK_ANIM = Animation(id = 21, frames = WALK_ANIM.sequence.frames.reverse())
+```
+
+If you have your animations defined in your AIR file, you can still utilize code-based animations for readability. You will need to declare an `external` animation, which the compiler will link back to the real AIR animation during build. Note that external animations do not contain any frame data until build time so e.g. trying to use `EXTERNAL_ANIM.sequence.frames` will cause an error.
+
+```
+from mdk.resources.animations import Animation, Sequence, Frame
+
+EXTERNAL_ANIM = Animation(id = 20, external = True)
+```
+
+If you have a need to add many small animations (this is the case for characters which will do animation search), you could also do something like this with anonymous animations in a loop:
+
+```
+from mdk.resources.animations import Animation, Sequence, Frame
+
+for index in range(5000):
+    Animation(id = 50000 + index, frames = [Frame(-1, 0, length = -1)])
+```
+
+Compare this to e.g. the animations at the top of the AIR file for this character: https://github.com/ZiddiaMUGEN/M-Creirwy/blob/main/System/Creirwy.air
+
+### Working with Sequences
+
+When you build an animation, you construct it from the `Animation` class with a Sequence (or a list of Frames) as an input:
+
+`WALK_ANIM = Animation(id = 20, frames = [Frame(20, index, length = 2) for index in range(10)])`
+
+Here WALK_ANIM is an Animation, and `frames` was provided as a `list[Frame]`. Internally, the Animation stores its frames as a `Sequence` object, which is a wrapper around the list of frames that provides utilities for building new sequences.
+
+Sequences can also be constructed in code, if you have a sequence of frames you may want to reuse throughout your character:
+
+`WALK_SEQ = Sequence([Frame(20, index, length = 2) for index in range(10)])`
+
+As a general rule, both Animation and Sequence objects should be considered to be immutable. Whenever you access a sequence or a modifiable property of a sequence, you will really be receiving a new Sequence containing a **copy** of the frame data.
+
+#### Slicing Sequence Frames
+
+To access (a copy of) the underlying frame data in an Animation, you can use the `Animation.sequence` property:
+
+`WALK_SEQ = WALK_ANIM.sequence`
+
+If you want to create a new Sequence using a subset of the frames in an existing Sequence, you can create a slice of that sequence as you would with a list:
+
+`WALK_SEQ_SUB = WALK_ANIM.sequence[:5]`
+
+This returns a new Sequence which contains ONLY the frames covered by the slice.
+
+#### Sequence Modifiers
+
+The Sequence object provides a number of properties which can be used to **modify** a sequence. This enables us to chain functions to build a more complex sequence.
+
+For example, if I want to increase the length of all frames in the sequence, I can use the `length` modifier:
+
+`WALK_SEQ = WALK_ANIM.sequence.length.set(5)`
+
+Each modifier function can be chained to add further modifications to all frames in the sequence. For example, if I want to change the length and ALSO change the offset of each frame in the animation:
+
+`WALK_SEQ = WALK_ANIM.sequence.length.set(5).offset.set((1, 1))`
+
+Each of these modifiers maps to a single property in the Frame (e.g. length, offset, rotation) and can be modified via several functions:
+
+- Use the `set` function to apply a new value to all frames
+- Use the `add` function to add to the existing value of the property
+- Use the `mul` function to multiply the existing value of the property
+
+There is also a `transform` function which accepts a function as input. The input function should accept a Frame and the existing value of the property as inputs, and return a new value to be applied. This can help apply more complex transformations (e.g. if the transformation should be different depending on frame properties).
+
+The following property modifiers are exposed by the Sequence object:
+
+- `group`
+- `index`
+- `length`
+- `rotation`
+- `offset`
+- `scale`
+- `flip`
+
+### Frame Modifiers
+
+The Sequence object also exposes a special modifier property `frames`. This modifier provides functionality which is not applied to a single property and instead modifies the sequence as a whole. The following modifications are available:
+
+- `reverse` - returns a sequence with all frames reversed
+- `clsn1` - attaches a new Clsn1 (hitbox) to all frames
+- `clsn2` - attaches a new Clsn2 (hurtbox) to all frames
+- `default` - makes the most recently attached Clsn box default
+
+### Slicing Modifiers
+
+You can also take a slice of a modifier property similar to taking a slice of the full Sequence. The main difference is that this just sets the frames which the modifier property will affect, rather than modifying the frames in the Sequence. To explain better:
+
+```
+# WALK_ANIM is an Animation with 10 frames.
+WALK_SEQ_SUB = WALK_ANIM.sequence[:5]
+WALK_SEQ_MOD = WALK_ANIM.sequence.rotation[:5]
+```
+
+In this case, WALK_SEQ_SUB has a slice applied to the `sequence` directly, and so that sequence will contain only the first 5 frames. On the other hand, WALK_SEQ_MOD has a slice applied to the `rotation` modifier property; the length of this sequence is still the full 10 frames, but if we then add `.set(50)` to this modifier, you will end up with the first 5 frames having rotation set to 50, and the later 5 frames having rotation remaining as it was before.
+
+To get back the full sequence without slices applied from the modifier, you can apply a new slice, or use the `.seq()` function:
+
+```
+WALK_SEQ_MOD  = WALK_ANIM.sequence.rotation[:5].set(50) # This is still a SequenceModifier with a slice applied.
+WALK_SEQ_MOD2 = WALK_SEQ_MOD.length.set(2)              # Unintuitively, this only applies to the first 5 elements as a slice is still applied.
+WALK_SEQ_MOD3 = WALK_SEQ_MOD.length[:10].set(2)         # This is applied to all elements as the slice was manually reset to 10.
+WALK_SEQ_MOD4 = WALK_SEQ_MOD.seq().length.set(2)        # This is also applied to all elements as we retrieved a new, unsliced Sequence from WALK_SEQ_MOD.
+```
+
+### mdkair
+
+The Python MDK package ships with a tool named `mdkair`, which is installed to the command line. This tool is intended to act as a companion for the developer, so that they can easily and quickly develop animations in code if they choose to. `mdkair` is a small graphical utility which displays the frames, hitboxes, etc for animations, and allows the developer to view the frame information in either Python and AIR syntax. `mdkair` also has hot reloading integrated, so any changes you make to your animations in code are immediately picked up and rendered by the tool.
+
+This tool is less fully featured than existing options such as Fighter Factory and is therefore meant just as a companion tool if you are choosing to implement some animations in code. For most use cases, a fully featured animation editor will be easier.
+
+If you are working with Sequence objects directly as reusable objects, `mdkair` will help as it can display BOTH Sequence and Animation types in its viewer.
+
 ## Building States
 
 To run a build, use the `mdk.compiler.build` function:
@@ -381,3 +520,35 @@ def myTemplate(myInput: Expression):
 if __name__ == "__main__":
     library([myTemplate], dirname="templates")
 ```
+
+## Animation Library Reference
+
+This section contains a reference for the functionality built in to the animation library, `mdk.resources.animation`.
+
+### class Animation
+
+Building block for creating animations in code. Any time you construct an Animation object, the animation is stored in the compiler context (so e.g. even if the Animation is never used anywhere or is not assigned to a variable, it will still appear in your compiled AIR file).
+
+Objects of type `Animation` can be used anywhere that animation numbers would normally be provided (e.g. as the `value` parameter in a `ChangeAnim` controller, or in the `anim` statedef parameter).
+
+#### `def __init__(self, frames: Sequence | SequenceModifier | list[Frame] | Frame | None = None, id: int | None = None, external: bool = False)`
+
+Construct a new animation. An animation must either be provided with a `frames` parameter defining the frames in the animation, or with an `external` parameter specifying the animation exists in an external AIR file. It is invalid to set both `frames` and `external` at the same time.
+
+`id` is required for externally-linked animations, but is optional for animations with frames provided. MDK will automatically assign a free ID if one is not specified.
+
+#### `@property sequence`
+
+Returns a `Sequence` object representing the frames inside this animation. The provided `Sequence` object is a copy of the animation's backing sequence, and not the original sequence (the frames inside the animation are immutable).
+
+### class Sequence
+
+A container for a list of `Frame` objects. Sequences are a core component for building animations logically. The Sequence class provides a number of properties which can be used to construct new, modified Sequences from existing frame data.
+
+#### `def __init__(self, frames: list[Frame])`
+
+Constructs a new Sequence from a list of Frames.
+
+#### `def extend(self, frames: Frame | list[Frame] | Sequence | SequenceModifier | FrameSequenceModifier | TupleSequenceModifier) -> Sequence`
+
+Extends an existing Sequence with frames from another Sequence or Sequence-like object. 
