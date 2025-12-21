@@ -6,6 +6,8 @@ import subprocess
 from mtl.types.shared import Location
 from mtl.types.translation import *
 
+from enum import Enum, IntEnum
+
 CREATE_SUSPENDED = 4
 INFINITE = 0xffffffff
 DBG_CONTINUE = 0x00010002
@@ -27,7 +29,7 @@ CONTEXT_CONTROL = (CONTEXT_AMD64 | 0x00000001)
 CONTEXT_INTEGER = (CONTEXT_AMD64 | 0x00000002)
 CONTEXT_DEBUG_REGISTERS = (CONTEXT_AMD64 | 0x00000010)
 
-class DebuggerCommand(Enum):
+class DebuggerCommand(IntEnum):
     EXIT = -1
     NONE = 0
     HELP = 1
@@ -42,6 +44,11 @@ class DebuggerCommand(Enum):
     BREAKP = 10
     DELETEP = 11
 
+class DebuggerResponseType(IntEnum):
+    SUCCESS = 0
+    ERROR = 1
+    EXCEPTION = 2
+
 class DebugProcessState(Enum):
     EXIT = -1 # indicates the process is exited or wants to exit.
     RUNNING = 0 # process is running and has not hit a breakpoint.
@@ -53,6 +60,19 @@ class DebugProcessState(Enum):
 class DebuggerRequest:
     command_type: DebuggerCommand
     params: list[str]
+
+@dataclass
+class DebuggerRequestIPC:
+    message_id: bytes
+    command_type: DebuggerCommand
+    params: bytes
+
+@dataclass
+class DebuggerResponseIPC:
+    message_id: bytes
+    command_type: DebuggerCommand
+    response_type: DebuggerResponseType
+    response_detail: bytes
 
 @dataclass
 class DebuggerLaunchInfo:
@@ -140,6 +160,7 @@ class DebuggingContext:
     filename: str
     p2_target: str
     enable_ai: int
+    quiet: bool
 
     def __init__(self):
         self.strings = []
@@ -156,6 +177,7 @@ class DebuggingContext:
         self.filename = ""
         self.p2_target = "kfm"
         self.enable_ai = 0
+        self.quiet = False
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

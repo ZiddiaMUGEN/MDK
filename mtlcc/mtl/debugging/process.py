@@ -31,7 +31,7 @@ def resumeExternal(target: DebuggerTarget):
 ## utility function to update the breakpoint list in memory
 def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
     if len(ctx.breakpoints) >= 8:
-        print(f"Reached maximum active breakpoint count (8)")
+        if not ctx.quiet: print(f"Reached maximum active breakpoint count (8)")
         return
     
     ctx.breakpoints.append((stateno, index))
@@ -41,7 +41,7 @@ def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: Debuggi
 
 def setPasspoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
     if len(ctx.passpoints) >= 8:
-        print(f"Reached maximum active passpoint count (8)")
+        if not ctx.quiet: print(f"Reached maximum active passpoint count (8)")
         return
     
     ctx.passpoints.append((stateno, index))
@@ -335,17 +335,17 @@ def match_breakpoint(launch_info: DebuggerLaunchInfo, ctx: DebuggingContext, pro
     ctx.current_breakpoint = (stateno, ctx.last_index)
     ## find the file and line corresponding to this breakpoint
     if (state := get_state_by_id(stateno, ctx)) == None:
-        print(f"Warning: Debugger could not find any state with ID {stateno} in database.")
+        if not ctx.quiet: print(f"Warning: Debugger could not find any state with ID {stateno} in database.")
         return
     if ctx.last_index >= len(state.states):
-        print(f"Warning: Debugger could not match controller index {ctx.last_index} for state {stateno} in database.")
+        if not ctx.quiet: print(f"Warning: Debugger could not match controller index {ctx.last_index} for state {stateno} in database.")
         return
     player_id = get_uncached(ctx.current_owner + 0x04, process_handle)
     helper_id = get_uncached(ctx.current_owner + launch_info.database["helperid"], process_handle)
     game_address = get_cached(launch_info.database["game"], process_handle, launch_info)
     p1_address = get_cached(game_address + launch_info.database["player"], process_handle, launch_info)
     player_name = "root" if ctx.current_owner == p1_address else f"helper({helper_id})"
-    print(f"Encountered breakpoint for player {player_id} ( {player_name} ) at: {state.states[ctx.last_index]} (state {stateno}, controller {ctx.last_index})")
+    if not ctx.quiet: print(f"Encountered breakpoint for player {player_id} ( {player_name} ) at: {state.states[ctx.last_index]} (state {stateno}, controller {ctx.last_index})")
 
 def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget:
     ## copy the character folder to the MUGEN chars folder.
@@ -356,7 +356,7 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
         random_id = generate_random_string(8)
         shutil.copytree(chara, f"{working}/chars/{random_id}/")
         character = f"chars/{random_id}/{os.path.basename(character)}"
-        print(f"Relocated character data to {character} for launch.")
+        if not ctx.quiet: print(f"Relocated character data to {character} for launch.")
         character_folder = os.path.dirname(f"{working}/{character}")
 
     ## prep the command-line arguments.
@@ -376,7 +376,7 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
     ## dispatch a thread to read events processed by debugger and push them back to the debugger
     threading.Thread(target=_debug_handler, args=(launch_info, events_queue, results_queue, ctx)).start()
 
-    print(f"Launched MUGEN suspended process. Type `continue` to continue.")
+    if not ctx.quiet: print(f"Launched MUGEN suspended process. Type `continue` to continue.")
 
     return result
 

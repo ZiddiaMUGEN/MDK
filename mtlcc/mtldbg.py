@@ -8,9 +8,10 @@ import traceback
 import readline
 
 from mtl.types.translation import TypeCategory
-from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext, DebugTypeInfo
+from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext, DebugTypeInfo, DebuggerResponseIPC, DebuggerResponseType
 from mtl.debugging import database, process
-from mtl.debugging.commands import DebuggerCommand, processDebugCommand
+from mtl.debugging.commands import DebuggerCommand, processDebugCommand, processDebugIPC, sendResponseIPC
+from mtl.debugging.ipc_code import *
 from mtl.utils.func import match_filenames, mask_variable, search_file
 from mtl.utils.debug import get_state_by_id, get_state_by_name
 
@@ -92,6 +93,64 @@ def displayMultipleVariables(scope: str, target: DebuggerTarget, ctx: DebuggingC
             print("")
 
     process.resumeExternal(target)
+
+def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
+    ## the early part of this function is identical to `runDebugger`.
+    ## we just skip any `print` as we need to use stdio for IPC communication.
+    debugger = None
+
+    ctx = database.load(target)
+
+    ctx.p2_target = p2
+    ctx.enable_ai = 1 if ai == "on" else 0
+    ctx.quiet = True
+
+    command = DebuggerCommand.NONE
+    while command != DebuggerCommand.EXIT:
+        ## if the debugger state is EXIT, set debugger to None.
+        if debugger != None and debugger.launch_info.state == DebugProcessState.EXIT:
+            debugger = None
+        ## if the process is not None, PAUSED, or SUSPENDED_WAIT, do not accept input.
+        try:
+            while debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED]:
+                time.sleep(1/60)
+                if debugger.launch_info.state == DebugProcessState.EXIT:
+                    continue
+        except KeyboardInterrupt:
+            ## directly grants access to command prompt for one command
+            pass
+
+        request = processDebugIPC()
+        command = request.command_type
+
+        if command == DebuggerCommand.EXIT and debugger != None and debugger.subprocess != None:
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_HELD_OPEN))
+            command = DebuggerCommand.NONE
+            continue
+
+        try:
+            if command == DebuggerCommand.LAUNCH:
+                ## launch and attach MUGEN subprocess
+                ## TODO: right now `breakpoints` is not cleared between launches.
+                debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.EXIT:
+                ## set the process state so the other threads can exit
+                if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, bytes()))
+            elif command == DebuggerCommand.STOP:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+                ## continue the process.
+                process.cont(debugger, ctx)
+                ## set the process state so the other threads can exit
+                if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+        except:
+            error_message = traceback.format_exc()
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, error_message.encode('utf-8')))
+            continue
 
 def runDebugger(target: str, mugen: str, p2: str, ai: str):
     debugger = None
@@ -395,6 +454,7 @@ def debug():
     parser.add_argument('-m', '--executable', help='Path to the mugen.exe executable for the MUGEN installation to use', required=True)
     parser.add_argument('-p', '--p2name', help='Name of the character to use as P2', required=False)
     parser.add_argument('-a', '--enableai', help='Set to `on` to enable AI in the fight', required=False)
+    parser.add_argument('-i', '--ipc', help='Pass `-i` to enable IPC with the debugger instead of an interactive CLI', required=False, action='store_true')
 
     args = parser.parse_args()
 
@@ -404,7 +464,10 @@ def debug():
     p2 = args.p2name if args.p2name else "kfm"
     ai = args.enableai if args.enableai else "off"
 
-    runDebugger(target, mugen, p2, ai)
+    if args.ipc:
+        runDebuggerIPC(target, mugen, p2, ai)
+    else:
+        runDebugger(target, mugen, p2, ai)
 
 if __name__ == "__main__":
     debug()

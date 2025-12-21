@@ -1,0 +1,122 @@
+{
+  "name": "vscode-mtldbg",
+  "displayName": "MTL Debugger",
+  "description": "",
+  "version": "0.2.0",
+  "engines": {
+    "vscode": "^1.106.3"
+  },
+  "author": {
+    "name": "Ziddia",
+    "email": "ziddia1@gmail.com"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onDebugResolve:mtldbg",
+    "onDebugDynamicConfigurations:mtldbg",
+    "onCommand:extension.vscode-mtldbg.getFileInput"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "breakpoints": [
+      {
+        "language": "python"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "mtldbg",
+        "label": "MTL Debug",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program",
+              "database"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the MTL or Python source file to compile for debugging.",
+                "default": "${workspaceFolder}/${command:AskForProgramName}"
+              },
+              "database": {
+                "type": "string",
+                "description": "Path to the MTL debugging database which will be output after compilation.",
+                "default": "${workspaceFolder}/${command:AskForDatabaseName}"
+              },
+              "pythonPath": {
+                "type": "string",
+                "description": "Path to the Python executable to use for compilation.",
+                "default": "${workspaceFolder}/${command:AskForDatabaseName}"
+              },
+              "mugenPath": {
+                "type": "string",
+                "description": "Path to the MUGEN executable to use for debugging.",
+                "default": "${workspaceFolder}/${command:AskForDatabaseName}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launch.",
+                "default": true
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "mtldbg",
+            "request": "launch",
+            "name": "Ask for file name",
+            "program": "${workspaceFolder}/${command:AskForProgramName}",
+            "database": "${workspaceFolder}/${command:AskForDatabaseName}",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "MDK Debug: Launch",
+            "description": "A new configuration for debugging MDK programs",
+            "body": {
+              "type": "mtldbg",
+              "request": "launch",
+              "name": "${3:Launch Program}",
+              "program": "^\"\\${workspaceFolder}/${1:Program}\"",
+              "database": "^\"\\${workspaceFolder}/${2:Database}\""
+            }
+          }
+        ],
+        "variables": {
+          "AskForProgramName": "extension.vscode-mtldbg.getFileInput",
+          "AskForDatabaseName": "extension.vscode-mtldbg.getFileInput"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.107.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.48.1"
+  },
+  "dependencies": {
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0",
+    "await-notify": "^1.0.1"
+  }
+}
