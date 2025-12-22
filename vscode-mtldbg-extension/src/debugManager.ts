@@ -1,51 +1,18 @@
 import { ChildProcess, spawn } from 'child_process';
 import { randomUUID, UUID } from 'crypto';
-import Stream from 'stream';
+import { EventEmitter } from 'events';
+import { DebuggerCommandType, DebuggerResponseType, DebuggerRequestIPC, DebuggerResponseIPC } from './sharedTypes';
 
 const MINIMUM_RESPONSE_LENGTH = 48;
+const MTL_TO_DAP_ID = '00000000-0000-0000-0000-000000000000';
 
-enum DebuggerCommandType {
-    EXIT = -1,
-    NONE = 0,
-    HELP = 1,
-    LAUNCH = 2,
-    LOAD = 3,
-    CONTINUE = 4,
-    INFO = 5,
-    BREAK = 6,
-    STEP = 7,
-    STOP = 8,
-    DELETE = 9,
-    BREAKP = 10,
-    DELETEP = 11,
-}
-
-enum DebuggerResponseType {
-    SUCCESS = 0,
-    ERROR = 1,
-    EXCEPTION = 2,
-}
-
-interface DebuggerRequestIPC {
-    messageId: UUID
-    command: DebuggerCommandType
-    params: string | object
-}
-
-interface DebuggerResponseIPC {
-    messageId: string
-    command: DebuggerCommandType
-    response: DebuggerResponseType
-    detail: any
-}
-
-export class MTLDebugManager {
+export class MTLDebugManager extends EventEmitter {
     private _debuggingProcess: ChildProcess | null = null;
     private _incomingMessages: DebuggerResponseIPC[] = [];
 
     private _partialMessage: Buffer | null = null;
 
-    public async connect(python: string, database: string, mugen: string) {
+    public async connect(python: string, database: string, mugen: string, stopOnEntry: boolean | undefined) {
         // check if debugger is already running
         if (this._debuggingProcess != null) {
             throw "Debugger has already been launched, please stop any debugging processes before running.";
@@ -73,6 +40,8 @@ export class MTLDebugManager {
         
         // notify debugger of launch
         await this.sendMessageAndWaitForResponse(DebuggerCommandType.LAUNCH, "");
+        // run CONTINUE if the debugger should not stop on entry
+        if (!stopOnEntry) await this.sendMessageAndWaitForResponse(DebuggerCommandType.CONTINUE, "");
     }
 
     public async disconnect() {
@@ -114,14 +83,25 @@ export class MTLDebugManager {
 
             const params = new Uint8Array(this._partialMessage.subarray(48, 48 + paramsLength)).slice();
 
-            this._incomingMessages.push({
-                messageId: inboundMessageId,
-                command: commandType,
-                response: responseType,
-                detail: new TextDecoder().decode(params)
-            });
-
             console.log(`Received new message with messageId ${inboundMessageId}, command ${commandType}, response ${responseType}`);
+            if (inboundMessageId === MTL_TO_DAP_ID) {
+                // this is a message from the debugger which needs to trigger behaviour in the adapter, forward it to the
+                // debugging session.
+                console.log(`Forward event ${DebuggerCommandType[commandType]} to session`);
+                this.emit(DebuggerCommandType[commandType], {
+                    messageId: inboundMessageId,
+                    command: commandType,
+                    response: responseType,
+                    detail: new TextDecoder().decode(params)
+                });
+            } else {
+                this._incomingMessages.push({
+                    messageId: inboundMessageId,
+                    command: commandType,
+                    response: responseType,
+                    detail: new TextDecoder().decode(params)
+                });
+            }
 
             this._partialMessage = Buffer.from(this._partialMessage.subarray(48 + paramsLength));
         }

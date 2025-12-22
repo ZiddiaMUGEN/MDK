@@ -131,12 +131,14 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 ## launch and attach MUGEN subprocess
                 ## TODO: right now `breakpoints` is not cleared between launches.
                 debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
+                debugger.launch_info.ipc = True
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "pid": debugger.launch_info.process_id }).encode("utf-8")))
-            elif command == DebuggerCommand.EXIT:
-                ## set the process state so the other threads can exit
-                if debugger != None:
-                    debugger.launch_info.state = DebugProcessState.EXIT
-                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.CONTINUE:
+                ## allow the process to continue running
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+                process.cont(debugger, ctx)
             elif command == DebuggerCommand.STOP:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
@@ -146,6 +148,11 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 process.resumeExternal(debugger)
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.EXIT:
+                ## set the process state so the other threads can exit
+                if debugger != None:
+                    debugger.launch_info.state = DebugProcessState.EXIT
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
         except:
             error_message = traceback.format_exc()

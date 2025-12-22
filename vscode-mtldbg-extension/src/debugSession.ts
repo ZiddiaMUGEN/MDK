@@ -4,12 +4,13 @@ import {
 	LoggingDebugSession,
 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
-	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent
+	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent,
+	ExitedEvent
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 
 import { MTLDebugManager } from './debugManager';
-import { FileAccessor } from './sharedTypes';
+import { DebuggerResponseIPC, FileAccessor } from './sharedTypes';
 
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** An absolute path to the program to debug. */
@@ -22,6 +23,8 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	mugenPath: string;
 	/** Automatically stop target after launch. If not specified, target does not stop. */
 	stopOnEntry?: boolean;
+	/** Build the character before launching the debugger. */
+	build?: boolean;
 }
 
 export class MTLDebugSession extends LoggingDebugSession {
@@ -35,6 +38,11 @@ export class MTLDebugSession extends LoggingDebugSession {
 
         this.setDebuggerLinesStartAt1(true);
 		this.setDebuggerColumnsStartAt1(true);
+
+		this.debugManager.on('IPC_EXIT', _ => {
+			// exit early due to IPC request (e.g. an exception in the debugger, or MUGEN closing)
+			this.sendEvent(new TerminatedEvent(false));
+		});
     }
 
     protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -113,9 +121,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		this.sendResponse(response);
 
-		// since this debug adapter can accept configuration requests like 'setBreakpoint' at any time,
-		// we request them early by sending an 'initializeRequest' to the frontend.
-		// The frontend will end the configuration sequence by calling 'configurationDone' request.
+		// it's OK to accept breakpoints early, we will save them + expose them to mtldbg during launch.
 		this.sendEvent(new InitializedEvent());
 	}
 
@@ -146,37 +152,56 @@ export class MTLDebugSession extends LoggingDebugSession {
 		logger.setup(Logger.LogLevel.Verbose, false);
 
 		// start the program in the runtime
-		//await this._runtime.start(args.program, !!args.stopOnEntry, !args.noDebug);
-        console.log(`Launch build for program ${args.program}.`)
-        
-        if (args.program.endsWith(".py")) {
-            // build with MDK
-            const terminal = vscode.window.createTerminal({ name: `MDK Build ${args.program}`, hideFromUser: true });
-            terminal.show();
-            terminal.sendText(`${args.pythonPath} "${args.program}"`, false);
-            terminal.sendText("; exit");
-            const result = await new Promise((resolve, reject) => {
-                const disposeToken = vscode.window.onDidCloseTerminal(
-                    async (closedTerminal) => {
-                        if (closedTerminal === terminal) {
-                            disposeToken.dispose();
-                            if (terminal.exitStatus !== undefined) {
-                                resolve(terminal.exitStatus);
-                            } else {
-                                reject("Terminal exited with undefined status");
-                            }
-                        }
-                    }
-                );
-            });
-        } else {
-            // build with MTL
-            throw "Build with MTL not currently implemented, try MDK.";
-        }
+		if (args.build) {
+			console.log(`Launch build for program ${args.program}.`)
+			
+			if (args.program.endsWith(".py")) {
+				// build with MDK
+				const terminal = vscode.window.createTerminal({ name: `MDK Build ${args.program}`, hideFromUser: true });
+				terminal.show();
+				terminal.sendText(`${args.pythonPath} "${args.program}"`, false);
+				terminal.sendText("; exit");
+				const result = await new Promise((resolve, reject) => {
+					const disposeToken = vscode.window.onDidCloseTerminal(
+						async (closedTerminal) => {
+							if (closedTerminal === terminal) {
+								disposeToken.dispose();
+								if (terminal.exitStatus !== undefined) {
+									resolve(terminal.exitStatus);
+								} else {
+									reject("Terminal exited with undefined status");
+								}
+							}
+						}
+					);
+				});
+			} else {
+				// build with MTL
+				throw "Build with MTL not currently implemented, try MDK.";
+			}
+		}
 
         // launch debugger
-        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath);
+        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry);
+		if (args.stopOnEntry) this.sendEvent(new StoppedEvent('entry', 1));
 
+		this.sendResponse(response);
+	}
+
+	protected async threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request) {
+		// TODO: add more than just thread 1
+		response.body = {
+			threads: [new Thread(1, "Main thread")]
+		};
+		this.sendResponse(response);
+	}
+
+	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments, request?: DebugProtocol.Request) {
+		// TODO: stack frame is not really meaningful but we can send the line...
+		response.body = {
+			stackFrames: [],
+			totalFrames: 0
+		};
 		this.sendResponse(response);
 	}
 }

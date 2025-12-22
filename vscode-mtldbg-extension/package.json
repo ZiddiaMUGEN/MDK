@@ -58,6 +58,11 @@
                 "description": "Path to the MUGEN executable to use for debugging.",
                 "default": "${workspaceFolder}/${command:AskForDatabaseName}"
               },
+              "build": {
+                "type": "boolean",
+                "description": "Run a build step before launching debugger.",
+                "default": true
+              },
               "stopOnEntry": {
                 "type": "boolean",
                 "description": "Automatically stop after launch.",

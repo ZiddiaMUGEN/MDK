@@ -43,6 +43,9 @@ class DebuggerCommand(IntEnum):
     DELETE = 9
     BREAKP = 10
     DELETEP = 11
+    ## below are commands intiated from the debugger side,
+    ## for IPC control.
+    IPC_EXIT = 101
 
 class DebuggerResponseType(IntEnum):
     SUCCESS = 0
@@ -82,6 +85,7 @@ class DebuggerLaunchInfo:
     character_folder: Optional[str]
     state: DebugProcessState
     database: dict
+    ipc: bool
 
 @dataclass
 class DebuggerTarget:

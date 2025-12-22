@@ -17,6 +17,8 @@ import os
 import subprocess
 import struct
 
+from mtl.debugging.commands import sendResponseIPC
+
 events_queue = multiprocessing.Queue()
 results_queue = multiprocessing.Queue()
 
@@ -186,6 +188,9 @@ def _wait_mugen(target: DebuggerTarget, folder: str):
     # delay cleanup to make sure MUGEN shutdown is completed.
     target.launch_info.state = DebugProcessState.EXIT
     time.sleep(1)
+    # in IPC mode, send IPC command to the adapter to inform it of exit
+    if target.launch_info.ipc:
+        sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.SUCCESS, bytes()))
     if folder != None:
         shutil.rmtree(folder)
 
@@ -368,7 +373,7 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
     child = subprocess.Popen(args, cwd=working, creationflags=CREATE_SUSPENDED)
 
     ## share the launch info across processes
-    launch_info = DebuggerLaunchInfo(child.pid, 0, {}, character_folder, DebugProcessState.SUSPENDED_WAIT, {})
+    launch_info = DebuggerLaunchInfo(child.pid, 0, {}, character_folder, DebugProcessState.SUSPENDED_WAIT, {}, False)
     result = DebuggerTarget(child, launch_info)
 
     ## dispatch a thread to check when the subprocess closes + clean up automatically.
