@@ -6,6 +6,7 @@ import traceback
 # readline is required for command history. but it's not available on Windows.
 # the pyreadline3 library works as a replacement?
 import readline
+import json
 
 from mtl.types.translation import TypeCategory
 from mtl.types.debugging import DebugProcessState, DebugParameterInfo, DebuggerTarget, DebuggingContext, DebugTypeInfo, DebuggerResponseIPC, DebuggerResponseType
@@ -109,6 +110,12 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
     while command != DebuggerCommand.EXIT:
         ## if the debugger state is EXIT, set debugger to None.
         if debugger != None and debugger.launch_info.state == DebugProcessState.EXIT:
+            while not debugger.subprocess.poll():
+                ## re-continue the process in case it didn't continue earlier.
+                process.cont(debugger, ctx, next_state = DebugProcessState.EXIT)
+                process.resumeExternal(debugger)
+                ## kill the process
+                debugger.subprocess.terminate()
             debugger = None
 
         request = processDebugIPC()
@@ -124,17 +131,19 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 ## launch and attach MUGEN subprocess
                 ## TODO: right now `breakpoints` is not cleared between launches.
                 debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
-                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "pid": debugger.launch_info.process_id }).encode("utf-8")))
             elif command == DebuggerCommand.EXIT:
                 ## set the process state so the other threads can exit
-                if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+                if debugger != None:
+                    debugger.launch_info.state = DebugProcessState.EXIT
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
             elif command == DebuggerCommand.STOP:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
                     continue
                 ## continue the process.
-                process.cont(debugger, ctx)
+                process.cont(debugger, ctx, next_state = DebugProcessState.EXIT)
+                process.resumeExternal(debugger)
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))

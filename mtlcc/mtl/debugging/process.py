@@ -243,6 +243,10 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
         time.sleep(1/10000)
         continue
 
+    ## early exit from IPC (without running any code)
+    if launch_info.state == DebugProcessState.EXIT:
+        return
+
     ## identify the address database to use
     version_address = get_cached(SELECT_VERSION_ADDRESS, process_handle, launch_info)
     launch_info.database = ADDRESS_DATABASE[version_address]
@@ -380,11 +384,11 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
 
     return result
 
-def cont(target: DebuggerTarget, ctx: DebuggingContext, step: bool = False):
+def cont(target: DebuggerTarget, ctx: DebuggingContext, step: bool = False, next_state = DebugProcessState.RUNNING):
     if target.subprocess != None and target.launch_info.state == DebugProcessState.SUSPENDED_PROCEED:
         # resume the process, 
         psutil.Process(target.subprocess.pid).resume()
-        target.launch_info.state = DebugProcessState.RUNNING
+        target.launch_info.state = next_state
     elif target.subprocess != None and target.launch_info.state == DebugProcessState.PAUSED:
         ## reinsert the breakpoint table
         next_step = None
@@ -392,4 +396,4 @@ def cont(target: DebuggerTarget, ctx: DebuggingContext, step: bool = False):
         insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target, step = next_step)
 
         results_queue.put(DebugBreakResult(step = step))
-        target.launch_info.state = DebugProcessState.RUNNING
+        target.launch_info.state = next_state

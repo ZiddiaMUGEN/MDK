@@ -54,9 +54,12 @@ export class MTLDebugManager {
         // run mtldbg and store the debugging process
         // we need to pass `-i` for IPC-over-stream mode, this will make it possible to communicate with
         // the debugger process via stdin/stdout.
-        this._debuggingProcess = spawn(`${python} -m mtldbg -d ${database} -m ${mugen} -i`, {
-            shell: true,
+        console.log(`${python} -m mtldbg -d ${database} -m ${mugen} -i`)
+        this._debuggingProcess = spawn(python, ["-m", "mtldbg", "-d", database, "-m", mugen, "-i"], {
             stdio: 'pipe'
+        });
+        this._debuggingProcess.on('error', (err) => {
+            console.error('Failed to start child process:', err);
         });
         console.log(`Launched debugger process: ${this._debuggingProcess.pid}`);
         this._debuggingProcess.stdout?.on('data', chunk => {
@@ -74,11 +77,10 @@ export class MTLDebugManager {
 
     public async disconnect() {
         // send `stop` and `exit` commands to the debugging process
-        if (this._debuggingProcess != null) {
+        if (this._debuggingProcess && this._debuggingProcess.pid) {
             console.log("Attempting to gracefully stop debugging.");
             await this.sendMessageAndWaitForResponse(DebuggerCommandType.STOP, "");
             await this.sendMessageAndWaitForResponse(DebuggerCommandType.EXIT, "");
-            await new Promise(resolve => setTimeout(resolve, 1000));
             this._debuggingProcess.kill();
         }
 
@@ -116,7 +118,7 @@ export class MTLDebugManager {
                 messageId: inboundMessageId,
                 command: commandType,
                 response: responseType,
-                detail: params
+                detail: new TextDecoder().decode(params)
             });
 
             console.log(`Received new message with messageId ${inboundMessageId}, command ${commandType}, response ${responseType}`);
