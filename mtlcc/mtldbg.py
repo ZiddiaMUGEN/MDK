@@ -110,15 +110,6 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
         ## if the debugger state is EXIT, set debugger to None.
         if debugger != None and debugger.launch_info.state == DebugProcessState.EXIT:
             debugger = None
-        ## if the process is not None, PAUSED, or SUSPENDED_WAIT, do not accept input.
-        try:
-            while debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED]:
-                time.sleep(1/60)
-                if debugger.launch_info.state == DebugProcessState.EXIT:
-                    continue
-        except KeyboardInterrupt:
-            ## directly grants access to command prompt for one command
-            pass
 
         request = processDebugIPC()
         command = request.command_type
@@ -137,7 +128,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
             elif command == DebuggerCommand.EXIT:
                 ## set the process state so the other threads can exit
                 if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
-                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, bytes()))
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
             elif command == DebuggerCommand.STOP:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))

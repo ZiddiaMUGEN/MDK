@@ -60,7 +60,11 @@ export class MTLDebugManager {
         });
         console.log(`Launched debugger process: ${this._debuggingProcess.pid}`);
         this._debuggingProcess.stdout?.on('data', chunk => {
-            this._partialMessage = chunk;
+            if (this._partialMessage) {
+                this._partialMessage = Buffer.concat([this._partialMessage, chunk]);
+            } else {
+                this._partialMessage = chunk;
+            }
             this.readMessageFromPartial();
         });
         
@@ -74,6 +78,7 @@ export class MTLDebugManager {
             console.log("Attempting to gracefully stop debugging.");
             await this.sendMessageAndWaitForResponse(DebuggerCommandType.STOP, "");
             await this.sendMessageAndWaitForResponse(DebuggerCommandType.EXIT, "");
+            await new Promise(resolve => setTimeout(resolve, 1000));
             this._debuggingProcess.kill();
         }
 
@@ -90,23 +95,22 @@ export class MTLDebugManager {
     private readMessageFromPartial() {
         if (this._partialMessage && this._partialMessage.length >= MINIMUM_RESPONSE_LENGTH) {
             // get the next message ID
-            console.log(this._partialMessage.buffer);
-            const nextMessage = this._partialMessage.subarray(0, 36);
+            const nextMessage = Buffer.from(this._partialMessage.subarray(0, 36));
 
             const inboundMessageId = new TextDecoder().decode(nextMessage);
             console.log(`Receive response on messageId ${inboundMessageId}`);
 
-            const inboundDv = new DataView(this._partialMessage.buffer, 0);
-            const commandType = inboundDv.getInt32(36, true) as DebuggerCommandType;
-            const responseType = inboundDv.getInt32(40, true) as DebuggerResponseType;
-            const paramsLength = inboundDv.getInt32(44, true);
+            const argumentsBuffer = Buffer.from(this._partialMessage.subarray(36, 48));
+            const commandType = argumentsBuffer.readInt32LE(0) as DebuggerCommandType;
+            const responseType = argumentsBuffer.readInt32LE(4) as DebuggerResponseType;
+            const paramsLength = argumentsBuffer.readInt32LE(8);
 
             if (this._partialMessage.length < (MINIMUM_RESPONSE_LENGTH + paramsLength)) {
                 console.log(`Partial response for ${inboundMessageId} incomplete, will resume read later`);
                 return;
             }
 
-            const params = new Uint8Array(this._partialMessage.subarray(48, 48 + paramsLength));
+            const params = new Uint8Array(this._partialMessage.subarray(48, 48 + paramsLength)).slice();
 
             this._incomingMessages.push({
                 messageId: inboundMessageId,
@@ -117,7 +121,7 @@ export class MTLDebugManager {
 
             console.log(`Received new message with messageId ${inboundMessageId}, command ${commandType}, response ${responseType}`);
 
-            this._partialMessage = Buffer.copyBytesFrom(this._partialMessage.subarray(48 + paramsLength));
+            this._partialMessage = Buffer.from(this._partialMessage.subarray(48 + paramsLength));
         }
     }
 
@@ -166,7 +170,7 @@ export class MTLDebugManager {
         const dataView = new DataView(new ArrayBuffer(4), 0);
 
         dataView.setInt32(0, message.command, true);
-        const commandBuffer = new Uint8Array(dataView.buffer);
+        const commandBuffer = new Uint8Array(dataView.buffer).slice();
 
         let paramsString: string;
         try {
@@ -177,7 +181,7 @@ export class MTLDebugManager {
         const paramsBuffer = Buffer.from(paramsString, 'utf-8');
 
         dataView.setInt32(0, paramsBuffer.length, true);
-        const paramsLen = new Uint8Array(dataView.buffer);
+        const paramsLen = new Uint8Array(dataView.buffer).slice();
 
         const totalBuffer = new Uint8Array(await new Blob([messageBuffer, commandBuffer, paramsLen, paramsBuffer]).arrayBuffer());
 

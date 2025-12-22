@@ -42,7 +42,7 @@ def processDebugIPC() -> DebuggerRequestIPC:
     ## n bytes for parameters (bytes)
 
     message = sys.stdin.buffer.read(36)
-    command = int.from_bytes(sys.stdin.buffer.read(4), 'little')
+    command = int.from_bytes(sys.stdin.buffer.read(4), 'little', signed=True)
     param_size = int.from_bytes(sys.stdin.buffer.read(4), 'little')
 
     if param_size > 0:
@@ -62,7 +62,7 @@ def sendResponseIPC(response: DebuggerResponseIPC):
     ## n bytes for parameters (bytes)
 
     sys.stdout.buffer.write(response.message_id)
-    sys.stdout.buffer.write(int(response.command_type).to_bytes(4, 'little'))
-    sys.stdout.buffer.write(int(response.response_type).to_bytes(4, 'little'))
+    sys.stdout.buffer.write(int(response.command_type).to_bytes(4, 'little', signed=True))
+    sys.stdout.buffer.write(int(response.response_type).to_bytes(4, 'little', signed=True))
     sys.stdout.buffer.write(len(response.response_detail).to_bytes(4, 'little'))
     sys.stdout.buffer.write(response.response_detail)
