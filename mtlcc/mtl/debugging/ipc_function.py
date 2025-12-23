@@ -1,5 +1,6 @@
 import json
 import traceback
+import struct
 
 from mtl.types.debugging import DebugProcessState, DebuggerResponseIPC, DebuggerRequestIPC, DebuggerResponseType, DebuggingContext, DebuggerTarget
 from mtl.debugging import database, process
@@ -12,7 +13,15 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
     ## we just skip any `print` as we need to use stdio for IPC communication.
     debugger = None
 
-    ctx = database.load(target)
+    try:
+        ctx = database.load(target)
+    except:
+        error_message = traceback.format_exc()
+        error = {
+            'message': error_message
+        }
+        sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.ERROR, DEBUGGER_INVALID_DEBUG_DATABASE))
+        return
 
     ctx.p2_target = p2
     ctx.enable_ai = 1 if ai == "on" else 0
@@ -383,10 +392,42 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
                 if trigger not in triggers:
                     triggers.append(trigger)
         for trigger in triggers:
-            detailResult.append({
-                "name": trigger,
-                "value": 0
-            })
+            target = trigger.lower()
+            if target in debugger.launch_info.database["triggers"]:
+                offset = debugger.launch_info.database["triggers"][target]
+                raw_value = process.getValue(target_address + offset[0], debugger, ctx)
+                detailResult.append({
+                    "name": trigger,
+                    "value": raw_value
+                })
+            elif target in debugger.launch_info.database["game_triggers"]["int"]:
+                offset = debugger.launch_info.database["game_triggers"]["int"][target]
+                raw_value = process.getValue(game_address + offset, debugger, ctx)
+                detailResult.append({
+                    "name": trigger,
+                    "value": raw_value
+                })
+            elif target in debugger.launch_info.database["game_triggers"]["float"]:
+                offset = debugger.launch_info.database["game_triggers"]["float"][target]
+                raw_value = process.getBytes(game_address + offset, debugger, ctx, 4)
+                resolved_value = round(struct.unpack('<f', raw_value)[0], 3)
+                detailResult.append({
+                    "name": trigger,
+                    "value": resolved_value
+                })
+            elif target in debugger.launch_info.database["game_triggers"]["double"]:
+                offset = debugger.launch_info.database["game_triggers"]["double"][target]
+                raw_value = process.getBytes(game_address + offset, debugger, ctx, 8)
+                resolved_value = round(struct.unpack('<d', raw_value)[0], 3)
+                detailResult.append({
+                    "name": trigger,
+                    "value": raw_value
+                })
+            else:
+                detailResult.append({
+                    "name": trigger,
+                    "value": "No offset for trigger"
+                })
     elif variable_type == "INDEXED_INT":
         for idx in range(60):
             detailResult.append({

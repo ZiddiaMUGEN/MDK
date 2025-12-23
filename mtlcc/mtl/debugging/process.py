@@ -112,6 +112,11 @@ def getValue(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> int:
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
     return get_uncached(offset, process_handle)
 
+## utility function to read trigger values from memory
+def getBytes(offset: int, target: DebuggerTarget, ctx: DebuggingContext, count: int) -> bytes:
+    process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
+    return get_bytes(offset, process_handle, count)
+
 ## utility function to read strings from memory
 def getString(offset: int, target: DebuggerTarget, ctx: DebuggingContext) -> str:
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
@@ -141,6 +146,12 @@ def get_byte(addr: int, handle: int) -> bytes:
     buf = ctypes.create_string_buffer(1)
     read = c_int()
     _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, 1, ctypes.byref(read)))
+    return buf.value
+
+def get_bytes(addr: int, handle: int, count: int) -> bytes:
+    buf = ctypes.create_string_buffer(count)
+    read = c_int()
+    _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, count, ctypes.byref(read)))
     return buf.value
 
 def set_addr(addr: int, val: int, handle: int):

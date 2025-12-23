@@ -116,6 +116,15 @@ ADDRESS_MUGEN_11B1 = {
         "pausemovetime": [0x228, int],
         "supermovetime": [0x22C, int],
         "ailevel": [0x2424, int]
+    },
+    "game_triggers": {
+        "int": {
+            "roundstate": 0x12754
+        },
+        "float": {
+        },
+        "double": {
+        }
     }
 }
 

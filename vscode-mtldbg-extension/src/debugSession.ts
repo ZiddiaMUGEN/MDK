@@ -40,8 +40,11 @@ export class MTLDebugSession extends LoggingDebugSession {
         this.setDebuggerLinesStartAt1(true);
 		this.setDebuggerColumnsStartAt1(true);
 
-		this.debugManager.on('IPC_EXIT', _ => {
+		this.debugManager.on('IPC_EXIT', evt => {
 			// exit early due to IPC request (e.g. an exception in the debugger, or MUGEN closing)
+			if (evt.detail === "DEBUGGER_INVALID_DEBUG_DATABASE") {
+				vscode.window.showErrorMessage("Debugger has been closed due to an incompatible debugging database.");
+			}
 			this.sendEvent(new TerminatedEvent(false));
 		});
     }
