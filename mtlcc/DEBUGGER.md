@@ -214,6 +214,7 @@ For each statedef, store the following information:
 - 4 bytes: line number for definition
 - ? bytes: Local Variable Table
 - ? bytes: State Controller Locations
+- ? bytes: State Controller Triggers
 
 ##### 6a. Local Variable Table
 
@@ -238,3 +239,18 @@ This is for each controller post-expansion (so e.g. if a template is called cont
     - for each controller:
     - 4 bytes: index into string table for filename
     - 4 bytes: line number for definition
+
+##### 6c. Trigger Reference
+
+For each controller in the statedef, data is produced for the triggers used by the controller. The count of controllers should match the count in 6b.
+
+This is also post-expansion (so any custom triggers will not be stored in the database, instead the triggers used in the definition are stored).
+
+This is intended for use in the debugger to quickly assess trigger values at time of controller execution.
+
+- 2 bytes: controller count
+    - for each controller:
+    - 4 bytes: controller type (index into string table)
+    - 2 bytes: trigger count
+        - for each trigger:
+        - 4 bytes: index into string table for trigger name

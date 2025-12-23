@@ -377,8 +377,16 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
                 "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
             })
     elif variable_type == "AUTO" and state != None:
-        ## TODO this needs support in the debugging DB.
-        pass
+        triggers: list[str] = []
+        for ctrl in state.state_data:
+            for trigger in ctrl.triggers:
+                if trigger not in triggers:
+                    triggers.append(trigger)
+        for trigger in triggers:
+            detailResult.append({
+                "name": trigger,
+                "value": 0
+            })
     elif variable_type == "INDEXED_INT":
         for idx in range(60):
             detailResult.append({

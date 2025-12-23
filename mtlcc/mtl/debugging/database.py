@@ -2,7 +2,7 @@ import os
 
 from mtl.types.context import *
 from mtl.types.shared import TranslationError, DebuggerError
-from mtl.utils.compiler import find_type, find, equals_insensitive, compiler_internal
+from mtl.utils.compiler import find_trigger, find_type, find, equals_insensitive, compiler_internal
 from mtl.utils.constant import MTL_VERSION, DEBUGGER_VERSION
 from mtl.utils.binary import *
 
@@ -81,7 +81,7 @@ def addStateDefinitionsToDatabase(ctx: TranslationContext):
         addStringToDatabase(statedef.name, ctx)
         addPathToDatabase(statedef.location.filename, ctx)
         state_id = statedef.parameters.id if statedef.parameters.id != None else -4
-        info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [])
+        info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [], [])
         for local in statedef.locals:
             local_info = DebugParameterInfo(local.name, local.type, statedef.scope, local.allocations, local.is_system)
             addStringToDatabase(local.name, ctx)
@@ -89,7 +89,23 @@ def addStateDefinitionsToDatabase(ctx: TranslationContext):
         for controller in statedef.states:
             addPathToDatabase(controller.location.filename, ctx)
             info.states.append(controller.location)
+        for controller in statedef.states:
+            addStringToDatabase(controller.name, ctx)
+            ctrl_info = DebugControllerInfo(controller.name, [])
+            for trigger in controller.properties:
+                addReferencedTriggerToDatabase(trigger.value, ctrl_info, ctx)
+            for idx in controller.triggers:
+                for trigger in controller.triggers[idx].triggers:
+                    addReferencedTriggerToDatabase(trigger, ctrl_info, ctx)
+            info.state_data.append(ctrl_info)
         ctx.debugging.states.append(info)
+
+def addReferencedTriggerToDatabase(trigger: TriggerTree, info: DebugControllerInfo, ctx: TranslationContext):
+    if trigger.node == TriggerTreeNode.ATOM and (resolved := find_trigger(trigger.operator, [], ctx, trigger.location)) != None:
+        if resolved.name not in info.triggers:
+            info.triggers.append(resolved.name)
+    for child in trigger.children:
+        addReferencedTriggerToDatabase(child, info, ctx)
 
 def writeDatabase(filename: str, ctx: DebuggingContext):
     with open(filename, mode='wb') as f:
@@ -220,6 +236,14 @@ def writeDatabase(filename: str, ctx: DebuggingContext):
             for controller in state.states:
                 write_integer(ctx.strings.index(getDefRelativePath(controller.filename, ctx.filename)), f)
                 write_integer(controller.line, f)
+            ## because the database spec specifies a new table after the controller locations table for controller triggers,
+            ## we need to redo this iteration.
+            write_short(len(state.state_data), f)
+            for controller in state.state_data:
+                write_integer(ctx.strings.index(controller.type), f)
+                write_short(len(controller.triggers), f)
+                for trigger in controller.triggers:
+                    write_integer(ctx.strings.index(trigger), f)
 
 ## loads context.
 def load(filename: str) -> DebuggingContext:
@@ -326,6 +350,7 @@ def load(filename: str) -> DebuggingContext:
             sds = StateDefinitionScope(scope, target if target != -1 else None)
             locals: list[DebugParameterInfo] = []
             controllers: list[Location] = []
+            controller_data: list[DebugControllerInfo] = []
             for _ in range(read_short(f)):
                 local_name = ctx.strings[read_integer(f)]
                 local_type = ctx.types[read_integer(f)]
@@ -335,6 +360,12 @@ def load(filename: str) -> DebuggingContext:
                 locals.append(DebugParameterInfo(local_name, local_type, sds, allocations, False))
             for _ in range(read_short(f)):
                 controllers.append(Location(ctx.strings[read_integer(f)], read_integer(f)))
-            ctx.states.append(DebugStateInfo(name, id, sds, is_common, Location(filename, line), locals, controllers))
+            for _ in range(read_short(f)):
+                ctrl_type = ctx.strings[read_integer(f)]
+                triggers: list[str] = []
+                for _ in range(read_short(f)):
+                    triggers.append(ctx.strings[read_integer(f)])
+                controller_data.append(DebugControllerInfo(ctrl_type, triggers))
+            ctx.states.append(DebugStateInfo(name, id, sds, is_common, Location(filename, line), locals, controllers, controller_data))
 
     return ctx

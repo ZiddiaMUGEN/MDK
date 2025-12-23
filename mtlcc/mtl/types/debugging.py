@@ -147,6 +147,11 @@ class DebugParameterInfo:
     system: bool
 
 @dataclass
+class DebugControllerInfo:
+    type: str
+    triggers: list[str]
+
+@dataclass
 class DebugStateInfo:
     name: str
     id: int
@@ -155,6 +160,7 @@ class DebugStateInfo:
     location: Location
     locals: list[DebugParameterInfo]
     states: list[Location]
+    state_data: list[DebugControllerInfo]
 
 @dataclass
 class DebuggingContext:
