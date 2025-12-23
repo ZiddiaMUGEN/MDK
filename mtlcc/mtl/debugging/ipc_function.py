@@ -358,31 +358,50 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
         sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
         return
     
+    player_state = process.getValue(target_address + debugger.launch_info.database["stateno"], debugger, ctx)
+    state = get_state_by_id(player_state, ctx)
+    
     ## handle the specific type of variable request
     detailResult = []
-    if variable_type == "INDEXED_INT":
+    if variable_type == "GLOBAL" and state != None:
+        for var in ctx.globals:
+            if var.scope == state.scope:
+                detailResult.append({
+                    "name": var.name,
+                    "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
+                })
+    elif variable_type == "LOCAL" and state != None:
+        for var in state.locals:
+            detailResult.append({
+                "name": var.name,
+                "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
+            })
+    elif variable_type == "AUTO" and state != None:
+        ## TODO this needs support in the debugging DB.
+        pass
+    elif variable_type == "INDEXED_INT":
         for idx in range(60):
             detailResult.append({
                 "name": f"var({idx})",
-                "value": process.getVariable(target_address, idx, 0, 4, False, False, debugger, ctx)
+                "value": process.getVariable(target_address, idx, 0, 32, False, False, debugger, ctx)
             })
     elif variable_type == "INDEXED_FLOAT":
         for idx in range(40):
             detailResult.append({
                 "name": f"fvar({idx})",
-                "value": process.getVariable(target_address, idx, 0, 4, True, False, debugger, ctx)
+                "value": process.getVariable(target_address, idx, 0, 32, True, False, debugger, ctx)
             })
     elif variable_type == "INDEXED_SYSINT":
         for idx in range(5):
             detailResult.append({
                 "name": f"sysvar({idx})",
-                "value": process.getVariable(target_address, idx, 0, 4, False, True, debugger, ctx)
+                "value": process.getVariable(target_address, idx, 0, 32, False, True, debugger, ctx)
             })
     elif variable_type == "INDEXED_SYSFLOAT":
         for idx in range(5):
             detailResult.append({
                 "name": f"sysfvar({idx})",
-                "value": process.getVariable(target_address, idx, 0, 4, True, True, debugger, ctx)
+                "value": process.getVariable(target_address, idx, 0, 32, True, True, debugger, ctx)
             })
 
     ## we have to suspend the process here otherwise the data will likely be junk!
