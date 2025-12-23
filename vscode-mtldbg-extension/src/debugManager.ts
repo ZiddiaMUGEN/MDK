@@ -211,7 +211,7 @@ export class MTLDebugManager extends EventEmitter {
     }
 
     private readMessageFromPartial() {
-        if (this._partialMessage && this._partialMessage.length >= MINIMUM_RESPONSE_LENGTH) {
+        while (this._partialMessage && this._partialMessage.length >= MINIMUM_RESPONSE_LENGTH) {
             // get the next message ID
             const nextMessage = Buffer.from(this._partialMessage.subarray(0, 36));
 
