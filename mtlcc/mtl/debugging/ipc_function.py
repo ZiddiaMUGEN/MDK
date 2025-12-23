@@ -113,7 +113,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 ## i do not currently have a way to look up which character is executing code at this time,
                 ## so we will just unset current_breakpoint.
                 process.suspendExternal(debugger)
-                debugger.launch_info.state = DebugProcessState.PAUSED
+                debugger.launch_info.state = DebugProcessState.SUSPENDED_DEBUG
 
                 ctx.current_breakpoint = None
                 ctx.current_owner = 0
@@ -148,7 +148,7 @@ def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: D
     include_enemy = 'includeEnemy' in params and params['includeEnemy']
 
     ## we have to suspend the process here otherwise the data will likely be junk!
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.suspendExternal(debugger)
 
     ## iterate each player
@@ -182,7 +182,7 @@ def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: D
                 "id": player_id
             })
     
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.resumeExternal(debugger)
 
     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(results).encode('utf-8')))
@@ -197,7 +197,7 @@ def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx:
     target_id = params['player']
 
     ## we have to suspend the process here otherwise the data will likely be junk!
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.suspendExternal(debugger)
 
     ## iterate each player
@@ -236,7 +236,7 @@ def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx:
                     }
                 }
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
-                if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+                if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
                     process.resumeExternal(debugger)
                 return
             target_address = player_address
@@ -287,7 +287,7 @@ def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx:
 
     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
 
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.resumeExternal(debugger)
 
 def ipcGetTeamside(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
@@ -454,10 +454,10 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
             })
 
     ## we have to suspend the process here otherwise the data will likely be junk!
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.suspendExternal(debugger)
 
     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
 
-    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.resumeExternal(debugger)

@@ -109,7 +109,7 @@ def runDebugger(target: str, mugen: str, p2: str, ai: str):
             debugger = None
         ## if the process is not None, PAUSED, or SUSPENDED_WAIT, do not accept input.
         try:
-            while debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED]:
+            while debugger != None and debugger.launch_info.state not in [DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_DEBUG]:
                 time.sleep(1/60)
                 if debugger.launch_info.state == DebugProcessState.EXIT:
                     continue

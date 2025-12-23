@@ -402,8 +402,12 @@ def launch(target: str, character: str, ctx: DebuggingContext) -> DebuggerTarget
 
 def cont(target: DebuggerTarget, ctx: DebuggingContext, step: bool = False, next_state = DebugProcessState.RUNNING):
     if target.subprocess != None and target.launch_info.state == DebugProcessState.SUSPENDED_PROCEED:
-        # resume the process, 
+        # resume the process
         psutil.Process(target.subprocess.pid).resume()
+        target.launch_info.state = next_state
+    elif target.subprocess != None and target.launch_info.state == DebugProcessState.SUSPENDED_DEBUG:
+        # unsuspend directly from the OS (since SUSPENDED_DEBUG happens on a manual break)
+        resumeExternal(target)
         target.launch_info.state = next_state
     elif target.subprocess != None and target.launch_info.state == DebugProcessState.PAUSED:
         ## reinsert the breakpoint table

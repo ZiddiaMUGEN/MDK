@@ -66,6 +66,7 @@ class DebugProcessState(Enum):
     SUSPENDED_WAIT = 1 # process is suspended, waiting for debugger to attach.
     SUSPENDED_PROCEED = 2 # process is suspended, debugger is attached.
     PAUSED = 3 # process is paused by a breakpoint.
+    SUSPENDED_DEBUG = 4 # process is paused by a direct pause request from a debugger.
 
 @dataclass
 class DebuggerRequest:
