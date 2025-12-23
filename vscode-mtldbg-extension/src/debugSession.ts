@@ -302,4 +302,16 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		this.sendResponse(response);
 	}
+
+	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments, request?: DebugProtocol.Request) {
+		const playerVariables = await this.debugManager.getPlayerVariables(args.frameId ?? 0, VariableType.ALL);
+		const match = playerVariables.find(x => x.name.toLowerCase() === args.expression.toLowerCase());
+		if (match) {
+			response.body = {
+				result: `${args.expression}: ${match.value.toString()}`,
+				variablesReference: 0
+			};
+		}
+		this.sendResponse(response);
+	}
 }

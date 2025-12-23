@@ -372,20 +372,20 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
     
     ## handle the specific type of variable request
     detailResult = []
-    if variable_type == "GLOBAL" and state != None:
+    if (variable_type == "GLOBAL" or variable_type == "ALL") and state != None:
         for var in ctx.globals:
             if var.scope == state.scope:
                 detailResult.append({
                     "name": var.name,
                     "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
                 })
-    elif variable_type == "LOCAL" and state != None:
+    if (variable_type == "LOCAL" or variable_type == "ALL") and state != None:
         for var in state.locals:
             detailResult.append({
                 "name": var.name,
                 "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
             })
-    elif variable_type == "AUTO" and state != None:
+    if (variable_type == "AUTO" or variable_type == "ALL") and state != None:
         triggers: list[str] = []
         for ctrl in state.state_data:
             for trigger in ctrl.triggers:
@@ -428,25 +428,25 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
                     "name": trigger,
                     "value": "No offset for trigger"
                 })
-    elif variable_type == "INDEXED_INT":
+    if variable_type == "INDEXED_INT" or variable_type == "ALL":
         for idx in range(60):
             detailResult.append({
                 "name": f"var({idx})",
                 "value": process.getVariable(target_address, idx, 0, 32, False, False, debugger, ctx)
             })
-    elif variable_type == "INDEXED_FLOAT":
+    if variable_type == "INDEXED_FLOAT" or variable_type == "ALL":
         for idx in range(40):
             detailResult.append({
                 "name": f"fvar({idx})",
                 "value": process.getVariable(target_address, idx, 0, 32, True, False, debugger, ctx)
             })
-    elif variable_type == "INDEXED_SYSINT":
+    if variable_type == "INDEXED_SYSINT" or variable_type == "ALL":
         for idx in range(5):
             detailResult.append({
                 "name": f"sysvar({idx})",
                 "value": process.getVariable(target_address, idx, 0, 32, False, True, debugger, ctx)
             })
-    elif variable_type == "INDEXED_SYSFLOAT":
+    if variable_type == "INDEXED_SYSFLOAT" or variable_type == "ALL":
         for idx in range(5):
             detailResult.append({
                 "name": f"sysfvar({idx})",

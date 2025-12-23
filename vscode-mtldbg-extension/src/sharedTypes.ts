@@ -13,7 +13,8 @@ export enum VariableType {
 	INDEXED_INT = 3,
 	INDEXED_FLOAT = 4,
 	INDEXED_SYSINT = 5,
-	INDEXED_SYSFLOAT = 6
+	INDEXED_SYSFLOAT = 6,
+	ALL = 99
 }
 
 export enum DebuggerCommandType {
