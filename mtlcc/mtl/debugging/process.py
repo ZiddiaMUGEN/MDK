@@ -243,6 +243,10 @@ def _debug_mugen(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue,
 def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue, results: multiprocessing.Queue, ctx: DebuggingContext):
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, launch_info.process_id)
 
+    ## identify the address database to use
+    version_address = get_cached(SELECT_VERSION_ADDRESS, process_handle, launch_info)
+    launch_info.database = ADDRESS_DATABASE[version_address]
+
     ## wait for the initial `suspended` states to progress
     while launch_info.state in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT]:
         time.sleep(1/10000)
@@ -251,10 +255,6 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
     ## early exit from IPC (without running any code)
     if launch_info.state == DebugProcessState.EXIT:
         return
-
-    ## identify the address database to use
-    version_address = get_cached(SELECT_VERSION_ADDRESS, process_handle, launch_info)
-    launch_info.database = ADDRESS_DATABASE[version_address]
 
     ## get thread handle and suspend the thread temporarily
     thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, launch_info.thread_id)

@@ -1,0 +1,395 @@
+import json
+import traceback
+
+from mtl.types.debugging import DebugProcessState, DebuggerResponseIPC, DebuggerRequestIPC, DebuggerResponseType, DebuggingContext, DebuggerTarget
+from mtl.debugging import database, process
+from mtl.debugging.commands import DebuggerCommand, processDebugIPC, sendResponseIPC
+from mtl.debugging.ipc_code import *
+from mtl.utils.debug import get_state_by_id
+
+def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
+    ## the early part of this function is identical to `runDebugger`.
+    ## we just skip any `print` as we need to use stdio for IPC communication.
+    debugger = None
+
+    ctx = database.load(target)
+
+    ctx.p2_target = p2
+    ctx.enable_ai = 1 if ai == "on" else 0
+    ctx.quiet = True
+
+    command = DebuggerCommand.NONE
+    while command != DebuggerCommand.EXIT:
+        ## if the debugger state is EXIT, set debugger to None.
+        if debugger != None and debugger.launch_info.state == DebugProcessState.EXIT:
+            while not debugger.subprocess.poll():
+                ## re-continue the process in case it didn't continue earlier.
+                process.cont(debugger, ctx, next_state = DebugProcessState.EXIT)
+                process.resumeExternal(debugger)
+                ## kill the process
+                debugger.subprocess.terminate()
+            debugger = None
+
+        request = processDebugIPC()
+        command = request.command_type
+
+        if command == DebuggerCommand.EXIT and debugger != None and debugger.subprocess != None:
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_HELD_OPEN))
+            command = DebuggerCommand.NONE
+            continue
+
+        try:
+            if command == DebuggerCommand.LAUNCH:
+                ## launch and attach MUGEN subprocess
+                ## TODO: right now `breakpoints` is not cleared between launches.
+                debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
+                debugger.launch_info.ipc = True
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "pid": debugger.launch_info.process_id }).encode("utf-8")))
+            elif command == DebuggerCommand.CONTINUE:
+                ## allow the process to continue running
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+                process.cont(debugger, ctx)
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.STOP:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+                ## continue the process.
+                process.cont(debugger, ctx, next_state = DebugProcessState.EXIT)
+                process.resumeExternal(debugger)
+                ## set the process state so the other threads can exit
+                if debugger != None: debugger.launch_info.state = DebugProcessState.EXIT
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.EXIT:
+                ## set the process state so the other threads can exit
+                if debugger != None:
+                    debugger.launch_info.state = DebugProcessState.EXIT
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.IPC_LIST_PLAYERS:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    return
+                
+                ipcListPlayers(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_GET_PLAYER_INFO:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ipcPlayerDetails(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_GET_VARIABLES:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ipcGetVariables(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_GET_TEAMSIDE:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ipcGetTeamside(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_PAUSE:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                if debugger.launch_info.state != DebugProcessState.RUNNING:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_ALREADY_PAUSED))
+                    continue
+
+                ## this is an immediate pause, does not involve the breakpoint system.
+                ## i do not currently have a way to look up which character is executing code at this time,
+                ## so we will just unset current_breakpoint.
+                process.suspendExternal(debugger)
+                debugger.launch_info.state = DebugProcessState.PAUSED
+
+                ctx.current_breakpoint = None
+                ctx.current_owner = 0
+
+                ## we send the first player ID through to the adapter to use as the 'thread ID' to pause on.
+                game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+                if game_address == 0:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+                    return
+                p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+                if p1_address == 0:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+                    return
+                
+                player_id = process.getValue(p1_address + 0x04, debugger, ctx)
+
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "firstPlayerID": player_id }).encode('utf-8')))
+            else:
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_UNRECOGNIZED_COMMAND))
+        except:
+            error_message = traceback.format_exc()
+            error = {
+                'message': error_message,
+                'send_params': request.params.decode('utf-8')
+            }
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, json.dumps(error).encode('utf-8')))
+            continue
+
+def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
+    ## send a list of player IDs and names to the adapter.
+    params = json.loads(request.params.decode('utf-8'))
+    include_enemy = 'includeEnemy' in params and params['includeEnemy']
+
+    ## we have to suspend the process here otherwise the data will likely be junk!
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.suspendExternal(debugger)
+
+    ## iterate each player
+    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+    if game_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+        return
+    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+    if p1_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+        return
+
+    results: list[dict] = []
+    
+    for idx in range(60):
+        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+        if player_address == 0:
+            continue
+        player_exist = process.getValue(player_address + debugger.launch_info.database["exist"], debugger, ctx)
+        if player_exist == 0:
+            continue
+        root_address = process.getValue(player_address + debugger.launch_info.database["root_addr"], debugger, ctx)
+        helper_id = process.getValue(player_address + debugger.launch_info.database["helperid"], debugger, ctx)
+        if player_address == p1_address or root_address == p1_address or include_enemy:
+            player_name = process.getString(player_address + 0x20, debugger, ctx)
+            player_type = "Player" if idx < 4 else f"Helper({helper_id})"
+            player_team = "p1" if player_address == p1_address or root_address == p1_address else "p2"
+            player_id = process.getValue(player_address + 0x04, debugger, ctx)
+            results.append({
+                "name": f"{player_name} ({player_type}, {player_team})",
+                "id": player_id
+            })
+    
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.resumeExternal(debugger)
+
+    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(results).encode('utf-8')))
+
+def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
+    ## send the requested player's ID, name, and the current frame information
+    params = json.loads(request.params.decode('utf-8'))
+    if 'player' not in params:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+        return
+    
+    target_id = params['player']
+
+    ## we have to suspend the process here otherwise the data will likely be junk!
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.suspendExternal(debugger)
+
+    ## iterate each player
+    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+    if game_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+        return
+    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+    if p1_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+        return
+
+    target_address = 0
+    for idx in range(60):
+        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+        if player_address == 0:
+            continue
+            
+        root_address = process.getValue(player_address + debugger.launch_info.database["root_addr"], debugger, ctx)
+        player_id = process.getValue(player_address + 0x04, debugger, ctx)
+
+        if target_id == player_id:
+            if player_address != p1_address and root_address != p1_address:
+                ## player with provided ID is owned by p2
+                ## we can still provide SOME context for p2, we just can't provide a file name.
+                player_name = process.getString(player_address + 0x20, debugger, ctx)
+                player_state = process.getValue(player_address + debugger.launch_info.database["stateno"], debugger, ctx)
+
+                detailResult = {
+                    "id": player_id,
+                    "name": player_name,
+                    "frame": {
+                        "fileName": "P2 data is not in debugging database and file cannot be retrieved.",
+                        "lineNumber": 1,
+                        "stateNameOrId": f"Unmanaged State {player_state}"
+                    }
+                }
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
+                if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+                    process.resumeExternal(debugger)
+                return
+            target_address = player_address
+            break
+
+    if target_address == 0:
+        ## player with provided ID does not exist
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
+        return
+    
+    if target_address == ctx.current_owner and ctx.current_breakpoint != None:
+        ## player with provided ID is the current breakpoint holder, so we can display the exact controller
+        player_name = process.getString(target_address + 0x20, debugger, ctx)
+        player_state = ctx.current_breakpoint[0]
+        player_ctrl = ctx.current_breakpoint[1]
+
+        if (state := get_state_by_id(player_state, ctx)) == None:
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_INVALID_STATE))
+            return
+
+        detailResult = {
+            "id": target_id,
+            "name": player_name,
+            "frame": {
+                "fileName": state.states[player_ctrl].filename,
+                "lineNumber": state.states[player_ctrl].line,
+                "stateNameOrId": state.name
+            }
+        }
+    else:
+        ## player with provided ID is not the current breakpoint holder, so we can only display the state
+        player_name = process.getString(target_address + 0x20, debugger, ctx)
+        player_state = process.getValue(target_address + debugger.launch_info.database["stateno"], debugger, ctx)
+
+        if (state := get_state_by_id(player_state, ctx)) == None:
+            sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_INVALID_STATE))
+            return
+
+        detailResult = {
+            "id": target_id,
+            "name": player_name,
+            "frame": {
+                "fileName": state.location.filename,
+                "lineNumber": state.location.line,
+                "stateNameOrId": state.name
+            }
+        }
+
+    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
+
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.resumeExternal(debugger)
+
+def ipcGetTeamside(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
+    ## send a list of player IDs and names to the adapter.
+    params = json.loads(request.params.decode('utf-8'))
+    if 'player' not in params:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+        return
+    
+    target_id = params['player']
+
+    ## iterate each player
+    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+    if game_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+        return
+    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+    if p1_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+        return
+
+    teamside = 0
+    for idx in range(60):
+        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+        if player_address == 0:
+            continue
+
+        root_address = process.getValue(player_address + debugger.launch_info.database["root_addr"], debugger, ctx)
+        player_id = process.getValue(player_address + 0x04, debugger, ctx)
+        if target_id == player_id:
+            if player_address != p1_address and root_address != p1_address:
+                teamside = 2
+            else:
+                teamside = 1
+            break
+
+    if teamside == 0:
+        ## player with provided ID does not exist
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
+        return
+    
+    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps({ "teamside": teamside }).encode('utf-8')))
+
+def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
+    ## send a list of player IDs and names to the adapter.
+    params = json.loads(request.params.decode('utf-8'))
+    if 'player' not in params or 'type' not in params:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+        return
+    
+    target_id = params['player']
+    variable_type = params['type']
+
+    ## iterate each player
+    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+    if game_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+        return
+    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+    if p1_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+        return
+
+    target_address = 0
+    for idx in range(60):
+        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+        if player_address == 0:
+            continue
+
+        player_id = process.getValue(player_address + 0x04, debugger, ctx)
+        if target_id == player_id:
+            target_address = player_address
+            break
+
+    if target_address == 0:
+        ## player with provided ID does not exist
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
+        return
+    
+    ## handle the specific type of variable request
+    detailResult = []
+    if variable_type == "INDEXED_INT":
+        for idx in range(60):
+            detailResult.append({
+                "name": f"var({idx})",
+                "value": process.getVariable(target_address, idx, 0, 4, False, False, debugger, ctx)
+            })
+    elif variable_type == "INDEXED_FLOAT":
+        for idx in range(40):
+            detailResult.append({
+                "name": f"fvar({idx})",
+                "value": process.getVariable(target_address, idx, 0, 4, True, False, debugger, ctx)
+            })
+    elif variable_type == "INDEXED_SYSINT":
+        for idx in range(5):
+            detailResult.append({
+                "name": f"sysvar({idx})",
+                "value": process.getVariable(target_address, idx, 0, 4, False, True, debugger, ctx)
+            })
+    elif variable_type == "INDEXED_SYSFLOAT":
+        for idx in range(5):
+            detailResult.append({
+                "name": f"sysfvar({idx})",
+                "value": process.getVariable(target_address, idx, 0, 4, True, True, debugger, ctx)
+            })
+
+    ## we have to suspend the process here otherwise the data will likely be junk!
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.suspendExternal(debugger)
+
+    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
+
+    if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED]:
+        process.resumeExternal(debugger)

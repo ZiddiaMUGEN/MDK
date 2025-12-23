@@ -1,10 +1,23 @@
+import * as vscode from 'vscode';
+
 import { ChildProcess, spawn } from 'child_process';
 import { randomUUID, UUID } from 'crypto';
 import { EventEmitter } from 'events';
-import { DebuggerCommandType, DebuggerResponseType, DebuggerRequestIPC, DebuggerResponseIPC } from './sharedTypes';
+import { DebuggerCommandType, DebuggerResponseType, DebuggerRequestIPC, DebuggerResponseIPC, VariableType } from './sharedTypes';
 
 const MINIMUM_RESPONSE_LENGTH = 48;
 const MTL_TO_DAP_ID = '00000000-0000-0000-0000-000000000000';
+
+interface PlayerFrame {
+    stateNameOrId: string;
+    fileName: string;
+    lineNumber: number;
+}
+
+interface MugenVariable {
+    name: string;
+    value: number;
+}
 
 export class MTLDebugManager extends EventEmitter {
     private _debuggingProcess: ChildProcess | null = null;
@@ -39,17 +52,37 @@ export class MTLDebugManager extends EventEmitter {
         });
         
         // notify debugger of launch
-        await this.sendMessageAndWaitForResponse(DebuggerCommandType.LAUNCH, "");
+        const launchResult = await this.sendMessageAndWaitForResponse(DebuggerCommandType.LAUNCH, "");
+        if (launchResult.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(launchResult);
+            await this.disconnect();
+            return;
+        }
         // run CONTINUE if the debugger should not stop on entry
-        if (!stopOnEntry) await this.sendMessageAndWaitForResponse(DebuggerCommandType.CONTINUE, "");
+        if (!stopOnEntry) {
+            const continueResult = await this.sendMessageAndWaitForResponse(DebuggerCommandType.CONTINUE, "");
+            if (continueResult.response !== DebuggerResponseType.SUCCESS) {
+                this.displayResponseError(launchResult);
+                await this.disconnect();
+                return;
+            }
+        }
     }
 
     public async disconnect() {
         // send `stop` and `exit` commands to the debugging process
         if (this._debuggingProcess && this._debuggingProcess.pid) {
             console.log("Attempting to gracefully stop debugging.");
-            await this.sendMessageAndWaitForResponse(DebuggerCommandType.STOP, "");
-            await this.sendMessageAndWaitForResponse(DebuggerCommandType.EXIT, "");
+            const stopResult = await this.sendMessageAndWaitForResponse(DebuggerCommandType.STOP, "");
+            const exitResult = await this.sendMessageAndWaitForResponse(DebuggerCommandType.EXIT, "");
+            if (stopResult.response === DebuggerResponseType.EXCEPTION) {
+                console.log("There may have been an issue when shutting down the debugger, check the result log.");
+                this.displayResponseError(stopResult);
+            }
+            if (exitResult.response === DebuggerResponseType.EXCEPTION) {
+                console.log("There may have been an issue when shutting down the debugger, check the result log.");
+                this.displayResponseError(stopResult);
+            }
             this._debuggingProcess.kill();
         }
 
@@ -59,8 +92,122 @@ export class MTLDebugManager extends EventEmitter {
         this._partialMessage = null;
     }
 
+    public async continue() {
+        if (!this.isConnected()) throw "Can't continue when the debugger is not running!";
+
+        const result = await this.sendMessageAndWaitForResponse(DebuggerCommandType.CONTINUE, "");
+        if (result.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(result);
+        }
+    }
+
+    public async pause() {
+        if (!this.isConnected()) throw "Can't pause when the debugger is not running!";
+
+        const result = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_PAUSE, "");
+        if (result.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(result);
+            return;
+        }
+    }
+
+    public async requestPlayerList(): Promise<{ name: string, id: number }[]> {
+        if (!this.isConnected()) return [];
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_LIST_PLAYERS, { includeEnemy: true });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            // for player_list we can swallow the game initialization and player initialization errors
+            // (because the breakOnEntry will occur before initialization)
+            if (results.detail === 'DEBUGGER_GAME_NOT_INITIALIZED' || results.detail === 'DEBUGGER_PLAYERS_NOT_INITIALIZED') {
+                console.log(`Requested player list before initialization completed: ${results.detail}`);
+            } else {
+                this.displayResponseError(results);
+            }
+            return [];
+        }
+
+        return JSON.parse(results.detail);
+    }
+
+    public async requestPlayerDetails(player: number): Promise<{ name: string, id: number, frame: PlayerFrame }> {
+        if (!this.isConnected()) throw "Cannot request player details when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_GET_PLAYER_INFO, { player });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            if (results.detail === 'DEBUGGER_PLAYER_WRONG_TEAMSIDE') {
+                console.log(`Requested player list before initialization completed: ${results.detail}`);
+            } else {
+                this.displayResponseError(results);
+            }
+            return { name: "", id: 0, frame: { fileName: "", stateNameOrId: "", lineNumber: 1 }};
+        }
+
+        return JSON.parse(results.detail);
+    }
+
+    public async getPlayerVariables(player: number, type: VariableType): Promise<MugenVariable[]> {
+        if (!this.isConnected()) throw "Cannot request variable details when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_GET_VARIABLES, { player, type: VariableType[type] });
+
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+            return [];
+        }
+
+        return JSON.parse(results.detail);
+    }
+
+    public async getPlayerTeamside(player: number): Promise<number> {
+        if (!this.isConnected()) throw "Cannot request player information when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_GET_TEAMSIDE, { player });
+
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+            return 2;
+        }
+
+        return JSON.parse(results.detail).teamside;
+    }
+
     public isConnected() {
         return this._debuggingProcess != null;
+    }
+
+    private displayResponseError(response: DebuggerResponseIPC) {
+        if (response.response === DebuggerResponseType.EXCEPTION) {
+            vscode.window.showErrorMessage(`An error occurred inside the debugger while handling a ${DebuggerCommandType[response.command]} command: ${response.detail}`);
+        } else {
+            vscode.window.showErrorMessage(this.getDetailedError(response.command, response.detail));
+        }
+    }
+
+    private getDetailedError(command: DebuggerCommandType, detail: string): string {
+        switch(detail) {
+            case 'DEBUGGER_HELD_OPEN':
+                return "The MUGEN process was still open when exit was requested, and may have become stuck.";
+            case 'DEBUGGER_NOT_RUNNING':
+                return `The MUGEN process was not running, so the debugger could not handle the ${DebuggerCommandType[command]} command.`;
+            case 'DEBUGGER_UNRECOGNIZED_COMMAND':
+                return `The command ${DebuggerCommandType[command]} was not recognized by the debugger, maybe the mtldbg and extension versions are out of sync?`;
+            case 'DEBUGGER_GAME_NOT_INITIALIZED':
+                return "The game offsets for MUGEN are not yet initialized.";
+            case 'DEBUGGER_PLAYERS_NOT_INITIALIZED':
+                return "The player offsets for MUGEN are not yet initialized.";
+            case 'DEBUGGER_INVALID_INPUT':
+                return "An invalid input was provided for an IPC command (this is probably the extension developer's fault)";
+            case 'DEBUGGER_ALREADY_PAUSED':
+                return "The debugger has already been paused by another request.";
+            case 'DEBUGGER_PLAYER_NOT_EXIST':
+                return "Player data was requested for a player ID which does not exist (this is probably the extension developer's fault)";
+            case 'DEBUGGER_PLAYER_WRONG_TEAMSIDE':
+                return "Player data was requested for a player on the enemy's team (cannot display source files for enemy players)";
+            case 'DEBUGGER_PLAYER_INVALID_STATE':
+                return "Player data was requested for a player which is in an invalid state number.";
+        }
+
+        return "Unknown error";
     }
 
     private readMessageFromPartial() {
@@ -121,7 +268,7 @@ export class MTLDebugManager extends EventEmitter {
         const message: DebuggerRequestIPC = {
             messageId,
             command,
-            params
+            params: JSON.stringify(params)
         };
 
         console.log(`Send message: ${JSON.stringify(message)}`);
@@ -154,13 +301,7 @@ export class MTLDebugManager extends EventEmitter {
         dataView.setInt32(0, message.command, true);
         const commandBuffer = new Uint8Array(dataView.buffer).slice();
 
-        let paramsString: string;
-        try {
-            paramsString = JSON.stringify(message.params);
-        } catch {
-            paramsString = message.params as string;
-        }
-        const paramsBuffer = Buffer.from(paramsString, 'utf-8');
+        const paramsBuffer = Buffer.from(message.params, 'utf-8');
 
         dataView.setInt32(0, paramsBuffer.length, true);
         const paramsLen = new Uint8Array(dataView.buffer).slice();

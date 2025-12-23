@@ -5,12 +5,13 @@ import {
 	InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
 	ProgressStartEvent, ProgressUpdateEvent, ProgressEndEvent, InvalidatedEvent,
 	Thread, StackFrame, Scope, Source, Handles, Breakpoint, MemoryEvent,
-	ExitedEvent
+	ExitedEvent,
+	Variable
 } from '@vscode/debugadapter';
 import { DebugProtocol } from '@vscode/debugprotocol';
 
 import { MTLDebugManager } from './debugManager';
-import { DebuggerResponseIPC, FileAccessor } from './sharedTypes';
+import { VariableType, FileAccessor } from './sharedTypes';
 
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** An absolute path to the program to debug. */
@@ -118,6 +119,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 		response.body.supportTerminateDebuggee = true;
 		response.body.supportsFunctionBreakpoints = true;
 		response.body.supportsDelayedStackTraceLoading = false;
+		response.body.supportsSingleThreadExecutionRequests = false;
 
 		this.sendResponse(response);
 
@@ -148,7 +150,6 @@ export class MTLDebugSession extends LoggingDebugSession {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-		// make sure to 'Stop' the buffered logging if 'trace' is not set
 		logger.setup(Logger.LogLevel.Verbose, false);
 
 		// start the program in the runtime
@@ -188,20 +189,114 @@ export class MTLDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
+	protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request) {
+		// just send a CONTINUE to the debugger, threads aren't real
+		await this.debugManager.continue();
+		response.body = { allThreadsContinued: true };
+		this.sendResponse(response);
+	}
+
+	protected async pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments, request?: DebugProtocol.Request) {
+		// send a BREAK to the debugger, threads aren't real
+		await this.debugManager.pause();
+		this.sendResponse(response);
+		// we need to send a pause event for ALL player IDs (thread IDs)
+		const playerList = await this.debugManager.requestPlayerList();
+		for (const player of playerList) {
+			this.sendEvent(new StoppedEvent('pause', player.id));
+		}
+	}
+
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request) {
-		// TODO: add more than just thread 1
+		// threads here will be 'symbolic threads' which track the state of the player and its helpers.
+		// thread ID will be the player ID, thread name will be the player name.
+		const playerList = await this.debugManager.requestPlayerList();
+
+		const threads = playerList.map(x => new Thread(x.id, x.name));
+		if (threads.length === 0) threads.push(new Thread(1, "Launch"));
+
 		response.body = {
-			threads: [new Thread(1, "Main thread")]
+			threads
 		};
 		this.sendResponse(response);
 	}
 
 	protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments, request?: DebugProtocol.Request) {
 		// TODO: stack frame is not really meaningful but we can send the line...
-		response.body = {
-			stackFrames: [],
-			totalFrames: 0
-		};
+		if (args.threadId === 1) {
+			// launch thread, just return empty
+			response.body = {
+				stackFrames: [],
+				totalFrames: 0
+			};
+		} else {
+			// get the current frame for this player.
+			const playerDetails = await this.debugManager.requestPlayerDetails(args.threadId);
+			// if the player's data fetch failed (e.g. because they are p2) respond with empty stackframes.
+			if (playerDetails.id === 0) {
+				response.body = {
+					stackFrames: [],
+					totalFrames: 0
+				};
+				this.sendResponse(response);
+				return;
+			}
+
+			let fileName = playerDetails.frame.fileName;
+			const matches = await vscode.workspace.findFiles(`${fileName.replaceAll('\\', '/')}`);
+			if (matches.length === 1) {
+				fileName = matches[0].fsPath;
+			} else if (matches.length > 1) {
+				fileName = matches.reduce((a, b) => a.fsPath.length <= b.fsPath.length ? a : b).fsPath;
+			}
+			const frame = new StackFrame(playerDetails.id, playerDetails.frame.stateNameOrId, new Source(playerDetails.frame.stateNameOrId, fileName, undefined, undefined, undefined), playerDetails.frame.lineNumber, 1);
+			response.body = {
+				stackFrames: [frame],
+				totalFrames: 1
+			};
+		}
+		this.sendResponse(response);
+	}
+
+	protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments, request?: DebugProtocol.Request) {
+		const teamside = await this.debugManager.getPlayerTeamside(args.frameId);
+		const baseReference = args.frameId << 8;
+
+		if (teamside === 1) {
+			response.body = {
+				scopes: [
+					new Scope("Globals", baseReference + VariableType.GLOBAL, false),
+					new Scope("Locals", baseReference + VariableType.LOCAL, false),
+					new Scope("Autos", baseReference + VariableType.AUTO, false),
+					new Scope("Indexed Var", baseReference + VariableType.INDEXED_INT, false),
+					new Scope("Indexed Fvar", baseReference + VariableType.INDEXED_FLOAT, false),
+					new Scope("Indexed Sysvar", baseReference + VariableType.INDEXED_SYSINT, false),
+					new Scope("Indexed Sysfvar", baseReference + VariableType.INDEXED_SYSFLOAT, false)
+				]
+			};
+		} else {
+			response.body = {
+				scopes: [
+					new Scope("Indexed Var", baseReference + VariableType.INDEXED_INT, false),
+					new Scope("Indexed Fvar", baseReference + VariableType.INDEXED_FLOAT, false),
+					new Scope("Indexed Sysvar", baseReference + VariableType.INDEXED_SYSINT, false),
+					new Scope("Indexed Sysfvar", baseReference + VariableType.INDEXED_SYSFLOAT, false)
+				]
+			};
+		}
+		
+
+		this.sendResponse(response);
+	}
+
+	protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments, request?: DebugProtocol.Request) {
+		const playerID = args.variablesReference >> 8;
+		const variableType = args.variablesReference - (playerID << 8);
+		
+		const playerVariables = await this.debugManager.getPlayerVariables(playerID, variableType);
+
+		response.body = { variables: playerVariables.map(x => new Variable(x.name, x.value.toString())) };
+
 		this.sendResponse(response);
 	}
 }

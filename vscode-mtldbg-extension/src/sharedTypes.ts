@@ -6,6 +6,16 @@ export interface FileAccessor {
 	writeFile(path: string, contents: Uint8Array): Promise<void>;
 }
 
+export enum VariableType {
+	GLOBAL = 0,
+	LOCAL = 1,
+	AUTO = 2,
+	INDEXED_INT = 3,
+	INDEXED_FLOAT = 4,
+	INDEXED_SYSINT = 5,
+	INDEXED_SYSFLOAT = 6
+}
+
 export enum DebuggerCommandType {
 	EXIT = -1,
 	NONE = 0,
@@ -21,7 +31,16 @@ export enum DebuggerCommandType {
 	BREAKP = 10,
 	DELETEP = 11,
 
+	// commands used specifically by IPC
+	// 1xx commands are mtldbg -> adapater
+	// 2xx commands are adapter -> mtldbg
 	IPC_EXIT = 101,
+
+	IPC_LIST_PLAYERS = 201,
+	IPC_GET_PLAYER_INFO = 202,
+	IPC_PAUSE = 203,
+	IPC_GET_VARIABLES = 204,
+	IPC_GET_TEAMSIDE = 205,
 }
 
 export enum DebuggerResponseType {
@@ -33,12 +52,12 @@ export enum DebuggerResponseType {
 export interface DebuggerRequestIPC {
 	messageId: UUID
 	command: DebuggerCommandType
-	params: string | object
+	params: string
 }
 
 export interface DebuggerResponseIPC {
 	messageId: string
 	command: DebuggerCommandType
 	response: DebuggerResponseType
-	detail: any
+	detail: string
 }

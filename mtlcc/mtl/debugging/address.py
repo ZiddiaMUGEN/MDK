@@ -93,6 +93,7 @@ ADDRESS_MUGEN_11B1 = {
     "game": 0x5040E8,
     "player": 0x12278,
     "stateno": 0xCCC,
+    "exist": 0x1B0,
     "var": 0xF1C,
     "fvar": 0x100C,
     "sysvar": 0x10AC,
