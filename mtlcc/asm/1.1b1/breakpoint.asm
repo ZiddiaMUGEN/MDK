@@ -6,6 +6,7 @@
 ;; EAX - root address, then breakpoint detail ptr
 ;; EDX - player 1 address
 ;; EBX - current stateno
+;; EDI - stateowner address
 
 ;; addresses:
 ;; 0x5040E8 - game address
@@ -22,13 +23,30 @@ push edx
 push edi
 
 ;; need to do some work to check if the current player is eligible for BPs
-;; fetch root address and p1 address
+;; fetch root address, p1 address, and stateowner root address
+;;; root
 mov eax,ebp
 mov eax,[eax+0x1650]
+;;; stateowner root
+xor edi,edi
+mov edx,[ebp+0xCB8]
+;; skip if the stateowner ID is -1 (not custom stated)
+cmp edx,-1
+je .readp1
+sub edx,1
+mov edi,[0x5040E8]
+add edi,0x12278
+mov edi,[edi + edx * 4]
+mov edi,[edi+0x1650]
+;;; p1
+.readp1:
 mov edx,[0x5040E8]
 mov edx,[edx+0x12278]
 ;; if character address == p1 address, this is p1. check bps
 cmp ebp,edx
+je .check_breakpoints
+;; if stateowner root address == p1 address, this is a custom stated enemy. check bps
+cmp edi,edx
 je .check_breakpoints
 ;; if character address == root address, this is a p1-owned Helper. check bps
 cmp eax,edx

@@ -226,13 +226,28 @@ def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx:
                 player_name = process.getString(player_address + 0x20, debugger, ctx)
                 player_state = process.getValue(player_address + debugger.launch_info.database["stateno"], debugger, ctx)
 
+                ## if the player is custom-stated by a character owned by us, we can provide file info.
+                fileName = "P2 data is not in debugging database and file cannot be retrieved."
+                lineNumber = 1
+                stateNameOrId = f"Unmanaged State {player_state}"
+
+                if (owner := process.getValue(player_address + debugger.launch_info.database["state_owner"], debugger, ctx)) != 0xFFFFFFFF:
+                    owner = owner - 1 ## for some ungodly reason this is 1-indexed, but flags -1 as invalid. wtf?
+                    owner_addr = process.getValue(game_address + debugger.launch_info.database["player"] + owner * 4, debugger, ctx)
+                    if owner_addr != 0 and process.getValue(owner_addr + debugger.launch_info.database["root_addr"], debugger, ctx) == p1_address:
+                        if (state := get_state_by_id(player_state, ctx)) != None:
+                            owner_name = process.getString(owner_addr + 0x20, debugger, ctx)
+                            fileName = state.location.filename
+                            lineNumber = state.location.line
+                            stateNameOrId = f"{owner_name}'s Custom State {state.name}"
+
                 detailResult = {
                     "id": player_id,
                     "name": player_name,
                     "frame": {
-                        "fileName": "P2 data is not in debugging database and file cannot be retrieved.",
-                        "lineNumber": 1,
-                        "stateNameOrId": f"Unmanaged State {player_state}"
+                        "fileName": fileName,
+                        "lineNumber": lineNumber,
+                        "stateNameOrId": stateNameOrId
                     }
                 }
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))

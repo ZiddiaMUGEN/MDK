@@ -34,8 +34,8 @@ ADDRESS_MUGEN_11B1 = {
     "SCTRL_PASSPOINT_INSERT_FUNC": [0xE9, 0x08, 0x18, 0x08, 0x00], # patch to insert at SCTRL_PASSPOINT_INSERT
     "SCTRL_BREAKPOINT_FUNC_ADDR": 0x4DD9C0, # address to write the function to
     "SCTRL_PASSPOINT_FUNC_ADDR": 0x4DDA50, # address to write the function to
-    "SCTRL_BREAKPOINT_ADDR": 0x4DD9FD, # address inside the function to break at
-    "SCTRL_PASSPOINT_ADDR": 0x4DDA90, # address inside the function to break at
+    "SCTRL_BREAKPOINT_ADDR": 0x4DDA26, # address inside the function to break at
+    "SCTRL_PASSPOINT_ADDR": 0x4DDAB9, # address inside the function to break at
     ## the below are produced by assembling `breakpoint.asm` and `passpoint.asm` for the target version.
     "SCTRL_BREAKPOINT_FUNC": BREAKPOINT_FUNC_11B1,
     "SCTRL_PASSPOINT_FUNC": PASSPOINT_FUNC_11B1,
