@@ -2,7 +2,10 @@ import json
 import traceback
 import struct
 
-from mtl.types.debugging import DebugProcessState, DebuggerResponseIPC, DebuggerRequestIPC, DebuggerResponseType, DebuggingContext, DebuggerTarget
+from mtl.types.debugging import (
+    DebugProcessState, DebuggerResponseIPC, DebuggerRequestIPC, DebuggerResponseType, 
+    DebuggingContext, DebuggerTarget, DebugTypeInfo, TypeCategory
+)
 from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugIPC, sendResponseIPC
 from mtl.debugging.ipc_code import *
@@ -141,6 +144,34 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
             }
             sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, json.dumps(error).encode('utf-8')))
             continue
+
+def getTypedValue(type: DebugTypeInfo, value, ctx: DebuggingContext) -> str:
+    if type.category == TypeCategory.ENUM:
+        if value >= 0 and value <= len(type.members):
+            return f"{type.name}.{type.members[value]} ({value})"
+        return f"{type.name} ({value})"
+    elif type.category == TypeCategory.FLAG:
+        result = ""
+        for index in range(len(type.members)):
+            member = type.members[index]
+            if ((2 ** index) & value) != 0:
+                result += str(member)
+        if len(result) > 0:
+            result = f"{type.name}.{result} ({value})"
+        else:
+            return f"{type.name} ({value})"
+    elif type.name == "char":
+        return chr(value)
+    elif type.name == "bool":
+        return "true" if value != 0 else "false"
+    elif type.name == "state" or type.name == "StateNo":
+        if (state := get_state_by_id(value, ctx)) != None:
+            return f"State {state.name} ({value})"
+        return f"State {value}"
+    elif type.name == "target":
+        return f"Target ID {value}"
+    
+    return str(value)
 
 def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
     ## send a list of player IDs and names to the adapter.
@@ -398,13 +429,21 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
             if var.scope == state.scope:
                 detailResult.append({
                     "name": var.name,
-                    "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
+                    "value": getTypedValue(
+                        var.type,
+                        process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx),
+                        ctx
+                    )
                 })
     if (variable_type == "LOCAL" or variable_type == "ALL") and state != None:
         for var in state.locals:
             detailResult.append({
                 "name": var.name,
-                "value": process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx)
+                "value": getTypedValue(
+                    var.type,
+                    process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx),
+                    ctx
+                )
             })
     if (variable_type == "AUTO" or variable_type == "ALL") and state != None:
         triggers: list[str] = []
