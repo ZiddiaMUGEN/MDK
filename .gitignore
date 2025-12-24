@@ -2,3 +2,4 @@ __pycache__
 *.pyc
 dist/
 .mypy_cache/
+mtlcc/asm/*/*.bin
