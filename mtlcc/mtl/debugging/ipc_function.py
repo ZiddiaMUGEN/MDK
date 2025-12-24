@@ -335,6 +335,12 @@ def ipcGetTeamside(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: D
         if target_id == player_id:
             if player_address != p1_address and root_address != p1_address:
                 teamside = 2
+                ## in custom states we CAN treat as teamside=1 for variable display (it'll be sketchy though)
+                if (owner := process.getValue(player_address + debugger.launch_info.database["state_owner"], debugger, ctx)) != 0xFFFFFFFF:
+                    owner = owner - 1 ## for some ungodly reason this is 1-indexed, but flags -1 as invalid. wtf?
+                    owner_addr = process.getValue(game_address + debugger.launch_info.database["player"] + owner * 4, debugger, ctx)
+                    if owner_addr != 0 and process.getValue(owner_addr + debugger.launch_info.database["root_addr"], debugger, ctx) == p1_address:
+                        teamside = 1
             else:
                 teamside = 1
             break
