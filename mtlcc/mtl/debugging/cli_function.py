@@ -143,6 +143,7 @@ def runDebugger(target: str, mugen: str, p2: str, ai: str):
                 if debugger == None or debugger.subprocess == None:
                     print("Cannot continue when MUGEN has not been launched.")
                     continue
+                process.removeStep(debugger, ctx)
                 process.cont(debugger, ctx)
             elif command == DebuggerCommand.BREAK or command == DebuggerCommand.BREAKP:
                 ## add a breakpoint; format of the breakpoint can be either <file>:<line> or <stateno> <ctrl index> or <state name> <ctrl index>
@@ -224,7 +225,7 @@ def runDebugger(target: str, mugen: str, p2: str, ai: str):
                 if debugger == None or debugger.subprocess == None:
                     print("Cannot continue when MUGEN has not been launched.")
                     continue
-                process.cont(debugger, ctx, step = True)
+                process.cont(debugger, ctx)
             elif command == DebuggerCommand.DELETE:
                 ## delete BP by ID.
                 index = int(request.params[0])

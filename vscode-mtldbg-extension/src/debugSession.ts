@@ -29,8 +29,7 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 }
 
 export class MTLDebugSession extends LoggingDebugSession {
-    private static threadID = 1;
-    private configurationComplete = false;
+    private initializationComplete = false;
 
     private debugManager = new MTLDebugManager();
 
@@ -45,7 +44,18 @@ export class MTLDebugSession extends LoggingDebugSession {
 			if (evt.detail === "DEBUGGER_INVALID_DEBUG_DATABASE") {
 				vscode.window.showErrorMessage("Debugger has been closed due to an incompatible debugging database.");
 			}
+			console.log(evt.detail);
 			this.sendEvent(new TerminatedEvent(false));
+		});
+
+		this.debugManager.on('IPC_HIT_BREAKPOINT', evt => {
+			// pause due to breakpoint
+			this.sendEvent(new StoppedEvent('breakpoint', JSON.parse(evt.detail).owner));
+		});
+
+		this.debugManager.on('IPC_STEP', evt => {
+			// pause due to breakpoint
+			this.sendEvent(new StoppedEvent('step', JSON.parse(evt.detail).owner));
 		});
     }
 
@@ -80,25 +90,6 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		// the adapter defines two exceptions filters, one with support for conditions.
 		response.body.supportsExceptionFilterOptions = false;
-        /*
-		response.body.exceptionBreakpointFilters = [
-			{
-				filter: 'namedException',
-				label: "Named Exception",
-				description: `Break on named exceptions. Enter the exception's name as the Condition.`,
-				default: false,
-				supportsCondition: true,
-				conditionDescription: `Enter the exception's name`
-			},
-			{
-				filter: 'otherExceptions',
-				label: "Other Exceptions",
-				description: 'This is a other exception',
-				default: true,
-				supportsCondition: false
-			}
-		];
-        */
 
 		// make VS Code send exceptionInfo request
 		response.body.supportsExceptionInfoRequest = false;
@@ -112,7 +103,9 @@ export class MTLDebugSession extends LoggingDebugSession {
 		// make VS Code send disassemble request
 		response.body.supportsDisassembleRequest = false;
 		response.body.supportsSteppingGranularity = true;
-		response.body.supportsInstructionBreakpoints = true;
+		response.body.supportsInstructionBreakpoints = false;
+		response.body.supportsDataBreakpoints = false;
+		response.body.supportsFunctionBreakpoints = false;
 
 		// make VS Code able to read and write variable memory
 		response.body.supportsReadMemoryRequest = true;
@@ -122,18 +115,20 @@ export class MTLDebugSession extends LoggingDebugSession {
 		response.body.supportTerminateDebuggee = true;
 		response.body.supportsFunctionBreakpoints = true;
 		response.body.supportsDelayedStackTraceLoading = false;
-		response.body.supportsSingleThreadExecutionRequests = false;
+		response.body.supportsSingleThreadExecutionRequests = true;
 
+		response.body.breakpointModes = [
+			{ mode: "pp", label: "Passpoint", description: "Breaks at a controller only if the triggers evaluate to true.", appliesTo: ['source'] },
+			{ mode: "bp", label: "Breakpoint", description: "Breaks every time a controller is evaluated, even if the triggers evaluate to false.", appliesTo: ['source'] }
+		];
+
+		this.initializationComplete = true;
 		this.sendResponse(response);
-
-		// it's OK to accept breakpoints early, we will save them + expose them to mtldbg during launch.
-		this.sendEvent(new InitializedEvent());
 	}
 
     protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
 		super.configurationDoneRequest(response, args);
         console.log('configuration done');
-        this.configurationComplete = true;
 	}
 
     protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments, request?: DebugProtocol.Request) {
@@ -149,7 +144,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
         // wait for configuration.
-        while (!this.configurationComplete) {
+        while (!this.initializationComplete) {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
 
@@ -187,6 +182,11 @@ export class MTLDebugSession extends LoggingDebugSession {
 
         // launch debugger
         await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry);
+
+		// manager is connected, so allow breakpoint initialization
+		this.sendEvent(new InitializedEvent());
+
+		// trigger a stop so that the debugger knows it is paused
 		if (args.stopOnEntry) this.sendEvent(new StoppedEvent('entry', 1));
 
 		this.sendResponse(response);
@@ -194,8 +194,13 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 	protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request) {
 		// just send a CONTINUE to the debugger, threads aren't real
+		if (args.singleThread && args.threadId !== 1) {
+			// note: this currently won't ever be hit as vscode doesn't support the `singleThread` parameter.
+			// support for this is included anyway so we can benefit if they ever allow it.
+			await this.debugManager.setStepTarget(args.threadId);
+		}
 		await this.debugManager.continue();
-		response.body = { allThreadsContinued: true };
+		response.body = { allThreadsContinued: (!args.singleThread || args.threadId === 1) };
 		this.sendResponse(response);
 	}
 
@@ -203,11 +208,18 @@ export class MTLDebugSession extends LoggingDebugSession {
 		// send a BREAK to the debugger, threads aren't real
 		await this.debugManager.pause();
 		this.sendResponse(response);
-		// we need to send a pause event for ALL player IDs (thread IDs)
-		const playerList = await this.debugManager.requestPlayerList();
-		for (const player of playerList) {
-			this.sendEvent(new StoppedEvent('pause', player.id));
+		
+		if (args.threadId === 1) {
+			// we need to send a pause event for ALL player IDs (thread IDs)
+			const playerList = await this.debugManager.requestPlayerList();
+			for (const player of playerList) {
+				this.sendEvent(new StoppedEvent('pause', player.id));
+			}
+		} else {
+			// just pause the target 'thread' (player)
+			this.sendEvent(new StoppedEvent('pause', args.threadId));
 		}
+		
 	}
 
 	protected async threadsRequest(response: DebugProtocol.ThreadsResponse, request?: DebugProtocol.Request) {
@@ -245,13 +257,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 				return;
 			}
 
-			let fileName = playerDetails.frame.fileName;
-			const matches = await vscode.workspace.findFiles(`${fileName.replaceAll('\\', '/')}`);
-			if (matches.length === 1) {
-				fileName = matches[0].fsPath;
-			} else if (matches.length > 1) {
-				fileName = matches.reduce((a, b) => a.fsPath.length <= b.fsPath.length ? a : b).fsPath;
-			}
+			const fileName = await this.findLocalFileName(playerDetails.frame.fileName);
 			const frame = new StackFrame(playerDetails.id, playerDetails.frame.stateNameOrId, new Source(playerDetails.frame.stateNameOrId, fileName, undefined, undefined, undefined), playerDetails.frame.lineNumber, 1);
 			response.body = {
 				stackFrames: [frame],
@@ -313,5 +319,68 @@ export class MTLDebugSession extends LoggingDebugSession {
 			};
 		}
 		this.sendResponse(response);
+	}
+
+	protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments, request?: DebugProtocol.Request) {
+		response.body = {
+			breakpoints: []
+		};
+
+		if (this.debugManager.isConnected()) {
+			if (args.source.path && args.breakpoints) {
+				// clear breakpoints for this file
+				await this.debugManager.clearFileBreakpoints(args.source.path);
+				// set breakpoints
+				for (var bp of args.breakpoints) {
+					const set = await this.debugManager.setBreakpoint(args.source.path, bp.line, bp.mode ?? "pp");
+					if (!set.filename) {
+						response.body.breakpoints.push({
+							verified: false,
+							reason: 'failed',
+							message: set
+						});
+					} else {
+						// adapter-internal ID is 100+ for breakpoints, just to differentiate
+						const fileName = await this.findLocalFileName(set.filename);
+						response.body.breakpoints.push({
+							id: set.id + (bp.mode === "bp" ? 100 : 0),
+							verified: true,
+							source: new Source(fileName, fileName, undefined, undefined, undefined),
+							line: set.line,
+							column: 1
+						});
+					}
+				}
+			}
+		}
+
+		this.sendResponse(response);
+	}
+
+	protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments, request?: DebugProtocol.Request) {
+		if (this.debugManager.isConnected() && args.threadId !== 1) {
+			await this.debugManager.setStepTarget(args.threadId);
+			await this.debugManager.step(args.threadId);
+		}
+		this.sendResponse(response);
+	}
+
+	protected async stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments, request?: DebugProtocol.Request) {
+		if (this.debugManager.isConnected() && args.threadId !== 1) {
+			await this.debugManager.setStepTarget(args.threadId);
+			await this.debugManager.step(args.threadId);
+		}
+		this.sendResponse(response);
+	}
+
+	private async findLocalFileName(fileName: string) {
+		const matches = await vscode.workspace.findFiles(`${fileName.replaceAll('\\', '/')}`);
+		if (matches.length === 1) {
+			fileName = matches[0].fsPath;
+		} else if (matches.length > 1) {
+			fileName = matches.reduce((a, b) => a.fsPath.length <= b.fsPath.length ? a : b).fsPath;
+		}
+
+		return fileName;
 	}
 }

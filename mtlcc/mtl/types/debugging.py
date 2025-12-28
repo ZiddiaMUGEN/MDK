@@ -48,12 +48,17 @@ class DebuggerCommand(IntEnum):
     ## mtldbg -> adapter uses 1xx
     ## adapter -> mtldbg uses 2xx
     IPC_EXIT = 101
+    IPC_HIT_BREAKPOINT = 102
+    IPC_STEP = 103
     
     IPC_LIST_PLAYERS = 201
     IPC_GET_PLAYER_INFO = 202
     IPC_PAUSE = 203
     IPC_GET_VARIABLES = 204
     IPC_GET_TEAMSIDE = 205
+    IPC_CLEAR_BREAKPOINTS = 206
+    IPC_SET_BREAKPOINT = 207
+    IPC_SET_STEP_TARGET = 208
 
 class DebuggerResponseType(IntEnum):
     SUCCESS = 0
@@ -104,11 +109,10 @@ class DebuggerTarget:
 @dataclass
 class DebugBreakEvent:
     address: int
-    step: bool
 
 @dataclass
 class DebugBreakResult:
-    step: bool = False
+    pass
 
 @dataclass
 class DebugTypeInfo:

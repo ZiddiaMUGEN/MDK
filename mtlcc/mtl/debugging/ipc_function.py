@@ -10,6 +10,7 @@ from mtl.debugging import database, process
 from mtl.debugging.commands import DebuggerCommand, processDebugIPC, sendResponseIPC
 from mtl.debugging.ipc_code import *
 from mtl.utils.debug import get_state_by_id
+from mtl.utils.func import search_file, match_filenames
 
 def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
     ## the early part of this function is identical to `runDebugger`.
@@ -62,6 +63,14 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
                     continue
+                process.removeStep(debugger, ctx)
+                process.cont(debugger, ctx)
+                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+            elif command == DebuggerCommand.STEP:
+                ## allow the process to continue running
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
                 process.cont(debugger, ctx)
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
             elif command == DebuggerCommand.STOP:
@@ -103,6 +112,68 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                     continue
 
                 ipcGetTeamside(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_CLEAR_BREAKPOINTS:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ## get the path from the request
+                params = json.loads(request.params.decode('utf-8'))
+                if 'path' not in params:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+                    continue
+
+                ## check the path provided maps to a source file
+                try:
+                    path = search_file(params['path'], target)
+                except:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_MISSING_SOURCE_FILE))
+                    continue
+
+                # clear all breakpoints which point to this path.
+                ctx.breakpoints = list(filter(lambda k: not breakpointInFile(k, path, ctx), ctx.breakpoints))
+                ctx.passpoints = list(filter(lambda k: not breakpointInFile(k, path, ctx), ctx.passpoints))
+                ## update the table in-memory after removing.
+                if debugger != None:
+                    process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
+                
+                sendResponseIPC(DebuggerResponseIPC(
+                    request.message_id, command, DebuggerResponseType.SUCCESS, 
+                    json.dumps(breakpointsToJson(ctx)).encode('utf-8')
+                ))
+            elif command == DebuggerCommand.IPC_SET_BREAKPOINT:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ## get the path from the request
+                params = json.loads(request.params.decode('utf-8'))
+                if 'path' not in params or 'line' not in params or 'mode' not in params:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+                    continue
+                if params['mode'] not in ['bp', 'pp']:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+                    continue
+
+                ## check the path provided maps to a source file
+                try:
+                    path = search_file(params['path'], target)
+                except:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_MISSING_SOURCE_FILE))
+                    continue
+
+                line = int(params['line'])
+                mode = params['mode']
+
+                if mode == "bp":
+                    created = insertBreakpoint(path, line, ctx, debugger)
+                else:
+                    created = insertPasspoint(path, line, ctx, debugger)
+
+                sendResponseIPC(DebuggerResponseIPC(
+                    request.message_id, command, DebuggerResponseType.SUCCESS, 
+                    json.dumps(created).encode('utf-8')
+                ))
             elif command == DebuggerCommand.IPC_PAUSE:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
@@ -114,12 +185,13 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
 
                 ## this is an immediate pause, does not involve the breakpoint system.
                 ## i do not currently have a way to look up which character is executing code at this time,
-                ## so we will just unset current_breakpoint.
+                ## so we will just unset current_breakpoint and remove any step context.
                 process.suspendExternal(debugger)
                 debugger.launch_info.state = DebugProcessState.SUSPENDED_DEBUG
 
                 ctx.current_breakpoint = None
                 ctx.current_owner = 0
+                process.removeStep(debugger, ctx)
 
                 ## we send the first player ID through to the adapter to use as the 'thread ID' to pause on.
                 game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
@@ -134,6 +206,39 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 player_id = process.getValue(p1_address + 0x04, debugger, ctx)
 
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "firstPlayerID": player_id }).encode('utf-8')))
+            elif command == DebuggerCommand.IPC_SET_STEP_TARGET:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                params = json.loads(request.params.decode('utf-8'))
+                if 'player' not in params:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+                    continue
+
+                target_id = params['player']
+                
+                ## find the address of the provided player ID, then set it as the step owner
+                game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+                if game_address == 0:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+                    return
+                
+                is_set = False
+                for idx in range(60):
+                    player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+                    if player_address == 0:
+                        continue
+                    player_id = process.getValue(player_address + 0x04, debugger, ctx)
+                    if player_id == target_id:
+                        process.setStep(debugger, ctx, player_address)
+                        is_set = True
+                        break
+
+                if is_set:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+                else:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
             else:
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_UNRECOGNIZED_COMMAND))
         except:
@@ -172,6 +277,75 @@ def getTypedValue(type: DebugTypeInfo, value, ctx: DebuggingContext) -> str:
         return f"Target ID {value}"
     
     return str(value)
+
+def breakpointInFile(bp: tuple[int, int], path: str, ctx: DebuggingContext) -> bool:
+    if (state := get_state_by_id(bp[0], ctx)) != None:
+        if match_filenames(path, state.location.filename) != None:
+            return True
+    return False
+
+def breakpointsToJson(ctx: DebuggingContext):
+    breakpoints = []
+    passpoints = []
+    index = 0
+    for bp in ctx.breakpoints:
+        if (state := get_state_by_id(bp[0], ctx)) != None:
+            breakpoints.append({ "filename": state.states[bp[1]].filename, "line": state.states[bp[1]].line, "id": index })
+        index += 1
+    index = 0
+    for bp in ctx.passpoints:
+        if (state := get_state_by_id(bp[0], ctx)) != None:
+            passpoints.append({ "filename": state.states[bp[1]].filename, "line": state.states[bp[1]].line, "id": index })
+        index += 1
+    return { "breakpoints": breakpoints, "passpoints": passpoints }
+
+def insertBreakpoint(filename: str, line: int, ctx: DebuggingContext, debugger: DebuggerTarget) -> dict | None:
+    # find the closest match to `filename:line` in the database,
+    # which is either a statedef or a controller.
+    # if it's a statedef set on controller 0.
+    match = None
+    match_location = None
+    match_distance = 99999999
+    for statedef in ctx.states:
+        if match_filenames(filename, statedef.location.filename) != None:
+            if line >= statedef.location.line and (line - statedef.location.line) < match_distance:
+                match = (statedef.id, 0)
+                match_location = statedef.states[0]
+                match_distance = line - statedef.location.line
+            for cindex in range(len(statedef.states)):
+                controller = statedef.states[cindex]
+                if line >= controller.line and (line - controller.line) < match_distance:
+                    match = (statedef.id, cindex)
+                    match_location = controller
+                    match_distance = line - controller.line
+    if match == None or match_location == None:
+        return None
+    process.setBreakpoint(match[0], match[1], debugger, ctx)
+    return { "filename": match_location.filename, "line": match_location.line, "id": len(ctx.breakpoints) - 1 }
+
+def insertPasspoint(filename: str, line: int, ctx: DebuggingContext, debugger: DebuggerTarget) -> dict | None:
+    # find the closest match to `filename:line` in the database,
+    # which is either a statedef or a controller.
+    # if it's a statedef set on controller 0.
+    match = None
+    match_location = None
+    match_distance = 99999999
+    for statedef in ctx.states:
+        if match_filenames(filename, statedef.location.filename) != None:
+            if line >= statedef.location.line and (line - statedef.location.line) < match_distance:
+                match = (statedef.id, 0)
+                match_location = statedef.states[0]
+                match_distance = line - statedef.location.line
+            for cindex in range(len(statedef.states)):
+                controller = statedef.states[cindex]
+                if line >= controller.line and (line - controller.line) < match_distance:
+                    match = (statedef.id, cindex)
+                    match_location = controller
+                    match_distance = line - controller.line
+    if match == None or match_location == None:
+        return None
+    process.setPasspoint(match[0], match[1], debugger, ctx)
+    return { "filename": match_location.filename, "line": match_location.line, "id": len(ctx.passpoints) - 1 }
 
 def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
     ## send a list of player IDs and names to the adapter.
@@ -271,6 +445,13 @@ def ipcPlayerDetails(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx:
                             fileName = state.location.filename
                             lineNumber = state.location.line
                             stateNameOrId = f"{owner_name}'s Custom State {state.name}"
+
+                            if player_address == ctx.current_owner and ctx.current_breakpoint != None:
+                                ## player with provided ID is the current breakpoint holder, so we can display the exact controller
+                                player_ctrl = ctx.current_breakpoint[1]
+                                fileName = state.states[player_ctrl].filename
+                                lineNumber = state.states[player_ctrl].line
+
 
                 detailResult = {
                     "id": player_id,

@@ -171,6 +171,49 @@ export class MTLDebugManager extends EventEmitter {
         return JSON.parse(results.detail).teamside;
     }
 
+    public async clearFileBreakpoints(path: string) {
+        if (!this.isConnected()) throw "Cannot clear breakpoints when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_CLEAR_BREAKPOINTS, { path });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+        }
+    }
+
+    public async setBreakpoint(path: string, line: number, mode: string) {
+        if (!this.isConnected()) throw "Cannot set breakpoints when debugger is not connected!";
+
+        if (mode !== "bp" && mode !== "pp") {
+            throw "Only support breakpoint modes `bp` and `pp` at this time.";
+        }
+        
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_SET_BREAKPOINT, { path, line, mode });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+            return results.detail;
+        }
+
+        return JSON.parse(results.detail);
+    }
+
+    public async step(player: number) {
+        if (!this.isConnected()) throw "Cannot step when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.STEP, { player });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+        }
+    }
+
+    public async setStepTarget(player: number) {
+        if (!this.isConnected()) throw "Cannot set step target when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_SET_STEP_TARGET, { player });
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+        }
+    }
+
     public isConnected() {
         return this._debuggingProcess != null;
     }

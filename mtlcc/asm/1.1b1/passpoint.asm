@@ -6,10 +6,12 @@
 ;; EAX - root address, then breakpoint detail ptr
 ;; EDX - player 1 address
 ;; EBX - current stateno
+;; EDI - stateowner address
 
 ;; addresses:
 ;; 0x5040E8 - game address
 ;; 0x4DD970 - passpoint list
+;; 0x4DDB94 - step character address
 
 ;; set origin for relative jumps...
 bits 32
@@ -20,6 +22,12 @@ push eax
 push ebx
 push edx
 push edi
+
+;; if the current character address equals the step character address,
+;; always break.
+mov eax,[0x4DDB94]
+cmp eax, ebp
+je .breakpoint
 
 ;; need to do some work to check if the current player is eligible for BPs
 ;; fetch root address and p1 address and stateowner root address
@@ -72,6 +80,7 @@ mov edx,[ebp+0x5C]
 ;; compare EAX+4 to the current controller index
 cmp [eax+0x04],edx
 jne .continue
+.breakpoint:
 nop ;; DO NOT REMOVE, THIS IS THE BREAKPOINT ADDRESS
 ;; after BP, reset to MUGEN processing
 jmp .reset

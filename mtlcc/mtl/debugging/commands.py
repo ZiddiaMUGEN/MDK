@@ -50,7 +50,10 @@ def processDebugIPC() -> DebuggerRequestIPC:
     else:
         params = b''
 
-    return DebuggerRequestIPC(message, DebuggerCommand(command), params)
+    if command in iter(DebuggerCommand):
+        return DebuggerRequestIPC(message, DebuggerCommand(command), params)
+    else:
+        return DebuggerRequestIPC(message, command, params)
 
 def sendResponseIPC(response: DebuggerResponseIPC):
     ## we receive debug request messages over stdout.
