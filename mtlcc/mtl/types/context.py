@@ -100,6 +100,7 @@ class ProjectContext:
         self.anim_file = ""
         self.snd_file = ""
         self.spr_file = ""
+        self.cns_file = ""
         self.ai_file = None
         self.constants = []
         self.commands = []

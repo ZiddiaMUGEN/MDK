@@ -369,3 +369,37 @@ def load(filename: str) -> DebuggingContext:
             ctx.states.append(DebugStateInfo(name, id, sds, is_common, Location(filename, line), locals, controllers, controller_data))
 
     return ctx
+
+def loadStates(states: list[StateDefinition], definition: str) -> DebuggingContext:
+    ## this is a helper to build a minimal DebuggingContext given CNS-ONLY statefiles as input.
+    ## this allows us to use the debugger in a CNS context (no MTL/MDK involved).
+    context = DebuggingContext()
+    context.filename = definition
+
+    ## this is basically a re-implementation of functions which exist above but rely on TranslationContext.
+    def addStringToDatabaseGen(name: str):
+        if name not in context.strings:
+            context.strings.append(name)
+
+    def addPathToDatabaseGen(name: str):
+        addStringToDatabaseGen(getDefRelativePath(name, definition))
+
+    for statedef in states:
+        addStringToDatabaseGen(statedef.name)
+        addPathToDatabaseGen(statedef.location.filename)
+        state_id = statedef.parameters.id if statedef.parameters.id != None else -4
+        info = DebugStateInfo(statedef.name, state_id, statedef.scope, statedef.parameters.is_common, statedef.location, [], [], [])
+        for local in statedef.locals:
+            local_info = DebugParameterInfo(local.name, local.type, statedef.scope, local.allocations, local.is_system)
+            addStringToDatabaseGen(local.name)
+            info.locals.append(local_info)
+        for controller in statedef.states:
+            addPathToDatabaseGen(controller.location.filename)
+            info.states.append(controller.location)
+        for controller in statedef.states:
+            addStringToDatabaseGen(controller.name)
+            ctrl_info = DebugControllerInfo(controller.name, [])
+            info.state_data.append(ctrl_info)
+        context.states.append(info)
+
+    return context

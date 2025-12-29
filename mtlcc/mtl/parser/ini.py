@@ -48,7 +48,7 @@ def parse(content: str, ctx: INIParserContext) -> List[INISection]:
     lines = content.replace("\r\n", "\n").split("\n")
     for line in lines:
         ctx.location.line += 1
-        line = remove_comment(line, ctx).strip()
+        line = remove_comment(line, ctx).strip().strip('\xef\xbb\xbf')
         if len(line) == 0: continue
         
         if line.startswith("[") and line.endswith("]"):

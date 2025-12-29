@@ -32,7 +32,7 @@ def loadFile(file: str, cc: CompilerConfiguration, cycle: list[str]) -> LoadCont
 
     return ctx
 
-def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadContext):
+def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadContext, ignore_error: bool = False):
     ## group sections into states, templates, triggers, types, includes, etc
     index = 0
     while index < len(sections):
@@ -46,8 +46,10 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
                 for property in sections[index + 1].properties:
                     if property.key.lower().startswith("mtl."):
                         properties.append(StateControllerProperty(property.key, TriggerTree(TriggerTreeNode.ATOM, property.value, [], property.location), property.location))
-                    else:
+                    elif mode == TranslationMode.MTL_MODE:
                         properties.append(StateControllerProperty(property.key, trigger.parseTrigger(property.value, property.location), property.location))
+                    else:
+                        properties.append(StateControllerProperty(property.key, TriggerTree(TriggerTreeNode.ATOM, property.value, [], property.location), property.location))
 
                 target_location = sections[index + 1].location
                 if (filename := find(properties, lambda k: k.key.lower() == "mtl.location.file")) != None and \
@@ -184,7 +186,7 @@ def parseTarget(sections: list[INISection], mode: TranslationMode, ctx: LoadCont
         elif includes_insensitive(section.name, ["Data", "Size", "Velocity", "Movement", "Quotes"]):
             ## ignore sections which are legal in CNS constant files
             pass
-        else:
+        elif not ignore_error:
             raise TranslationError(f"Section with name {section.name} was not recognized by the parser.", section.location)
         index += 1
 

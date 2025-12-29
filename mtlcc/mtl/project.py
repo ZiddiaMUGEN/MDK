@@ -21,7 +21,7 @@ def loadDefinition(file: str) -> ProjectContext:
     if (constants := find(section.properties, lambda k: equals_insensitive(k.key, "cns"))) == None:
         raise TranslationError("Input definition file must specify constants via `cns` key.", section.location)
     constants = search_file(constants.value, file)
-    with open(constants) as f:
+    with open(constants, errors='ignore') as f:
         ctx.constants = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
 
     if (commands := find(section.properties, lambda k: equals_insensitive(k.key, "cmd"))) == None:
