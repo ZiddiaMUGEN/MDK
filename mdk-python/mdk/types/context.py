@@ -78,6 +78,7 @@ class StateDefinition:
     params: dict[str, Expression]
     controllers: list[StateController]
     locals: list[ParameterDefinition]
+    location: tuple[str, int]
     scope: Optional[StateScope]
     _fwd_animation: Optional[Animation]
 
@@ -114,6 +115,7 @@ class CompilerContext:
     format_params: list[Expression]
     if_stack: list[int]
     animations: list[Animation]
+    debug_build: bool
 
     def __init__(self):
         self.statedefs = {}
@@ -131,6 +133,7 @@ class CompilerContext:
         self.format_params = []
         self.if_stack = []
         self.animations = []
+        self.debug_build = False
     
     @classmethod
     def instance(cls):

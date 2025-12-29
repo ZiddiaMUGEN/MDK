@@ -23,8 +23,12 @@ from mdk.utils.animation import read_animations
 from mdk.stdlib.controllers import ChangeState
 from mdk.resources.animation import Animation
 
-def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False, preserve_ir: bool = False, target_folder: str = "mdk-out") -> None:
+def build(
+        def_file: str, output: str, 
+        run_mtl: bool = True, skip_templates: bool = False, locations: bool = True, compress: bool = False, 
+        preserve_ir: bool = False, target_folder: str = "mdk-out", debug_build: bool = False) -> None:
     context = CompilerContext.instance()
+    context.debug_build = debug_build
     try:
         output_path = os.path.join(os.path.abspath(os.path.dirname(def_file)), output)
         print(f"Will build state definitions to output path {output_path}.")
@@ -66,6 +70,12 @@ def build(def_file: str, output: str, run_mtl: bool = True, skip_templates: bool
             context.current_state = definition
             try:
                 definition.fn() # this call registers the controllers in the statedef with the statedef itself.
+                if context.debug_build:
+                    virtual = StateController()
+                    virtual.location = definition.location
+                    virtual.type = "Null"
+                    virtual.triggers = [Expression("true", BoolType)]
+                    definition.controllers.insert(0, virtual)
             except Exception as exc:
                 raise CompilationException(exc)
             context.current_state = None
@@ -272,6 +282,13 @@ def statefunc(mode: TranslationMode = TranslationMode.STANDARD) -> Callable[[Cal
         new_fn = rewrite_function(fn, mode = mode)
         ctx.statefuncs.append(fn.__name__)
         def inner(*args, **kwargs):
+            if ctx.debug_build and ctx.current_state != None:
+                virtual = StateController()
+                callsite = traceback.extract_stack()[-2]
+                virtual.location = (callsite.filename, callsite.lineno if callsite.lineno != None else 0)
+                virtual.type = "Null"
+                virtual.triggers = [Expression("true", BoolType)]
+                ctx.current_state.controllers.append(virtual)
             new_fn(*args, **kwargs)
         return inner
     return wrapped
@@ -322,7 +339,8 @@ def create_statedef(
     print(f"Discovered a new StateDef named {fn.__name__}. Will process and load this StateDef.")
     
     new_fn = rewrite_function(fn, mode = mode)
-    statedef = StateDefinition(new_fn, {}, [], [], scope, None)
+    callsite = traceback.extract_stack()[-3]
+    statedef = StateDefinition(new_fn, {}, [], [], (callsite.filename, callsite.lineno + 1 if callsite.lineno != None else 0), scope, None)
 
     # apply each parameter
     if stateno != None: statedef.params["id"] = Expression(str(stateno), IntType)
