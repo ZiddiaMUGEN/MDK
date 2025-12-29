@@ -129,7 +129,7 @@ def runDebugger(target: str, mugen: str, p2: str, ai: str):
             if command == DebuggerCommand.LAUNCH:
                 ## launch and attach MUGEN subprocess
                 ## TODO: right now `breakpoints` is not cleared between launches.
-                debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
+                debugger = process.launch(mugen, target.replace(".mdbg.gen", ".def").replace(".mdbg", ".def"), ctx)
             elif command == DebuggerCommand.LOAD:
                 ## discard current mdbg and load a new one
                 if debugger != None:

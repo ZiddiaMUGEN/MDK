@@ -26,6 +26,8 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	stopOnEntry?: boolean;
 	/** Build the character before launching the debugger. */
 	build?: boolean;
+	/** Generate a debugging database from the provided DEF file in `program`. */
+	generate?: boolean;
 }
 
 export class MTLDebugSession extends LoggingDebugSession {
@@ -46,6 +48,11 @@ export class MTLDebugSession extends LoggingDebugSession {
 			}
 			console.log(evt.detail);
 			this.sendEvent(new TerminatedEvent(false));
+		});
+
+		this.debugManager.on('IPC_GENERATE', evt => {
+			// mtldbg is generating debugging info, wait for completion
+			vscode.window.showInformationMessage("Waiting for mtldbg to finish generating debugging database.");
 		});
 
 		this.debugManager.on('IPC_HIT_BREAKPOINT', evt => {
@@ -150,11 +157,14 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		logger.setup(Logger.LogLevel.Verbose, false);
 
+		if (args.build && args.generate)
+			throw "`build` and `generate` are incompatible; use `generate` for a CNS (non-compiled) character only.";
+
 		// start the program in the runtime
 		if (args.build) {
 			console.log(`Launch build for program ${args.program}.`)
 			
-			if (args.program.endsWith(".py")) {
+			if (!args.generate && args.program.endsWith(".py")) {
 				// build with MDK
 				const terminal = vscode.window.createTerminal({ name: `MDK Build ${args.program}`, hideFromUser: true });
 				terminal.show();
@@ -174,14 +184,14 @@ export class MTLDebugSession extends LoggingDebugSession {
 						}
 					);
 				});
-			} else {
+			} else if (!args.generate) {
 				// build with MTL
 				throw "Build with MTL not currently implemented, try MDK.";
 			}
 		}
 
         // launch debugger
-        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry);
+        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry, args.generate ? args.program : undefined);
 
 		// manager is connected, so allow breakpoint initialization
 		this.sendEvent(new InitializedEvent());

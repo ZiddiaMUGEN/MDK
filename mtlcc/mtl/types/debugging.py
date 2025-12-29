@@ -50,6 +50,7 @@ class DebuggerCommand(IntEnum):
     IPC_EXIT = 101
     IPC_HIT_BREAKPOINT = 102
     IPC_STEP = 103
+    IPC_GENERATE = 104
     
     IPC_LIST_PLAYERS = 201
     IPC_GET_PLAYER_INFO = 202

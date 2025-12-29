@@ -5,7 +5,7 @@ from mtl.parser import ini
 from mtl.utils.func import find, equals_insensitive, compiler_internal, search_file, get_scope
 from mtl.utils.constant import LEGAL_COMPILER_FLAGS
 
-def loadDefinition(file: str) -> ProjectContext:
+def loadDefinition(file: str, quiet: bool = False) -> ProjectContext:
     ctx = ProjectContext(file)
     all_loaded: list[str] = []
 
@@ -34,7 +34,7 @@ def loadDefinition(file: str) -> ProjectContext:
         ctx.common_file = search_file(common.value, file, [f"stdlib/{common.value}"])
     except TranslationError:
         if common.value == "common1.cns":
-            print(f"Attempting to load common states from built-in common1.mtl as {common.value} does not exist.")
+            if not quiet: print(f"Attempting to load common states from built-in common1.mtl as {common.value} does not exist.")
             ctx.common_file = search_file("common1.mtl", file, [f"stdlib/common1.mtl"])
         else:
             raise

@@ -55,7 +55,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
             if command == DebuggerCommand.LAUNCH:
                 ## launch and attach MUGEN subprocess
                 ## TODO: right now `breakpoints` is not cleared between launches.
-                debugger = process.launch(mugen, target.replace(".mdbg", ".def"), ctx)
+                debugger = process.launch(mugen, target.replace(".mdbg.gen", ".def").replace(".mdbg", ".def"), ctx)
                 debugger.launch_info.ipc = True
                 sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, json.dumps({ "pid": debugger.launch_info.process_id }).encode("utf-8")))
             elif command == DebuggerCommand.CONTINUE:

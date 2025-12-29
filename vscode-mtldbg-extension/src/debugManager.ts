@@ -25,7 +25,7 @@ export class MTLDebugManager extends EventEmitter {
 
     private _partialMessage: Buffer | null = null;
 
-    public async connect(python: string, database: string, mugen: string, stopOnEntry: boolean | undefined) {
+    public async connect(python: string, database: string, mugen: string, stopOnEntry: boolean | undefined, generate: string | undefined) {
         // check if debugger is already running
         if (this._debuggingProcess != null) {
             throw "Debugger has already been launched, please stop any debugging processes before running.";
@@ -34,8 +34,14 @@ export class MTLDebugManager extends EventEmitter {
         // run mtldbg and store the debugging process
         // we need to pass `-i` for IPC-over-stream mode, this will make it possible to communicate with
         // the debugger process via stdin/stdout.
-        console.log(`${python} -m mtldbg -d ${database} -m ${mugen} -i`)
-        this._debuggingProcess = spawn(python, ["-m", "mtldbg", "-d", database, "-m", mugen, "-i"], {
+        const commandLine = ["-m", "mtldbg", "-d", database, "-m", mugen, "-i"];
+        if (generate) {
+            commandLine.push("-g");
+            commandLine.push(generate);
+        }
+        console.log(`${python} ${commandLine.join(' ')}`);
+
+        this._debuggingProcess = spawn(python, commandLine, {
             stdio: 'pipe'
         });
         this._debuggingProcess.on('error', (err) => {

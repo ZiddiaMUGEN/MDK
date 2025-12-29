@@ -3,10 +3,12 @@ import argparse
 # readline is required for command history. but it's not available on Windows.
 # the pyreadline3 library works as a replacement?
 import readline
-import sys
+import os
 
 from mtl.debugging.cli_function import runDebugger
 from mtl.debugging.ipc_function import runDebuggerIPC
+from mtl.debugging.commands import DebuggerCommand, sendResponseIPC
+from mtl.types.debugging import DebuggerResponseIPC, DebuggerResponseType
 
 from mtl.project import loadDefinition
 from mtl.types.translation import StateDefinition, StateDefinitionParameters, StateDefinitionScope, StateScopeType, StateController
@@ -33,17 +35,25 @@ def debug():
     ai = args.enableai if args.enableai else "off"
 
     if args.generate:
-        target = generate(target, args.generate)
+        if args.ipc:
+            sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_GENERATE, DebuggerResponseType.SUCCESS, bytes()))
+        else:
+            print("Waiting for debugging database to generate.")
+        target = generate(target, args.generate, mugen)
 
     if args.ipc:
         runDebuggerIPC(target, mugen, p2, ai)
     else:
         runDebugger(target, mugen, p2, ai)
 
-def generate(database: str, character: str):
+def generate(database: str, character: str, mugen: str):
     result = f"{database}.gen"
     ## read the DEF file as provided
-    definition = loadDefinition(character)
+    definition = loadDefinition(character, True)
+    if definition.common_file.endswith("common1.mtl"):
+        ## this indicates the character uses builtin common1.cns.
+        definition.common_file = os.path.dirname(os.path.abspath(mugen)) + "/data/common1.cns"
+    definition.source_files.append(definition.common_file)
     ## read each state file from the DEF file into a list of StateDefinition
     states: list[StateDefinition] = []
     ### each StateDefinition here only needs to define `name`, `states`, and `location`.

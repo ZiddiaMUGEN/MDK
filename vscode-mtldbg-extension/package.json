@@ -40,7 +40,7 @@
             "properties": {
               "program": {
                 "type": "string",
-                "description": "Path to the MTL or Python source file to compile for debugging.",
+                "description": "Path to the MTL or Python source file to compile for debugging. If using `generate`, pass the CNS character's DEF file here.",
                 "default": "${workspaceFolder}/${command:AskForProgramName}"
               },
               "database": {
@@ -67,6 +67,11 @@
                 "type": "boolean",
                 "description": "Automatically stop after launch.",
                 "default": true
+              },
+              "generate": {
+                "type": "boolean",
+                "description": "Set to `true` to generate a debugging file on launch. Use this if you provide a CNS DEF file in program.",
+                "default": false
               }
             }
           }
