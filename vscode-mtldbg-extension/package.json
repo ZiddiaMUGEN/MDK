@@ -23,6 +23,18 @@
     "breakpoints": [
       {
         "language": "python"
+      },
+      {
+        "language": "cns"
+      },
+      {
+        "language": "st"
+      },
+      {
+        "language": "mtl"
+      },
+      {
+        "language": "ini"
       }
     ],
     "debuggers": [
