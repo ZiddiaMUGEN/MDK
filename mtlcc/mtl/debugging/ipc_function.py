@@ -314,7 +314,7 @@ def insertBreakpoint(filename: str, line: int, ctx: DebuggingContext, debugger: 
                 match_distance = line - statedef.location.line
             for cindex in range(len(statedef.states)):
                 controller = statedef.states[cindex]
-                if line >= controller.line and (line - controller.line) < match_distance:
+                if line >= controller.line and (line - controller.line) < match_distance and match_filenames(filename, controller.filename) != None:
                     match = (statedef.id, cindex)
                     match_location = controller
                     match_distance = line - controller.line
@@ -338,7 +338,7 @@ def insertPasspoint(filename: str, line: int, ctx: DebuggingContext, debugger: D
                 match_distance = line - statedef.location.line
             for cindex in range(len(statedef.states)):
                 controller = statedef.states[cindex]
-                if line >= controller.line and (line - controller.line) < match_distance:
+                if line >= controller.line and (line - controller.line) < match_distance and match_filenames(filename, controller.filename) != None:
                     match = (statedef.id, cindex)
                     match_location = controller
                     match_distance = line - controller.line

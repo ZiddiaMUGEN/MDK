@@ -50,7 +50,7 @@ def match_filenames(f1: str, f2: str) -> Optional[str]:
     ## we can check a couple ways:
     ### 1. real file match (find the files from paths on disk, confirm they are the same)
     ### 2. stem match (e.g. I input `common1.mtl`, match to `f2` based on last path component)
-    if os.path.exists(f1) and os.path.exists(f2):
+    if os.path.exists(f1) and os.path.exists(f2) and f1 == f2:
         return os.path.abspath(f1)
     if os.path.abspath(f2).lower().endswith(f1.lower()):
         ## it's still necessary to find it on the system.
