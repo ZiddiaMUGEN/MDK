@@ -87,7 +87,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 ## set the process state so the other threads can exit
                 if debugger != None:
                     debugger.launch_info.state = DebugProcessState.EXIT
-                sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
+                #sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.SUCCESS, bytes()))
             elif command == DebuggerCommand.IPC_LIST_PLAYERS:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))

@@ -200,10 +200,10 @@ def _wait_mugen(target: DebuggerTarget, folder: str):
     target.launch_info.state = DebugProcessState.EXIT
     time.sleep(1)
     # in IPC mode, send IPC command to the adapter to inform it of exit
-    if target.launch_info.ipc:
-        sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.SUCCESS, json.dumps({ "ret": target.subprocess.poll() }).encode('utf-8')))
     if folder != None:
         shutil.rmtree(folder)
+    if target.launch_info.ipc:
+        sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.SUCCESS, json.dumps({ "ret": target.subprocess.poll() }).encode('utf-8')))
 
 def _debug_mugen(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue, results: multiprocessing.Queue):
     ## insert self as a debugger into the target process, then indicate the process can unsuspend
