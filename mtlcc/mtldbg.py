@@ -53,7 +53,6 @@ def generate(database: str, character: str, mugen: str):
     if definition.common_file.endswith("common1.mtl"):
         ## this indicates the character uses builtin common1.cns.
         definition.common_file = os.path.dirname(os.path.abspath(mugen)) + "/data/common1.cns"
-    definition.source_files.append(definition.common_file)
     ## read each state file from the DEF file into a list of StateDefinition
     states: list[StateDefinition] = []
     ### each StateDefinition here only needs to define `name`, `states`, and `location`.
@@ -66,10 +65,23 @@ def generate(database: str, character: str, mugen: str):
             parseTarget(contents, TranslationMode.CNS_MODE, loadContext, True)
             for state in loadContext.state_definitions:
                 new_definition = StateDefinition(state.name, StateDefinitionParameters(), [], [], StateDefinitionScope(StateScopeType.SHARED, None), state.location)
+                new_definition.parameters.id = int(state.name)
                 for controller in state.states:
                     ## the contents of the controller do not matter. we just need the locations.
                     new_definition.states.append(StateController("", {}, [], controller.location))
                 states.append(new_definition)
+    loadContext = LoadContext(definition.common_file, CompilerConfiguration())
+    with open(definition.common_file, errors='ignore') as f:
+        contents = ini.parse(f.read(), loadContext.ini_context)
+        parseTarget(contents, TranslationMode.CNS_MODE, loadContext, True)
+        for state in loadContext.state_definitions:
+            new_definition = StateDefinition(state.name, StateDefinitionParameters(), [], [], StateDefinitionScope(StateScopeType.SHARED, None), state.location)
+            new_definition.parameters.id = int(state.name)
+            new_definition.parameters.is_common = True
+            for controller in state.states:
+                ## the contents of the controller do not matter. we just need the locations.
+                new_definition.states.append(StateController("", {}, [], controller.location))
+            states.append(new_definition)
     ## process the StateDefinitions into a minimal debugging context
     context = loadStates(states, character)
     ## write the states into the `.gen` database file

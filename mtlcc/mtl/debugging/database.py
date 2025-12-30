@@ -11,11 +11,14 @@ def addStringToDatabase(name: str, ctx: TranslationContext):
         ctx.debugging.strings.append(name)
 
 def getDefRelativePath(name: str, base: str) -> str:
+    """
     def_path = os.path.dirname(os.path.abspath(base))
     rel_path = os.path.relpath(os.path.abspath(name), def_path)
     while rel_path.startswith("..\\") or rel_path.startswith("../"):
         rel_path = rel_path[3:]
     return rel_path
+    """
+    return os.path.abspath(name)
 
 def addPathToDatabase(name: str, ctx: TranslationContext):
     addStringToDatabase(getDefRelativePath(name, ctx.filename), ctx)
