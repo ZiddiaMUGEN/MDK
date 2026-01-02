@@ -60,7 +60,7 @@ def read_animations(anim_path: str) -> list[Animation]:
                     if params[5] == "VH" or params[5] == "HV": flip = AnimationFlip.BOTH
                     if flip != AnimationFlip.NONE: next_frame.flip(flip)
                 if len(params) >= 7 and params[6] != "":
-                    pass ## trans not fully supported yet
+                    next_frame._trans = params[6]
                 if len(params) >= 9 and params[7] != "" and params[8] != "":
                     next_frame.scale((float(params[7]), float(params[8])))
                 if len(params) >= 10 and params[9] != "":

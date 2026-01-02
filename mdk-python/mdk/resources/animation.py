@@ -15,20 +15,10 @@ class AnimationFlip(Flag):
     HORIZONTAL = 2
     BOTH = 3
 
-class AnimationTrans(Enum):
-    NONE = 0
-    ADD = 1
-    SUB = 2
-
 def get_flip(flip: AnimationFlip):
     if flip == AnimationFlip.BOTH: return "VH"
     if flip == AnimationFlip.HORIZONTAL: return "H"
     if flip == AnimationFlip.VERTICAL: return "V"
-    return ""
-
-def get_trans(trans: AnimationTrans):
-    if trans == AnimationTrans.ADD: return "A"
-    if trans == AnimationTrans.SUB: return "S"
     return ""
 
 class Clsn:
@@ -51,7 +41,7 @@ class Frame:
     _length: int = -1
     _offset: tuple[int, int] = (0, 0)
     _flip: AnimationFlip = AnimationFlip.NONE
-    _trans: AnimationTrans = AnimationTrans.NONE
+    _trans: str | None = None
     _scale: tuple[float, float] = (1, 1)
     _rotate: int = 0
     _loopstart: bool = False
@@ -61,7 +51,7 @@ class Frame:
 
     def __init__(self, 
                  group: int, index: int, length: int = -1, 
-                 offset: tuple[int, int] = (0, 0), flip: AnimationFlip = AnimationFlip.NONE, trans: AnimationTrans = AnimationTrans.NONE,
+                 offset: tuple[int, int] = (0, 0), flip: AnimationFlip = AnimationFlip.NONE, trans: str | None = None,
                  scale: tuple[float, float] = (1, 1), rotate: int = 0):
         self._group = group
         self._index = index
@@ -112,10 +102,10 @@ class Frame:
         result = f"{result}{self._group}, {self._index}, {self._offset[0]}, {self._offset[1]}, {self._length}"
 
         ## early exit if no extra params are set.
-        if self._flip == AnimationFlip.NONE and self._trans == AnimationTrans.NONE and self._scale[0] == 1 and self._scale[1] == 1 and self._rotate == 0:
+        if self._flip == AnimationFlip.NONE and self._trans == None and self._scale[0] == 1 and self._scale[1] == 1 and self._rotate == 0:
             return result
         result += f", {get_flip(self._flip)}"
-        result += f", {get_trans(self._trans)}"
+        result += f", {self._trans if self._trans != None else ''}"
         result += f", {self._scale[0]}, {self._scale[1]}"
         result += f", {self._rotate}"
         return result
@@ -127,7 +117,7 @@ class Frame:
 
         if self._offset != (0, 0): result += f"\n{indents}.offset({self._offset})"
         if self._flip != AnimationFlip.NONE: result += f"\n{indents}.flip({self._flip})"
-        if self._trans != AnimationTrans.NONE: result += f"\n{indents}.trans({self._trans})"
+        if self._trans != None: result += f"\n{indents}.trans(\"{self._trans}\")"
         if self._scale != (1, 1): result += f"\n{indents}.scale({self._scale})"
         if self._rotate != 0: result += f"\n{indents}.rotate({self._rotate})"
         if self._loopstart: result += f"\n{indents}.loop()"
@@ -558,4 +548,4 @@ class Animation:
     def __repr__(self):
         return self.compile()
     
-__all__ = ["Animation", "Sequence", "Frame", "AnimationFlip", "AnimationTrans"]
+__all__ = ["Animation", "Sequence", "Frame", "AnimationFlip"]
