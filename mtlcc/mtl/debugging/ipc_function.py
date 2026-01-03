@@ -107,6 +107,12 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                     continue
 
                 ipcGetVariables(request, debugger, ctx)
+            elif command == DebuggerCommand.IPC_GET_TRIGGER:
+                if debugger == None or debugger.subprocess == None:
+                    sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
+                    continue
+
+                ipcGetTrigger(request, debugger, ctx)
             elif command == DebuggerCommand.IPC_GET_TEAMSIDE:
                 if debugger == None or debugger.subprocess == None:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.ERROR, DEBUGGER_NOT_RUNNING))
@@ -564,6 +570,79 @@ def ipcGetTeamside(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: D
         return
     
     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps({ "teamside": teamside }).encode('utf-8')))
+
+def ipcGetTrigger(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
+    ## send a trigger value to the adapter.
+    params = json.loads(request.params.decode('utf-8'))
+    if 'player' not in params or 'trigger' not in params:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_INVALID_INPUT))
+        return
+    
+    target_id = params['player']
+    trigger_name: str = params['trigger']
+
+    ## iterate each player
+    game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
+    if game_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
+        return
+    p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
+    if p1_address == 0:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
+        return
+
+    target_address = 0
+    for idx in range(60):
+        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
+        if player_address == 0:
+            continue
+
+        player_id = process.getValue(player_address + 0x04, debugger, ctx)
+        if target_id == player_id:
+            target_address = player_address
+            break
+
+    if target_address == 0:
+        ## player with provided ID does not exist
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
+        return
+    
+    target = trigger_name.lower()
+    if target in debugger.launch_info.database["triggers"]:
+        offset = debugger.launch_info.database["triggers"][target]
+        raw_value = process.getValue(target_address + offset[0], debugger, ctx)
+        detailResult = {
+            "name": trigger_name,
+            "value": raw_value
+        }
+    elif target in debugger.launch_info.database["game_triggers"]["int"]:
+        offset = debugger.launch_info.database["game_triggers"]["int"][target]
+        raw_value = process.getValue(game_address + offset, debugger, ctx)
+        detailResult = {
+            "name": trigger_name,
+            "value": raw_value
+        }
+    elif target in debugger.launch_info.database["game_triggers"]["float"]:
+        offset = debugger.launch_info.database["game_triggers"]["float"][target]
+        raw_value = process.getBytes(game_address + offset, debugger, ctx, 4)
+        resolved_value = round(struct.unpack('<f', raw_value)[0], 3)
+        detailResult = {
+            "name": trigger_name,
+            "value": resolved_value
+        }
+    elif target in debugger.launch_info.database["game_triggers"]["double"]:
+        offset = debugger.launch_info.database["game_triggers"]["double"][target]
+        raw_value = process.getBytes(game_address + offset, debugger, ctx, 8)
+        resolved_value = round(struct.unpack('<d', raw_value)[0], 3)
+        detailResult = {
+            "name": trigger_name,
+            "value": raw_value
+        }
+    else:
+        sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_VALUE_NOT_EXIST))
+        return
+    
+    sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.SUCCESS, json.dumps(detailResult).encode('utf-8')))
 
 def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
     ## send a list of player IDs and names to the adapter.

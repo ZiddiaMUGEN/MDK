@@ -48,6 +48,7 @@ export enum DebuggerCommandType {
 	IPC_CLEAR_BREAKPOINTS = 206,
 	IPC_SET_BREAKPOINT = 207,
 	IPC_SET_STEP_TARGET = 208,
+	IPC_GET_TRIGGER = 209,
 }
 
 export enum DebuggerResponseType {

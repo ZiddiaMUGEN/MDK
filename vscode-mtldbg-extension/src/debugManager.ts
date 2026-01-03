@@ -16,7 +16,7 @@ interface PlayerFrame {
 
 interface MugenVariable {
     name: string;
-    value: number;
+    value: number | string;
 }
 
 export class MTLDebugManager extends EventEmitter {
@@ -159,6 +159,19 @@ export class MTLDebugManager extends EventEmitter {
         if (results.response !== DebuggerResponseType.SUCCESS) {
             this.displayResponseError(results);
             return [];
+        }
+
+        return JSON.parse(results.detail);
+    }
+
+    public async getPlayerTrigger(player: number, trigger: string): Promise<MugenVariable> {
+        if (!this.isConnected()) throw "Cannot request variable details when debugger is not connected!";
+
+        const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_GET_TRIGGER, { player, trigger });
+
+        if (results.response !== DebuggerResponseType.SUCCESS) {
+            this.displayResponseError(results);
+            return { name: trigger, value: "Trigger offset not available in database" };
         }
 
         return JSON.parse(results.detail);

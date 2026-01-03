@@ -320,8 +320,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 	}
 
 	protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments, request?: DebugProtocol.Request) {
-		const playerVariables = await this.debugManager.getPlayerVariables(args.frameId ?? 0, VariableType.ALL);
-		const match = playerVariables.find(x => x.name.toLowerCase() === args.expression.toLowerCase());
+		const match = await this.debugManager.getPlayerTrigger(args.frameId ?? 0, args.expression);
 		if (match) {
 			response.body = {
 				result: `${args.expression}: ${match.value.toString()}`,
