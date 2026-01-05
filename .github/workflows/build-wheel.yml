@@ -19,6 +19,12 @@ jobs:
           nasm -o mtlcc/asm/1.1b1/passpoint.bin mtlcc/asm/1.1b1/passpoint.asm
           python3 .github/copy_binary.py mtlcc/asm/1.1b1/breakpoint.bin mtlcc/mtl/debugging/asmbin/breakpoint_11b1.py BREAKPOINT_FUNC_11B1
           python3 .github/copy_binary.py mtlcc/asm/1.1b1/passpoint.bin mtlcc/mtl/debugging/asmbin/passpoint_11b1.py PASSPOINT_FUNC_11B1
+
+          # 1.1a4 breakpoint/passpoint functions
+          nasm -o mtlcc/asm/1.1a4/breakpoint.bin mtlcc/asm/1.1a4/breakpoint.asm
+          nasm -o mtlcc/asm/1.1a4/passpoint.bin mtlcc/asm/1.1a4/passpoint.asm
+          python3 .github/copy_binary.py mtlcc/asm/1.1a4/breakpoint.bin mtlcc/mtl/debugging/asmbin/breakpoint_11a4.py BREAKPOINT_FUNC_11A4
+          python3 .github/copy_binary.py mtlcc/asm/1.1a4/passpoint.bin mtlcc/mtl/debugging/asmbin/passpoint_11a4.py PASSPOINT_FUNC_11A4
       - run: python3 -m pip install --upgrade pip build
       - run: cd mtlcc && python3 -m build
       - run: cd mdk-python && python3 -m build
