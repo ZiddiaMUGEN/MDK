@@ -69,13 +69,7 @@ ADDRESS_MUGEN_11B1 = {
         "ailevel": [0x2424, int]
     },
     "game_triggers": {
-        "int": {
-            "roundstate": 0x12754
-        },
-        "float": {
-        },
-        "double": {
-        }
+        "roundstate": [0x12754, int]
     }
 }
 

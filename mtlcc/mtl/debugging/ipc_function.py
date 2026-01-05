@@ -6,9 +6,10 @@ from mtl.types.debugging import (
     DebugProcessState, DebuggerResponseIPC, DebuggerRequestIPC, DebuggerResponseType, 
     DebuggingContext, DebuggerTarget, DebugTypeInfo, TypeCategory
 )
-from mtl.debugging import database, process
+from mtl.debugging import database, process, common_function
 from mtl.debugging.commands import DebuggerCommand, processDebugIPC, sendResponseIPC
 from mtl.debugging.ipc_code import *
+
 from mtl.utils.debug import get_state_by_id
 from mtl.utils.func import search_file, match_filenames
 
@@ -146,7 +147,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 
                 sendResponseIPC(DebuggerResponseIPC(
                     request.message_id, command, DebuggerResponseType.SUCCESS, 
-                    json.dumps(breakpointsToJson(ctx)).encode('utf-8')
+                    json.dumps(common_function.breakpointsToJson(ctx)).encode('utf-8')
                 ))
             elif command == DebuggerCommand.IPC_SET_BREAKPOINT:
                 if debugger == None or debugger.subprocess == None:
@@ -172,10 +173,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 line = int(params['line'])
                 mode = params['mode']
 
-                if mode == "bp":
-                    created = insertBreakpoint(path, line, ctx, debugger)
-                else:
-                    created = insertPasspoint(path, line, ctx, debugger)
+                created = common_function.insertBreakpoint(path, line, ctx, debugger, mode)
 
                 sendResponseIPC(DebuggerResponseIPC(
                     request.message_id, command, DebuggerResponseType.SUCCESS, 
@@ -204,11 +202,11 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
                 if game_address == 0:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
-                    return
+                    continue
                 p1_address = process.getValue(game_address + debugger.launch_info.database["player"], debugger, ctx)
                 if p1_address == 0:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
-                    return
+                    continue
                 
                 player_id = process.getValue(p1_address + 0x04, debugger, ctx)
 
@@ -229,7 +227,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 game_address = process.getValue(debugger.launch_info.database["game"], debugger, ctx)
                 if game_address == 0:
                     sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_GAME_NOT_INITIALIZED))
-                    return
+                    continue
                 
                 is_set = False
                 for idx in range(60):
@@ -257,102 +255,11 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
             sendResponseIPC(DebuggerResponseIPC(request.message_id, command, DebuggerResponseType.EXCEPTION, json.dumps(error).encode('utf-8')))
             continue
 
-def getTypedValue(type: DebugTypeInfo, value, ctx: DebuggingContext) -> str:
-    if type.category == TypeCategory.ENUM:
-        if value >= 0 and value <= len(type.members):
-            return f"{type.name}.{type.members[value]} ({value})"
-        return f"{type.name} ({value})"
-    elif type.category == TypeCategory.FLAG:
-        result = ""
-        for index in range(len(type.members)):
-            member = type.members[index]
-            if ((2 ** index) & value) != 0:
-                result += str(member)
-        if len(result) > 0:
-            result = f"{type.name}.{result} ({value})"
-        else:
-            return f"{type.name} ({value})"
-    elif type.name == "char":
-        return chr(value)
-    elif type.name == "bool":
-        return "true" if value != 0 else "false"
-    elif type.name == "state" or type.name == "StateNo":
-        if (state := get_state_by_id(value, ctx)) != None:
-            return f"State {state.name} ({value})"
-        return f"State {value}"
-    elif type.name == "target":
-        return f"Target ID {value}"
-    
-    return str(value)
-
 def breakpointInFile(bp: tuple[int, int], path: str, ctx: DebuggingContext) -> bool:
     if (state := get_state_by_id(bp[0], ctx)) != None:
         if match_filenames(path, state.location.filename) != None:
             return True
     return False
-
-def breakpointsToJson(ctx: DebuggingContext):
-    breakpoints = []
-    passpoints = []
-    index = 0
-    for bp in ctx.breakpoints:
-        if (state := get_state_by_id(bp[0], ctx)) != None:
-            breakpoints.append({ "filename": state.states[bp[1]].filename, "line": state.states[bp[1]].line, "id": index })
-        index += 1
-    index = 0
-    for bp in ctx.passpoints:
-        if (state := get_state_by_id(bp[0], ctx)) != None:
-            passpoints.append({ "filename": state.states[bp[1]].filename, "line": state.states[bp[1]].line, "id": index })
-        index += 1
-    return { "breakpoints": breakpoints, "passpoints": passpoints }
-
-def insertBreakpoint(filename: str, line: int, ctx: DebuggingContext, debugger: DebuggerTarget) -> dict | None:
-    # find the closest match to `filename:line` in the database,
-    # which is either a statedef or a controller.
-    # if it's a statedef set on controller 0.
-    match = None
-    match_location = None
-    match_distance = 99999999
-    for statedef in ctx.states:
-        if match_filenames(filename, statedef.location.filename) != None:
-            if line >= statedef.location.line and (line - statedef.location.line) < match_distance:
-                match = (statedef.id, 0)
-                match_location = statedef.states[0]
-                match_distance = line - statedef.location.line
-            for cindex in range(len(statedef.states)):
-                controller = statedef.states[cindex]
-                if line >= controller.line and (line - controller.line) < match_distance and match_filenames(filename, controller.filename) != None:
-                    match = (statedef.id, cindex)
-                    match_location = controller
-                    match_distance = line - controller.line
-    if match == None or match_location == None:
-        return None
-    process.setBreakpoint(match[0], match[1], debugger, ctx)
-    return { "filename": match_location.filename, "line": match_location.line, "id": len(ctx.breakpoints) - 1 }
-
-def insertPasspoint(filename: str, line: int, ctx: DebuggingContext, debugger: DebuggerTarget) -> dict | None:
-    # find the closest match to `filename:line` in the database,
-    # which is either a statedef or a controller.
-    # if it's a statedef set on controller 0.
-    match = None
-    match_location = None
-    match_distance = 99999999
-    for statedef in ctx.states:
-        if match_filenames(filename, statedef.location.filename) != None:
-            if line >= statedef.location.line and (line - statedef.location.line) < match_distance:
-                match = (statedef.id, 0)
-                match_location = statedef.states[0]
-                match_distance = line - statedef.location.line
-            for cindex in range(len(statedef.states)):
-                controller = statedef.states[cindex]
-                if line >= controller.line and (line - controller.line) < match_distance and match_filenames(filename, controller.filename) != None:
-                    match = (statedef.id, cindex)
-                    match_location = controller
-                    match_distance = line - controller.line
-    if match == None or match_location == None:
-        return None
-    process.setPasspoint(match[0], match[1], debugger, ctx)
-    return { "filename": match_location.filename, "line": match_location.line, "id": len(ctx.passpoints) - 1 }
 
 def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: DebuggingContext):
     ## send a list of player IDs and names to the adapter.
@@ -373,26 +280,7 @@ def ipcListPlayers(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: D
         sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYERS_NOT_INITIALIZED))
         return
 
-    results: list[dict] = []
-    
-    for idx in range(60):
-        player_address = process.getValue(game_address + debugger.launch_info.database["player"] + idx * 4, debugger, ctx)
-        if player_address == 0:
-            continue
-        player_exist = process.getValue(player_address + debugger.launch_info.database["exist"], debugger, ctx)
-        if player_exist == 0:
-            continue
-        root_address = process.getValue(player_address + debugger.launch_info.database["root_addr"], debugger, ctx)
-        helper_id = process.getValue(player_address + debugger.launch_info.database["helperid"], debugger, ctx)
-        if player_address == p1_address or root_address == p1_address or include_enemy:
-            player_name = process.getString(player_address + 0x20, debugger, ctx)
-            player_type = "Player" if idx < 4 else f"Helper({helper_id})"
-            player_team = "p1" if player_address == p1_address or root_address == p1_address else "p2"
-            player_id = process.getValue(player_address + 0x04, debugger, ctx)
-            results.append({
-                "name": f"{player_name} ({player_type}, {player_team})",
-                "id": player_id
-            })
+    results = common_function.listPlayers(game_address, p1_address, include_enemy, debugger, ctx)    
     
     if debugger.launch_info.state not in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT, DebugProcessState.PAUSED, DebugProcessState.SUSPENDED_DEBUG]:
         process.resumeExternal(debugger)
@@ -607,38 +495,8 @@ def ipcGetTrigger(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: De
         sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_PLAYER_NOT_EXIST))
         return
     
-    target = trigger_name.lower()
-    if target in debugger.launch_info.database["triggers"]:
-        offset = debugger.launch_info.database["triggers"][target]
-        raw_value = process.getValue(target_address + offset[0], debugger, ctx)
-        detailResult = {
-            "name": trigger_name,
-            "value": raw_value
-        }
-    elif target in debugger.launch_info.database["game_triggers"]["int"]:
-        offset = debugger.launch_info.database["game_triggers"]["int"][target]
-        raw_value = process.getValue(game_address + offset, debugger, ctx)
-        detailResult = {
-            "name": trigger_name,
-            "value": raw_value
-        }
-    elif target in debugger.launch_info.database["game_triggers"]["float"]:
-        offset = debugger.launch_info.database["game_triggers"]["float"][target]
-        raw_value = process.getBytes(game_address + offset, debugger, ctx, 4)
-        resolved_value = round(struct.unpack('<f', raw_value)[0], 3)
-        detailResult = {
-            "name": trigger_name,
-            "value": resolved_value
-        }
-    elif target in debugger.launch_info.database["game_triggers"]["double"]:
-        offset = debugger.launch_info.database["game_triggers"]["double"][target]
-        raw_value = process.getBytes(game_address + offset, debugger, ctx, 8)
-        resolved_value = round(struct.unpack('<d', raw_value)[0], 3)
-        detailResult = {
-            "name": trigger_name,
-            "value": raw_value
-        }
-    else:
+    detailResult = common_function.getTriggerValue(trigger_name, target_address, game_address, debugger, ctx)
+    if detailResult == None:
         sendResponseIPC(DebuggerResponseIPC(request.message_id, request.command_type, DebuggerResponseType.ERROR, DEBUGGER_VALUE_NOT_EXIST))
         return
     
@@ -687,10 +545,10 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
     detailResult = []
     if (variable_type == "GLOBAL" or variable_type == "ALL") and state != None:
         for var in ctx.globals:
-            if var.scope == state.scope:
+            if var.scope == state.scope and isinstance(var.type, DebugTypeInfo):
                 detailResult.append({
                     "name": var.name,
-                    "value": getTypedValue(
+                    "value": common_function.get_typed_value(
                         var.type,
                         process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx),
                         ctx
@@ -698,14 +556,15 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
                 })
     if (variable_type == "LOCAL" or variable_type == "ALL") and state != None:
         for var in state.locals:
-            detailResult.append({
-                "name": var.name,
-                "value": getTypedValue(
-                    var.type,
-                    process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx),
-                    ctx
-                )
-            })
+            if isinstance(var.type, DebugTypeInfo):
+                detailResult.append({
+                    "name": var.name,
+                    "value": common_function.get_typed_value(
+                        var.type,
+                        process.getVariable(target_address, var.allocations[0][0], var.allocations[0][1], var.type.size, var.type.name == "float", var.system, debugger, ctx),
+                        ctx
+                    )
+                })
     if (variable_type == "AUTO" or variable_type == "ALL") and state != None:
         triggers: list[str] = []
         for ctrl in state.state_data:
@@ -713,37 +572,9 @@ def ipcGetVariables(request: DebuggerRequestIPC, debugger: DebuggerTarget, ctx: 
                 if trigger not in triggers:
                     triggers.append(trigger)
         for trigger in triggers:
-            target = trigger.lower()
-            if target in debugger.launch_info.database["triggers"]:
-                offset = debugger.launch_info.database["triggers"][target]
-                raw_value = process.getValue(target_address + offset[0], debugger, ctx)
-                detailResult.append({
-                    "name": trigger,
-                    "value": raw_value
-                })
-            elif target in debugger.launch_info.database["game_triggers"]["int"]:
-                offset = debugger.launch_info.database["game_triggers"]["int"][target]
-                raw_value = process.getValue(game_address + offset, debugger, ctx)
-                detailResult.append({
-                    "name": trigger,
-                    "value": raw_value
-                })
-            elif target in debugger.launch_info.database["game_triggers"]["float"]:
-                offset = debugger.launch_info.database["game_triggers"]["float"][target]
-                raw_value = process.getBytes(game_address + offset, debugger, ctx, 4)
-                resolved_value = round(struct.unpack('<f', raw_value)[0], 3)
-                detailResult.append({
-                    "name": trigger,
-                    "value": resolved_value
-                })
-            elif target in debugger.launch_info.database["game_triggers"]["double"]:
-                offset = debugger.launch_info.database["game_triggers"]["double"][target]
-                raw_value = process.getBytes(game_address + offset, debugger, ctx, 8)
-                resolved_value = round(struct.unpack('<d', raw_value)[0], 3)
-                detailResult.append({
-                    "name": trigger,
-                    "value": raw_value
-                })
+            nextResult = common_function.getTriggerValue(trigger, target_address, game_address, debugger, ctx)
+            if nextResult != None:
+                detailResult.append(nextResult)
             else:
                 detailResult.append({
                     "name": trigger,
