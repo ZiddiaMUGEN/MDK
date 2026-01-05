@@ -196,5 +196,12 @@ def getTriggerValue(trigger_name: str, target_address: int, game_address: int, d
                 "name": trigger_name,
                 "value": raw_value
             }
-            
+        else:
+            ## this is for non-builtin types (e.g. enum/flag) which can be resolved later
+            raw_value = process.getValue(game_address + trigger_detail[0], debugger, ctx)
+            detailResult = {
+                "name": trigger_name,
+                "value": raw_value
+            }
+
     return detailResult
