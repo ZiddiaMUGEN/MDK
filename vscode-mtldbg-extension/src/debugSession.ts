@@ -383,6 +383,11 @@ export class MTLDebugSession extends LoggingDebugSession {
 		this.sendResponse(response);
 	}
 
+	protected async setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments, request?: DebugProtocol.Request) {
+		console.log(args);
+		this.sendResponse(response);
+	}
+
 	private async findLocalFileName(fileName: string) {
 		const matches = await vscode.workspace.findFiles(`${fileName.replaceAll('\\', '/')}`);
 		if (matches.length === 1) {

@@ -164,14 +164,15 @@ export class MTLDebugManager extends EventEmitter {
         return JSON.parse(results.detail);
     }
 
-    public async getPlayerTrigger(player: number, trigger: string): Promise<MugenVariable> {
+    public async getPlayerTrigger(player: number, trigger: string): Promise<MugenVariable | null> {
         if (!this.isConnected()) throw "Cannot request variable details when debugger is not connected!";
 
         const results = await this.sendMessageAndWaitForResponse(DebuggerCommandType.IPC_GET_TRIGGER, { player, trigger });
 
         if (results.response !== DebuggerResponseType.SUCCESS) {
-            this.displayResponseError(results);
-            return { name: trigger, value: "Trigger offset not available in database" };
+            if (results.detail !== "DEBUGGER_VALUE_NOT_EXIST")
+                this.displayResponseError(results);
+            return null;
         }
 
         return JSON.parse(results.detail);

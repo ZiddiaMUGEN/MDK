@@ -1,14 +1,19 @@
 {
   "name": "vscode-mtldbg",
-  "displayName": "MTL Debugger",
-  "description": "",
-  "version": "0.2.0",
+  "displayName": "MUGEN Debugger",
+  "description": "A debugger for MUGEN character code (CNS, MTL, MDK)",
+  "version": "0.2.1",
+  "publisher": "ZiddiaMUGEN",
+  "icon": "mugen.png",
+  "repository": {
+    "url": "https://github.com/ZiddiaMUGEN/MDK"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
   "author": {
     "name": "Ziddia",
-    "email": "ziddia1@gmail.com"
+    "email": "joshua.barton.smith12@gmail.com"
   },
   "categories": [
     "Debuggers"
@@ -63,12 +68,12 @@
               "pythonPath": {
                 "type": "string",
                 "description": "Path to the Python executable to use for compilation.",
-                "default": "${workspaceFolder}/${command:AskForDatabaseName}"
+                "default": "${workspaceFolder}/${command:AskForPythonPath}"
               },
               "mugenPath": {
                 "type": "string",
                 "description": "Path to the MUGEN executable to use for debugging.",
-                "default": "${workspaceFolder}/${command:AskForDatabaseName}"
+                "default": "${workspaceFolder}/${command:AskForMUGENPath}"
               },
               "build": {
                 "type": "boolean",
@@ -92,28 +97,39 @@
           {
             "type": "mtldbg",
             "request": "launch",
-            "name": "Ask for file name",
+            "name": "Debug in MUGEN",
             "program": "${workspaceFolder}/${command:AskForProgramName}",
             "database": "${workspaceFolder}/${command:AskForDatabaseName}",
+            "pythonPath": "${command:AskForPythonPath}",
+            "mugenPath": "${command:AskForMUGENPath}",
+            "build": false,
+            "generate": false,
             "stopOnEntry": true
           }
         ],
         "configurationSnippets": [
           {
-            "label": "MDK Debug: Launch",
+            "label": "MUGEN Debug: Launch",
             "description": "A new configuration for debugging MDK programs",
             "body": {
               "type": "mtldbg",
               "request": "launch",
               "name": "${3:Launch Program}",
               "program": "^\"\\${workspaceFolder}/${1:Program}\"",
-              "database": "^\"\\${workspaceFolder}/${2:Database}\""
+              "database": "^\"\\${workspaceFolder}/${2:Database}\"",
+              "pythonPath": "^\"\\${workspaceFolder}/${4:Python}\"",
+              "mugenPath": "^\"\\${workspaceFolder}/${5:MUGEN}\"",
+              "build": false,
+              "generate": false,
+              "stopOnEntry": true
             }
           }
         ],
         "variables": {
           "AskForProgramName": "extension.vscode-mtldbg.getFileInput",
-          "AskForDatabaseName": "extension.vscode-mtldbg.getFileInput"
+          "AskForDatabaseName": "extension.vscode-mtldbg.getFileInput",
+          "AskForPythonPath": "extension.vscode-mtldbg.getFileInput",
+          "AskForMUGENPath": "extension.vscode-mtldbg.getFileInput"
         }
       }
     ]
