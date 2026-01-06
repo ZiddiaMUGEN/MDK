@@ -143,7 +143,7 @@ def runDebuggerIPC(target: str, mugen: str, p2: str, ai: str):
                 ctx.passpoints = list(filter(lambda k: not breakpointInFile(k, path, ctx), ctx.passpoints))
                 ## update the table in-memory after removing.
                 if debugger != None:
-                    process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger)
+                    process.insertBreakpointTable(ctx.breakpoints, ctx.passpoints, debugger, ctx)
                 
                 sendResponseIPC(DebuggerResponseIPC(
                     request.message_id, command, DebuggerResponseType.SUCCESS, 

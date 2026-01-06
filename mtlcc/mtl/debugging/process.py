@@ -40,7 +40,7 @@ def setBreakpoint(stateno: int, index: int, target: DebuggerTarget, ctx: Debuggi
     ctx.breakpoints.append((stateno, index))
 
     ## update breakpoint table
-    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target)
+    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target, ctx)
 
 def setPasspoint(stateno: int, index: int, target: DebuggerTarget, ctx: DebuggingContext):
     if len(ctx.passpoints) >= 8:
@@ -50,9 +50,9 @@ def setPasspoint(stateno: int, index: int, target: DebuggerTarget, ctx: Debuggin
     ctx.passpoints.append((stateno, index))
 
     ## update breakpoint table
-    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target)
+    insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target, ctx)
 
-def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[tuple[int, int]], target: DebuggerTarget):
+def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[tuple[int, int]], target: DebuggerTarget, ctx: DebuggingContext):
     ## suspend the thread
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
     thread_handle = ctypes.windll.kernel32.OpenThread(THREAD_GET_SET_CONTEXT, 0, target.launch_info.thread_id)
@@ -60,20 +60,20 @@ def insertBreakpointTable(breakpoints: list[tuple[int, int]], passpoints: list[t
 
     ## re-fill the breakpoint list with 0xFF
     for idx in range(target.launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] - target.launch_info.database['SCTRL_BREAKPOINT_TABLE']):
-        set_addr(target.launch_info.database['SCTRL_BREAKPOINT_TABLE'] + idx, 0xFF, process_handle)
+        set_addr(target.launch_info.database['SCTRL_BREAKPOINT_TABLE'] + idx, 0xFF, process_handle, target.launch_info, ctx)
 
     ## write the breakpoint list
     start_addr = target.launch_info.database['SCTRL_BREAKPOINT_TABLE']
     breakpoints_ = copy.deepcopy(breakpoints)
     for bp in breakpoints_:
-        set_addr_int(start_addr, bp[0], process_handle)
-        set_addr_int(start_addr + 4, bp[1], process_handle)
+        set_addr_int(start_addr, bp[0], process_handle, target.launch_info, ctx)
+        set_addr_int(start_addr + 4, bp[1], process_handle, target.launch_info, ctx)
         start_addr += 8
 
     start_addr = target.launch_info.database['SCTRL_BREAKPOINT_TABLE'] + (8 * 10)
     for bp in passpoints:
-        set_addr_int(start_addr, bp[0], process_handle)
-        set_addr_int(start_addr + 4, bp[1], process_handle)
+        set_addr_int(start_addr, bp[0], process_handle, target.launch_info, ctx)
+        set_addr_int(start_addr + 4, bp[1], process_handle, target.launch_info, ctx)
         start_addr += 8
 
     ## resume thread now that breakpoint is applied
@@ -154,14 +154,18 @@ def get_bytes(addr: int, handle: int, count: int) -> bytes:
     _winapi(ctypes.windll.kernel32.ReadProcessMemory(handle, addr, buf, count, ctypes.byref(read)))
     return buf.value
 
-def set_addr(addr: int, val: int, handle: int):
+def set_addr(addr: int, val: int, handle: int, launch_info: DebuggerLaunchInfo, ctx: DebuggingContext):
+    unprotect(launch_info, ctx)
+
     v = val.to_bytes(1, byteorder='little', signed=False)
     buf = ctypes.create_string_buffer(v, 1)
 
     total = c_int()
     _winapi(ctypes.windll.kernel32.WriteProcessMemory(handle, addr, buf, 1, ctypes.byref(total)))
 
-def set_addr_int(addr: int, val: int, handle: int):
+def set_addr_int(addr: int, val: int, handle: int, launch_info: DebuggerLaunchInfo, ctx: DebuggingContext):
+    unprotect(launch_info, ctx)
+
     v = val.to_bytes(4, byteorder='little', signed=False)
     buf = ctypes.create_string_buffer(v, 4)
 
@@ -256,6 +260,12 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
     version_address = get_cached(SELECT_VERSION_ADDRESS, process_handle, launch_info)
     launch_info.database = ADDRESS_DATABASE[version_address]
 
+    ## for winmugen, we need to change protection on the page for the breakpoint functions.
+    ## this is because winmugen has less room for the function in .text than other versions,
+    ## so the function is placed in rdata instead.
+    if version_address == 0x5002E0C1:
+        ctx.is_winmugen = True
+
     ## wait for the initial `suspended` states to progress
     while launch_info.state in [DebugProcessState.SUSPENDED_PROCEED, DebugProcessState.SUSPENDED_WAIT]:
         time.sleep(1/10000)
@@ -271,36 +281,36 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
 
     ## write the breakpoint dispatch handling table with initial values, 0xFF
     for idx in range(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] - launch_info.database['SCTRL_BREAKPOINT_TABLE']):
-        set_addr(launch_info.database['SCTRL_BREAKPOINT_TABLE'] + idx, 0xFF, process_handle)
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_TABLE'] + idx, 0xFF, process_handle, launch_info, ctx)
 
     ## write the breakpoint handling function
     for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_FUNC'])):
-        set_addr(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_BREAKPOINT_FUNC'][idx], process_handle)
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_BREAKPOINT_FUNC'][idx], process_handle, launch_info, ctx)
 
     ## write the passpoint handling function
     for idx in range(len(launch_info.database['SCTRL_PASSPOINT_FUNC'])):
-        set_addr(launch_info.database['SCTRL_PASSPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_PASSPOINT_FUNC'][idx], process_handle)
+        set_addr(launch_info.database['SCTRL_PASSPOINT_FUNC_ADDR'] + idx, launch_info.database['SCTRL_PASSPOINT_FUNC'][idx], process_handle, launch_info, ctx)
 
     ## write the breakpoint handling jump
     for idx in range(len(launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'])):
-        set_addr(launch_info.database['SCTRL_BREAKPOINT_INSERT'] + idx, launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'][idx], process_handle)
+        set_addr(launch_info.database['SCTRL_BREAKPOINT_INSERT'] + idx, launch_info.database['SCTRL_BREAKPOINT_INSERT_FUNC'][idx], process_handle, launch_info, ctx)
 
     ## write the passpoint handling jump
     for idx in range(len(launch_info.database['SCTRL_PASSPOINT_INSERT_FUNC'])):
-        set_addr(launch_info.database['SCTRL_PASSPOINT_INSERT'] + idx, launch_info.database['SCTRL_PASSPOINT_INSERT_FUNC'][idx], process_handle)
+        set_addr(launch_info.database['SCTRL_PASSPOINT_INSERT'] + idx, launch_info.database['SCTRL_PASSPOINT_INSERT_FUNC'][idx], process_handle, launch_info, ctx)
 
     ## restore the breakpoint list from input
     start_addr = launch_info.database['SCTRL_BREAKPOINT_TABLE']
     breakpoints_ = copy.deepcopy(ctx.breakpoints)
     for bp in breakpoints_:
-        set_addr_int(start_addr, bp[0], process_handle)
-        set_addr_int(start_addr + 4, bp[1], process_handle)
+        set_addr_int(start_addr, bp[0], process_handle, launch_info, ctx)
+        set_addr_int(start_addr + 4, bp[1], process_handle, launch_info, ctx)
         start_addr += 8
 
     start_addr = launch_info.database['SCTRL_BREAKPOINT_TABLE'] + (8 * 10)
     for bp in ctx.passpoints:
-        set_addr_int(start_addr, bp[0], process_handle)
-        set_addr_int(start_addr + 4, bp[1], process_handle)
+        set_addr_int(start_addr, bp[0], process_handle, launch_info, ctx)
+        set_addr_int(start_addr + 4, bp[1], process_handle, launch_info, ctx)
         start_addr += 8
 
     ## now add a breakpoint at the breakpoint insertion address
@@ -326,11 +336,13 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                 ## always store breakpoint info for passpoints
                 get_context(thread_handle, context)
                 ctx.current_owner = context.Ebp
+                if ctx.is_winmugen:
+                    ctx.current_owner = context.Esi
                 ctx.last_index = get_uncached(ctx.current_owner + 0x5c, process_handle)
 
                 ## set the owner's address into the passpoint-step address
                 is_step = ctx.current_owner == get_uncached(launch_info.database["SCTRL_STEP_ADDR"] + 4, process_handle)
-                set_addr_int(launch_info.database["SCTRL_STEP_ADDR"] + 4, ctx.current_owner, process_handle)
+                set_addr_int(launch_info.database["SCTRL_STEP_ADDR"] + 4, ctx.current_owner, process_handle, launch_info, ctx)
                 
                 match_breakpoint(launch_info, ctx, process_handle, is_step)
             elif next_event.address == launch_info.database["SCTRL_BREAKPOINT_ADDR"]:
@@ -338,10 +350,12 @@ def _debug_handler(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queu
                 get_context(thread_handle, context)
                 ctx.last_index = context.Ecx
                 ctx.current_owner = context.Ebp
+                if ctx.is_winmugen:
+                    ctx.current_owner = context.Esi
 
                 ## set the owner's address into the breakpoint-step address
                 is_step = ctx.current_owner == get_uncached(launch_info.database["SCTRL_STEP_ADDR"], process_handle)
-                set_addr_int(launch_info.database["SCTRL_STEP_ADDR"], ctx.current_owner, process_handle)
+                set_addr_int(launch_info.database["SCTRL_STEP_ADDR"], ctx.current_owner, process_handle, launch_info, ctx)
                 
                 match_breakpoint(launch_info, ctx, process_handle, is_step)
             else:
@@ -431,7 +445,7 @@ def cont(target: DebuggerTarget, ctx: DebuggingContext, next_state = DebugProces
         target.launch_info.state = next_state
     elif target.subprocess != None and target.launch_info.state == DebugProcessState.PAUSED:
         ## reinsert the breakpoint table
-        insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target)
+        insertBreakpointTable(ctx.breakpoints, ctx.passpoints, target, ctx)
 
         results_queue.put(DebugBreakResult())
         target.launch_info.state = next_state
@@ -439,8 +453,8 @@ def cont(target: DebuggerTarget, ctx: DebuggingContext, next_state = DebugProces
 def removeStep(target: DebuggerTarget, ctx: DebuggingContext):
     ## remove all step addresses
     process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, target.launch_info.process_id)
-    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"], 0, process_handle)
-    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"] + 4, 0, process_handle)
+    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"], 0, process_handle, target.launch_info, ctx)
+    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"] + 4, 0, process_handle, target.launch_info, ctx)
 
 def setStep(target: DebuggerTarget, ctx: DebuggingContext, addr: int):
     ## set the owner's address into the breakpoint-step address
@@ -448,5 +462,11 @@ def setStep(target: DebuggerTarget, ctx: DebuggingContext, addr: int):
     ## don't set if this is already marked as the step character.
     if get_uncached(target.launch_info.database["SCTRL_STEP_ADDR"], process_handle) == addr or get_uncached(target.launch_info.database["SCTRL_STEP_ADDR"] + 4, process_handle) == addr:
         return
-    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"], addr, process_handle)
+    set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"], addr, process_handle, target.launch_info, ctx)
     #set_addr_int(target.launch_info.database["SCTRL_STEP_ADDR"] + 4, addr, process_handle)
+
+def unprotect(launch_info: DebuggerLaunchInfo, ctx: DebuggingContext):
+    if ctx.is_winmugen:
+        process_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, launch_info.process_id)
+        read = c_int()
+        _winapi(ctypes.windll.kernel32.VirtualProtectEx(process_handle, launch_info.database['SCTRL_BREAKPOINT_TABLE'], 0x2000, 0x40, ctypes.byref(read)))

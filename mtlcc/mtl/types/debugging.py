@@ -186,6 +186,7 @@ class DebuggingContext:
     p2_target: str
     enable_ai: int
     quiet: bool
+    is_winmugen: bool
 
     def __init__(self):
         self.strings = []
@@ -203,6 +204,7 @@ class DebuggingContext:
         self.p2_target = "kfm"
         self.enable_ai = 0
         self.quiet = False
+        self.is_winmugen = False
 
 class EXCEPTION_RECORD(ctypes.Structure):
     _fields_ = [

@@ -25,6 +25,18 @@ jobs:
           nasm -o mtlcc/asm/1.1a4/passpoint.bin mtlcc/asm/1.1a4/passpoint.asm
           python3 .github/copy_binary.py mtlcc/asm/1.1a4/breakpoint.bin mtlcc/mtl/debugging/asmbin/breakpoint_11a4.py BREAKPOINT_FUNC_11A4
           python3 .github/copy_binary.py mtlcc/asm/1.1a4/passpoint.bin mtlcc/mtl/debugging/asmbin/passpoint_11a4.py PASSPOINT_FUNC_11A4
+
+          # 1.0 breakpoint/passpoint functions
+          nasm -o mtlcc/asm/1.0/breakpoint.bin mtlcc/asm/1.0/breakpoint.asm
+          nasm -o mtlcc/asm/1.0/passpoint.bin mtlcc/asm/1.0/passpoint.asm
+          python3 .github/copy_binary.py mtlcc/asm/1.0/breakpoint.bin mtlcc/mtl/debugging/asmbin/breakpoint_100.py BREAKPOINT_FUNC_100
+          python3 .github/copy_binary.py mtlcc/asm/1.0/passpoint.bin mtlcc/mtl/debugging/asmbin/passpoint_100.py PASSPOINT_FUNC_100
+
+          # winmugen breakpoint/passpoint functions
+          nasm -o mtlcc/asm/win/breakpoint.bin mtlcc/asm/win/breakpoint.asm
+          nasm -o mtlcc/asm/win/passpoint.bin mtlcc/asm/win/passpoint.asm
+          python3 .github/copy_binary.py mtlcc/asm/win/breakpoint.bin mtlcc/mtl/debugging/asmbin/breakpoint_win.py BREAKPOINT_FUNC_WIN
+          python3 .github/copy_binary.py mtlcc/asm/win/passpoint.bin mtlcc/mtl/debugging/asmbin/passpoint_win.py PASSPOINT_FUNC_WIN
       - run: python3 -m pip install --upgrade pip build
       - run: cd mtlcc && python3 -m build
       - run: cd mdk-python && python3 -m build

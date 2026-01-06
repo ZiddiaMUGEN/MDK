@@ -27,7 +27,7 @@ def loadDefinition(file: str, quiet: bool = False) -> ProjectContext:
     if (commands := find(section.properties, lambda k: equals_insensitive(k.key, "cmd"))) == None:
         raise TranslationError("Input definition file must specify commands via `cmd` key.", section.location)
     commands = search_file(commands.value, file)
-    with open(commands) as f:
+    with open(commands, errors='ignore') as f:
         ctx.commands = ini.parse(f.read(), INIParserContext(file, Location(file, 0)))
     
     try:
@@ -76,7 +76,10 @@ def loadDefinition(file: str, quiet: bool = False) -> ProjectContext:
     else:
         raise TranslationError("Input definition file must specify SND file via `sound` key.", section.location)
     if (ai := find(section.properties, lambda k: equals_insensitive(k.key, "ai"))) != None:
-        ctx.ai_file = search_file(ai.value, file)
+        try:
+            ctx.ai_file = search_file(ai.value, file)
+        except:
+            pass
 
     ## compiler flags
     if (section := find(ctx.contents, lambda k: equals_insensitive(k.name, "Compiler"))) != None:

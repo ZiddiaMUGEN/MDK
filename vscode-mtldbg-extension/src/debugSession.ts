@@ -57,6 +57,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		this.debugManager.on('IPC_HIT_BREAKPOINT', evt => {
 			// pause due to breakpoint
+			console.log(evt.detail);
 			this.sendEvent(new StoppedEvent('breakpoint', JSON.parse(evt.detail).owner));
 		});
 
