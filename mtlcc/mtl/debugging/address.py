@@ -43,8 +43,37 @@ ADDRESS_MUGEN_WIN = {
     "root_addr": 0x2624,
     "helperid": 0x2618,
     "state_owner": 0xBF0,
-    "triggers": {},
-    "game_triggers": {}
+    "triggers": {
+        "id": [0x04, int],
+        #"time": [0xED4, int],
+        "helperid": [0x2618, int],
+        "parent": [0x261C, int],
+        "prevstateno": [0xBF8, int],
+        "facing": [0x190, int],
+        "movecontact": [0xE30, int],
+        "palno": [0x13C4, int],
+        "stateno": [0xBF4, int],
+        "life": [0x160, int],
+        "power": [0x178, int],
+        "alive": [0xE24, bool],
+        "ctrl": [0xE0C, bool],
+        "pausemovetime": [0x1DC, int],
+        "supermovetime": [0x1E0, int],
+        "ailevel": [0x33F8, int],
+        "projhit": [0x218, int],
+        "statetype": [0xE00, "statetype"],
+        "movetype": [0xE04, "movetype"],
+        "hitpausetime": [0xE18, int],
+        "movecontact": [0xE30, int],
+        "movehit": [0xE34, int]
+    },
+    "game_triggers": {
+        "gametime": [0xB3FC, int],
+        "roundstate": [0xBC30, int],
+        "roundno": [0xBC04, int],
+        "win": [0xBC34, bool],
+        "winko": [0xBC38, bool],
+    }
 }
 
 ADDRESS_MUGEN_100 = {
@@ -72,8 +101,37 @@ ADDRESS_MUGEN_100 = {
     "root_addr": 0x1480,
     "helperid": 0x1474,
     "state_owner": 0xC38,
-    "triggers": {},
-    "game_triggers": {}
+    "triggers": {
+        "id": [0x04, int],
+        #"time": [0xED4, int],
+        "helperid": [0x1474, int],
+        "parent": [0x1478, int],
+        "prevstateno": [0xC50, int],
+        "facing": [0x1E8, int],
+        "movecontact": [0xE8C, int],
+        "palno": [0x1420, int],
+        "stateno": [0xC4C, int],
+        "life": [0x1BC, int],
+        "power": [0x1D8, int],
+        "alive": [0xE80, bool],
+        "ctrl": [0xE64, bool],
+        "pausemovetime": [0x228, int],
+        "supermovetime": [0x22C, int],
+        "ailevel": [0x2254, int],
+        "projhit": [0x264, int],
+        "statetype": [0xE58, "statetype"],
+        "movetype": [0xE5C, "movetype"],
+        "hitpausetime": [0xE70, int],
+        "movecontact": [0xE8C, int],
+        "movehit": [0xE90, int]
+    },
+    "game_triggers": {
+        "gametime": [0x10EA8, int],
+        "roundstate": [0x11710, int],
+        "roundno": [0x116E4, int],
+        "win": [0x11714, bool],
+        "winko": [0x11718, bool],
+    }
 }
 
 ADDRESS_MUGEN_11A4 = {
