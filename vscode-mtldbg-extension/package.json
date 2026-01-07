@@ -2,7 +2,7 @@
   "name": "vscode-mtldbg",
   "displayName": "MUGEN Debugger",
   "description": "A debugger for MUGEN character code (CNS, MTL, MDK)",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "ZiddiaMUGEN",
   "icon": "mugen.png",
   "repository": {
@@ -52,7 +52,9 @@
           "launch": {
             "required": [
               "program",
-              "database"
+              "database",
+              "pythonPath",
+              "mugenPath"
             ],
             "properties": {
               "program": {
@@ -89,6 +91,11 @@
                 "type": "boolean",
                 "description": "Set to `true` to generate a debugging file on launch. Use this if you provide a CNS DEF file in program.",
                 "default": false
+              },
+              "opponent": {
+                "type": "string",
+                "description": "The character name (or path to a character) to use as p2. Defaults to `kfm`.",
+                "default": "kfm"
               }
             }
           }
@@ -102,6 +109,7 @@
             "database": "${workspaceFolder}/${command:AskForDatabaseName}",
             "pythonPath": "${command:AskForPythonPath}",
             "mugenPath": "${command:AskForMUGENPath}",
+            "opponent": "kfm",
             "build": false,
             "generate": false,
             "stopOnEntry": true
@@ -119,6 +127,7 @@
               "database": "^\"\\${workspaceFolder}/${2:Database}\"",
               "pythonPath": "^\"\\${workspaceFolder}/${4:Python}\"",
               "mugenPath": "^\"\\${workspaceFolder}/${5:MUGEN}\"",
+              "opponent": "kfm",
               "build": false,
               "generate": false,
               "stopOnEntry": true

@@ -25,16 +25,19 @@ export class MTLDebugManager extends EventEmitter {
 
     private _partialMessage: Buffer | null = null;
 
-    public async connect(python: string, database: string, mugen: string, stopOnEntry: boolean | undefined, generate: string | undefined) {
+    public async connect(python: string, database: string, mugen: string, stopOnEntry: boolean | undefined, generate: string | undefined, p2: string | undefined) {
         // check if debugger is already running
         if (this._debuggingProcess != null) {
             throw "Debugger has already been launched, please stop any debugging processes before running.";
         }
 
+        // set p2 to KFM if not specified
+        if (!p2) p2 = "kfm";
+
         // run mtldbg and store the debugging process
         // we need to pass `-i` for IPC-over-stream mode, this will make it possible to communicate with
         // the debugger process via stdin/stdout.
-        const commandLine = ["-m", "mtldbg", "-d", database, "-m", mugen, "-i"];
+        const commandLine = ["-m", "mtldbg", "-d", database, "-m", mugen, "-p", p2, "-i"];
         if (generate) {
             commandLine.push("-g");
             commandLine.push(generate);

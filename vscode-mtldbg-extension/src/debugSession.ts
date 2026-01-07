@@ -28,6 +28,8 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	build?: boolean;
 	/** Generate a debugging database from the provided DEF file in `program`. */
 	generate?: boolean;
+	/** The character name (or path to a character) to use as p2. Defaults to `kfm`. */
+	opponent?: string;
 
 	// builtin value used on restart requests.
 	__restart: boolean;
@@ -203,7 +205,7 @@ export class MTLDebugSession extends LoggingDebugSession {
 		}
 
         // launch debugger
-        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry, args.generate ? args.program : undefined);
+        await this.debugManager.connect(args.pythonPath, args.database, args.mugenPath, args.stopOnEntry, args.generate ? args.program : undefined, args.opponent);
 
 		// manager is connected, so allow breakpoint initialization
 		this.sendEvent(new InitializedEvent());
