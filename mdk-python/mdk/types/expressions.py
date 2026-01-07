@@ -2,7 +2,7 @@ import functools
 from typing import Union, Callable
 from enum import Enum, Flag
 
-from mdk.types.specifier import TypeSpecifier
+from mdk.types.specifier import TypeSpecifier, TypeCategory
 from mdk.types.builtins import IntType, BoolType, FloatType, StringType, StateNoType, AnyType
 from mdk.types.context import CompilerContext, StateController
 
@@ -40,10 +40,14 @@ def _convert(input: Union['Expression', Enum, Flag, str, int, float, bool, tuple
         for typename in ctx.typedefs:
             typedef = ctx.typedefs[typename]
             if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
-                result = ""
-                for member in input:
-                    result += member.name # type: ignore
-                return Expression(f"{typedef.name}.{result}", typedef)
+                if not typedef.register:
+                    result = ""
+                    for member in input:
+                        result += member.name # type: ignore
+                    return Expression(f"{typedef.name}.{result}", typedef)
+                else:
+                    result = " | ".join([x.__str__() for x in input])
+                    return Expression(f"({result})", typedef)
         raise Exception(f"Could not determine the MTL type to use for flag type {type(input)}.")
     elif isinstance(input, Enum):
         ctx = CompilerContext.instance()
@@ -209,6 +213,16 @@ class Expression:
         return Expression(f"floor({self.__str__()})", self.type)
     def __ceil__(self):
         return Expression(f"ceil({self.__str__()})", self.type)
+    
+    ## membership, for Flag types
+    def __contains__(self, other):
+        if not isinstance(other, Expression):
+            other = _convert(other)
+        if check_types_assignable(self.type, other.type) == None:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not assignable and cannot be tested for membership.")
+        if self.type.category != TypeCategory.FLAG or other.type.category != TypeCategory.FLAG:
+            raise Exception(f"Types {self.type.name} and {other.type.name} are not Flag types and cannot be tested for membership.")
+        return Expression(f"{self.__str__()} = {other.__str__()}", BoolType)
     
     def __bool__(self):
         ctx = CompilerContext.instance()

@@ -7,7 +7,7 @@ from typing import Callable
 from mdk.types.context import StateController, TranslationMode
 
 from mdk.utils.shared import format_bool
-from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerAssign, TriggerPush, TriggerPop, TriggerPrint
+from mdk.utils.triggers import TriggerAnd, TriggerOr, TriggerNot, TriggerNotIn, TriggerAssign, TriggerPush, TriggerPop, TriggerPrint
 
 def write_controller(ctrl: StateController, f: io.TextIOWrapper, locations: bool):
     f.write("[State ]\n")
@@ -42,6 +42,7 @@ def rewrite_function(fn: Callable[..., None], overload_print: bool = True, mode:
     new_globals["mdk.impl.TriggerAnd"] = TriggerAnd
     new_globals["mdk.impl.TriggerOr"] = TriggerOr
     new_globals["mdk.impl.TriggerNot"] = TriggerNot
+    new_globals["mdk.impl.TriggerNotIn"] = TriggerNotIn
     new_globals["mdk.impl.TriggerAssign"] = TriggerAssign
     new_globals["mdk.impl.TriggerPush"] = TriggerPush
     new_globals["mdk.impl.TriggerPop"] = TriggerPop
@@ -88,6 +89,29 @@ class ReplaceLogicalOperators(ast.NodeTransformer):
         return ast.Call(
             func=ast.Name(id=target, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
             args=node.values,
+            keywords=[],
+            lineno=node.lineno,
+            col_offset=node.col_offset
+        )
+    
+    def visit_Compare(self, node: ast.Compare):
+        # recursively inspect child nodes.
+        node = super(ReplaceLogicalOperators, self).generic_visit(node) # type: ignore
+        # get the type of operation: we support transforming NOT-IN for cmpop (for Flag membership behaviour)
+        if len(node.ops) == 1 and type(node.ops[0]) == ast.NotIn:
+            print(ast.dump(node, indent=4))
+            target = 'mdk.impl.TriggerNotIn'
+        else:
+            return node
+        
+        # then, replace the CmpOp directly with a Call to the appropriate override,
+        # with arguments provided from the inner values.
+        return ast.Call(
+            func=ast.Name(id=target, ctx=ast.Load(), lineno=node.lineno, col_offset=node.col_offset),
+            args=[
+                node.left,
+                node.comparators[0]
+            ],
             keywords=[],
             lineno=node.lineno,
             col_offset=node.col_offset

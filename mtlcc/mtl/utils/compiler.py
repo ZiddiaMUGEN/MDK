@@ -464,10 +464,13 @@ def match_enum(input: str, enum: TypeDefinition) -> Optional[list[TypeSpecifier]
     if enum.category in [TypeCategory.ENUM, TypeCategory.STRING_ENUM] and includes_insensitive(input, enum.members):
         ## for enum, input must exactly match a constant
         return [TypeSpecifier(enum)]
-    elif enum.category in [TypeCategory.FLAG, TypeCategory.STRING_FLAG]:
-        ## for flag, each character of input must exactly match a constant
+    elif enum.category == TypeCategory.STRING_FLAG:
+        ## for STRING_FLAG, each member is one character. each character of input must exactly match a constant.
         for c in input:
             if not includes_insensitive(c, enum.members): return None
+        return [TypeSpecifier(enum)]
+    elif enum.category == TypeCategory.FLAG and includes_insensitive(input, enum.members):
+        ## for FLAG, the input should be a SINGLE flag member. members are joined by bitwise or operators.
         return [TypeSpecifier(enum)]
     return None
     

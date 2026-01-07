@@ -77,9 +77,14 @@ def translateTypes(load_ctx: LoadContext, ctx: TranslationContext):
 
         ## automatically register equality and assignment for all Enum and Flag user-defined types.
         ## if other operators are required, end users should implement it themselves.
-        if definition.category in [TypeCategory.ENUM, TypeCategory.FLAG]:
+        if definition.category == TypeCategory.ENUM:
             ctx.triggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtins.builtin_eq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator=", category = TriggerCategory.OPERATOR))
             ctx.triggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtins.builtin_neq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator!=", category = TriggerCategory.OPERATOR))
+            ctx.triggers.append(TriggerDefinition("operator:=", definition, builtins.builtin_assign, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator:=", category = TriggerCategory.OPERATOR))
+        if definition.category == TypeCategory.FLAG:
+            ctx.triggers.append(TriggerDefinition("operator=", BUILTIN_BOOL, builtins.flag_eq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator=", category = TriggerCategory.OPERATOR))
+            ctx.triggers.append(TriggerDefinition("operator!=", BUILTIN_BOOL, builtins.flag_neq, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator!=", category = TriggerCategory.OPERATOR))
+            ctx.triggers.append(TriggerDefinition("operator|", BUILTIN_BOOL, builtins.flag_join, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator|", category = TriggerCategory.OPERATOR))
             ctx.triggers.append(TriggerDefinition("operator:=", definition, builtins.builtin_assign, [TypeParameter("expr1", definition), TypeParameter("expr2", definition)], None, definition.location, "operator:=", category = TriggerCategory.OPERATOR))
 
 def translateStructs(load_ctx: LoadContext, ctx: TranslationContext):

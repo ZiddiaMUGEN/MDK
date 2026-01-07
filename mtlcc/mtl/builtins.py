@@ -374,10 +374,7 @@ def builtin_div(exprs: list[Expression], ctx: TranslationContext) -> Expression:
 def builtin_mod(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "%")
 def builtin_exp(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "**")
 def builtin_xor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^^")
-def builtin_eq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "=")
-def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "!=")
 def builtin_bitand(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&")
-def builtin_bitor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "|")
 def builtin_bitxor(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "^")
 def builtin_lt(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<")
 def builtin_lte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, "<=")
@@ -385,6 +382,35 @@ def builtin_gt(exprs: list[Expression], ctx: TranslationContext) -> Expression: 
 def builtin_gte(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_compare(exprs, ctx, ">=")
 def builtin_and(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "&&")
 def builtin_or(exprs: list[Expression], ctx: TranslationContext) -> Expression: return builtin_binary(exprs, ctx, "||")
+
+## these have special logic to push flag expressions into the flag_eq/flag_neq options.
+def builtin_eq(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if exprs[0].type.category == TypeCategory.FLAG and exprs[1].type.category == TypeCategory.FLAG:
+        return flag_eq(exprs, ctx)
+    return builtin_compare(exprs, ctx, "=")
+def builtin_neq(exprs: list[Expression], ctx: TranslationContext) -> Expression:
+    if exprs[0].type.category == TypeCategory.FLAG and exprs[1].type.category == TypeCategory.FLAG:
+        return flag_neq(exprs, ctx) 
+    return builtin_compare(exprs, ctx, "!=")
+def builtin_bitor(exprs: list[Expression], ctx: TranslationContext) -> Expression: 
+    if exprs[0].type.category == TypeCategory.FLAG and exprs[1].type.category == TypeCategory.FLAG:
+        return flag_join(exprs, ctx)
+    return builtin_binary(exprs, ctx, "|")
+
+def flag_eq(exprs: list[Expression], ctx: TranslationContext):
+    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal(ctx.compiler_flags)) != None:
+        return Expression(BUILTIN_BOOL, f"({exprs[0].value} & {exprs[1].value}) = {exprs[1].value}")
+    raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for flag membership.", Location("mtl/builtins.py", line_number()))
+
+def flag_neq(exprs: list[Expression], ctx: TranslationContext):
+    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal(ctx.compiler_flags)) != None:
+        return Expression(BUILTIN_BOOL, f"({exprs[0].value} & {exprs[1].value}) != {exprs[1].value}")
+    raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for flag non-membership.", Location("mtl/builtins.py", line_number()))
+
+def flag_join(exprs: list[Expression], ctx: TranslationContext):
+    if get_widest_match(exprs[0].type, exprs[1].type, ctx, compiler_internal(ctx.compiler_flags)) != None:
+        return Expression(exprs[0].type, f"({exprs[0].value} | {exprs[1].value})")
+    raise TranslationError(f"Failed to convert an expression of type {exprs[0].type.name} to type {exprs[1].type.name} for flag combination.", Location("mtl/builtins.py", line_number()))
 
 def getBaseTemplates() -> list[TemplateDefinition]:
     return [

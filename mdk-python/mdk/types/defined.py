@@ -84,6 +84,11 @@ class FlagType(TypeSpecifier):
 
     def __getattr__(self, name: str) -> Expression:
         all_members: list[str] = []
+
+        ## 'full' flag with whole members
+        if name in self.members:
+            return Expression(f"{self.name}.{name}", self)
+        
         for character in name:
             found = False
             for member in self.members:

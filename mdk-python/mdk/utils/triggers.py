@@ -1,10 +1,11 @@
 from typing import Optional
 
-from mdk.types.context import CompilerContext, StateController
+from mdk.types.context import CompilerContext
 from mdk.types.expressions import Expression
 from mdk.types.variables import VariableExpression
 from mdk.types.builtins import BoolType, IntType, ShortType, ByteType
 from mdk.types.defined import StateNoType, EnumType, FlagType
+from mdk.types.specifier import TypeCategory
 
 from mdk.stdlib.controllers import DisplayToClipboard, AppendToClipboard
 
@@ -63,6 +64,17 @@ def TriggerNot(expr: Expression):
     """
 
     return Expression(f"!({expr.exprn})", BoolType)
+
+def TriggerNotIn(expr1: Expression, expr2: Expression):
+    ## unfortunately, just using `expr1 in expr2` gives us a bool in return (i guess the language automatically calls __bool__ for us, which is annoying)
+    ## so there's duplicated logic here from the __contains__ dunder.
+    if not isinstance(expr1, Expression):
+        expr1 = convert(expr1)
+    if not isinstance(expr2, Expression):
+        expr2 = convert(expr2)
+    if expr1.type.category != TypeCategory.FLAG or expr2.type.category != TypeCategory.FLAG:
+        raise Exception(f"Types {expr1.type.name} and {expr2.type.name} are not Flag types and cannot be tested for membership.")
+    return Expression(f"({expr2.__str__()} != {expr1.__str__()})", BoolType)
 
 def TriggerAssign(expr1: Expression, expr2: Expression):
     if not isinstance(expr1, VariableExpression):

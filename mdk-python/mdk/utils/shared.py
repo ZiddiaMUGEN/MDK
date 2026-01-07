@@ -37,10 +37,14 @@ def convert(input: Union[Expression, Enum, Flag, str, int, float, bool, tuple, C
         for typename in ctx.typedefs:
             typedef = ctx.typedefs[typename]
             if hasattr(typedef, "inner_type") and typedef.inner_type == type(input): # type: ignore
-                result = ""
-                for member in input:
-                    result += member.name # type: ignore
-                return Expression(f"{typedef.name}.{result}", typedef)
+                if not typedef.register:
+                    result = ""
+                    for member in input:
+                        result += member.name # type: ignore
+                    return Expression(f"{typedef.name}.{result}", typedef)
+                else:
+                    result = " | ".join([x.__str__() for x in input])
+                    return Expression(f"({result})", typedef)
         raise Exception(f"Could not determine the MTL type to use for flag type {type(input)}.")
     elif isinstance(input, Enum):
         ctx = CompilerContext.instance()
