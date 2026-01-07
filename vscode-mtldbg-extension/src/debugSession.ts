@@ -11,7 +11,7 @@ import {
 import { DebugProtocol } from '@vscode/debugprotocol';
 
 import { MTLDebugManager } from './debugManager';
-import { VariableType, FileAccessor } from './sharedTypes';
+import { VariableType, FileAccessor, DebuggerResponseType } from './sharedTypes';
 
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** An absolute path to the program to debug. */
@@ -28,6 +28,9 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	build?: boolean;
 	/** Generate a debugging database from the provided DEF file in `program`. */
 	generate?: boolean;
+
+	// builtin value used on restart requests.
+	__restart: boolean;
 }
 
 export class MTLDebugSession extends LoggingDebugSession {
@@ -43,11 +46,16 @@ export class MTLDebugSession extends LoggingDebugSession {
 
 		this.debugManager.on('IPC_EXIT', evt => {
 			// exit early due to IPC request (e.g. an exception in the debugger, or MUGEN closing)
+			console.log(evt.detail);
 			if (evt.detail === "DEBUGGER_INVALID_DEBUG_DATABASE") {
 				vscode.window.showErrorMessage("Debugger has been closed due to an incompatible debugging database.");
+				this.sendEvent(new TerminatedEvent(false));
+			} else if (evt.response === DebuggerResponseType.ERROR) {
+				vscode.window.showErrorMessage("Debugger subprocess failed to run, please retry launch.");
+				this.sendEvent(new TerminatedEvent(true));
+			} else {
+				this.sendEvent(new TerminatedEvent(false));
 			}
-			console.log(evt.detail);
-			this.sendEvent(new TerminatedEvent(false));
 		});
 
 		this.debugManager.on('IPC_GENERATE', evt => {
@@ -151,6 +159,8 @@ export class MTLDebugSession extends LoggingDebugSession {
 	}
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: ILaunchRequestArguments) {
+		console.log(`Launch request: ${JSON.stringify(args)}`);
+
         // wait for configuration.
         while (!this.initializationComplete) {
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -162,7 +172,8 @@ export class MTLDebugSession extends LoggingDebugSession {
 			throw "`build` and `generate` are incompatible; use `generate` for a CNS (non-compiled) character only.";
 
 		// start the program in the runtime
-		if (args.build) {
+		// skip build if it's a restart request.
+		if (args.build && !args.__restart) {
 			console.log(`Launch build for program ${args.program}.`)
 			
 			if (!args.generate && args.program.endsWith(".py")) {

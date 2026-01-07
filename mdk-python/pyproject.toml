@@ -7,7 +7,7 @@ name = "mdk-mugen"
 version = "0.2.0"
 readme = "README.md"
 dependencies = [
-    "mtl-mugen>=0.2.0",
+    "mtl-mugen>=0.2.1",
     "pyqt6>=6.10.1"
 ]
 

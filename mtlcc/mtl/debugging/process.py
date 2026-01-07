@@ -207,7 +207,11 @@ def _wait_mugen(target: DebuggerTarget, folder: str):
     if folder != None:
         shutil.rmtree(folder)
     if target.launch_info.ipc:
-        sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.SUCCESS, json.dumps({ "ret": target.subprocess.poll() }).encode('utf-8')))
+        retval = target.subprocess.poll()
+        if retval not in [0, 1]:
+            sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.ERROR, json.dumps({ "ret": retval }).encode('utf-8')))
+        else:
+            sendResponseIPC(DebuggerResponseIPC(b'00000000-0000-0000-0000-000000000000', DebuggerCommand.IPC_EXIT, DebuggerResponseType.SUCCESS, json.dumps({ "ret": retval }).encode('utf-8')))
 
 def _debug_mugen(launch_info: DebuggerLaunchInfo, events: multiprocessing.Queue, results: multiprocessing.Queue):
     ## insert self as a debugger into the target process, then indicate the process can unsuspend

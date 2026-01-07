@@ -2,7 +2,7 @@
   "name": "vscode-mtldbg",
   "displayName": "MUGEN Debugger",
   "description": "A debugger for MUGEN character code (CNS, MTL, MDK)",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "ZiddiaMUGEN",
   "icon": "mugen.png",
   "repository": {
