@@ -11,6 +11,11 @@ dependencies = [
     "pyreadline3>=3.5.4"
 ]
 
+[project.urls]
+Repository = "https://github.com/ZiddiaMUGEN/MDK"
+Documentation = "https://github.com/ZiddiaMUGEN/MDK/blob/main/mtlcc/SPEC.md"
+Changelog = "https://github.com/ZiddiaMUGEN/MDK/releases"
+
 [tool.hatch.build.targets.wheel]
 include = ["mtl", "stdlib", "mtlcc.py", "mtldbg.py"]
 exclude = ["dist", "sample", "*.md", "*.toml"]

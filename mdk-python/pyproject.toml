@@ -11,6 +11,11 @@ dependencies = [
     "pyqt6>=6.10.1"
 ]
 
+[project.urls]
+Repository = "https://github.com/ZiddiaMUGEN/MDK"
+Documentation = "https://github.com/ZiddiaMUGEN/MDK/blob/main/mdk-python/TUTORIAL.md"
+Changelog = "https://github.com/ZiddiaMUGEN/MDK/releases"
+
 [tool.hatch.build.targets.wheel]
 include = ["mdk", "mdk-stubs", "mdkair.py"]
 
